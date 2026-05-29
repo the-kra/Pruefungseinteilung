@@ -2,7 +2,7 @@
 
 > Zeitoptimierter Prüfungsplan für mündliche Reife- & Diplomprüfungen an HTLs — eigenständige HTML-Datei, läuft offline im Browser.
 
-**Live-Demo:** [https://DEIN-USERNAME.github.io/DEIN-REPO/](https://DEIN-USERNAME.github.io/DEIN-REPO/)
+**Live-Demo:** [https://the-kra.github.io/Pruefungseinteilung/](https://the-kra.github.io/Pruefungseinteilung/)
 
 ---
 
