@@ -119,6 +119,10 @@ input,select{width:100%;padding:9px 11px;border:1px solid var(--line);border-rad
   transition:border-color .15s, box-shadow .15s}
 input:focus,select:focus{outline:none;border-color:var(--accent2);box-shadow:0 0 0 3px #5577e622}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.param-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;margin-top:6px}
+.param-grid input:disabled,.param-grid select:disabled{background:#eef2f7;color:#9aa4b3;cursor:not-allowed}
+.param-grid .ph{font-size:11px;font-weight:600;color:var(--accent);letter-spacing:1.5px;text-transform:uppercase;
+  padding-bottom:2px;border-bottom:1.5px solid var(--accent);margin-bottom:2px;text-align:center}
 .btn{display:inline-block;width:100%;padding:12px;border:none;border-radius:10px;cursor:pointer;
   font-family:'Lexend',sans-serif;font-weight:500;font-size:14px;margin-top:12px;
   transition:transform .08s,filter .15s,box-shadow .15s}
@@ -134,8 +138,9 @@ input:focus,select:focus{outline:none;border-color:var(--accent2);box-shadow:0 0
   font-family:'Lexend',sans-serif;font-size:13px;font-weight:400;color:var(--ink);transition:all .15s}
 .tab:hover{border-color:var(--accent2)}
 .tab.active{background:var(--ink);color:#fff;border-color:var(--ink)}
-.stat{display:inline-block;margin:0 18px 10px 0}
-.stat b{font-size:23px;font-weight:600;display:block;color:var(--accent2);letter-spacing:-.5px}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 22px;margin-bottom:14px}
+.stat{display:block}
+.stat b{font-size:23px;font-weight:600;display:block;color:var(--accent2);letter-spacing:-.5px;line-height:1.15}
 .stat span{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:400}
 table{border-collapse:collapse;width:100%;font-size:13px;font-weight:400}
 th,td{border:1px solid var(--line);padding:7px 10px;text-align:left}
@@ -150,7 +155,10 @@ tr:nth-child(even) td{background:#fafbfd}
 .gblock{position:absolute;top:3px;height:24px;border-radius:7px;color:#fff;font-size:10px;font-weight:500;
   display:flex;align-items:center;justify-content:center;overflow:hidden;white-space:nowrap;
   box-shadow:0 2px 8px -2px rgba(27,35,48,.35)}
-.gblock.prep{opacity:.32;background-image:repeating-linear-gradient(45deg,#0002 0 4px,#0000 4px 8px)}
+.gblock.gclick{cursor:pointer;transition:transform .12s,box-shadow .12s}
+.gblock.gclick:hover{transform:scale(1.06);box-shadow:0 4px 12px -2px rgba(27,35,48,.55);z-index:3}
+.gblock.gsel{outline:3px solid #ff2b2b;outline-offset:1px;box-shadow:0 0 0 4px rgba(255,43,43,.25),0 4px 12px -2px rgba(27,35,48,.55);z-index:4}
+.gblock.prep{opacity:.32;background-image:repeating-linear-gradient(45deg,#0002 0 4px,#0000 4px 8px);pointer-events:none}
 .gaxis{display:flex;margin-left:172px;border-top:2px solid var(--ink);font-size:10px;color:var(--muted);
   font-family:ui-monospace,monospace;position:relative;height:18px}
 .tick{position:absolute;transform:translateX(-50%);padding-top:3px}
@@ -164,17 +172,25 @@ tr:nth-child(even) td{background:#fafbfd}
   font-size:12px;margin-bottom:16px;color:#8a6314;font-weight:300}
 .cmp{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .cmp .panel{margin:0}
-.legend{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0;font-size:12px}
+.legend{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0;font-size:12px;align-items:center}
+.legend-hint{margin-left:auto;color:var(--muted);font-size:11px;font-style:italic;
+  background:#f7fbfc;padding:3px 10px;border-radius:12px;border:1px dashed #c8d4dd}
 .fileok{font-size:12px;color:var(--good);margin-top:8px;font-weight:400}
 footer{margin-top:34px;font-size:11px;color:var(--muted);font-weight:300;text-align:center}
 .collapse summary{cursor:pointer;font-size:12px;color:var(--accent2);margin-top:12px;font-weight:400}
 tr.draggable{cursor:grab}
 tr.draggable td:first-child::before{content:"⠿";color:var(--muted);margin-right:6px;font-size:11px}
 tr.dragging{opacity:.4}
-tr.dropbefore td{box-shadow:inset 0 3px 0 var(--accent2)}
+tr.dropswap td{background:linear-gradient(90deg,#e9f7f5,#eef2fb)!important;
+  box-shadow:inset 0 0 0 2px var(--accent2);transition:background .12s}
+tr.dropswap td::before{content:"⇄ tauschen";font-size:9px;font-weight:600;color:var(--accent2);
+  letter-spacing:1px;text-transform:uppercase;float:right;margin-right:6px}
 td.hard{background:#fde7ea !important;color:#a52138}
 td.soft{background:#fdf3df !important;color:#8a6314}
 .cell-flag{display:block;font-size:10px;margin-top:2px;font-weight:300;font-style:italic}
+tr.group-sep td{background:linear-gradient(90deg,#e7f3f5,#f7fbfc);color:#0083aa;font-weight:600;
+  font-size:11px;letter-spacing:2px;text-transform:uppercase;padding:9px 14px;
+  border-top:2px solid #0083aa;border-bottom:1px solid #d6e7eb}
 .editbar{display:flex;gap:9px;align-items:center;margin:16px 0 9px;flex-wrap:wrap;
   font-size:12px;color:var(--muted);font-weight:300}
 .editbar .vstat{padding:3px 10px;border-radius:13px;font-weight:500}
@@ -439,15 +455,18 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
       </div>
       <div class="hint">Ab dem Tagesbeginn läuft die Vorbereitung; die erste Prüfung startet entsprechend später (Tagesbeginn + Vorbereitungszeit).</div>
 
-      <label>Max. Blocklänge (Prüfungen am Stück)</label>
-      <select id="maxblock"><option>3</option><option selected>4</option><option>5</option></select>
-      <div class="hint">Längster ununterbrochener Block je Lehrer.</div>
-
-      <div class="row2">
-        <div><label>Min. Pause Schüler (min)</label><input type="number" id="sgap" value="" placeholder="4–6 (Std)"></div>
-        <div><label>Min. Pause Lehrer (min)</label><input type="number" id="tgap" value="" placeholder="2–4 (Std)"></div>
+      <div class="param-grid">
+        <div class="ph">Schüler</div>
+        <div class="ph">Lehrer</div>
+        <div><label>Max. Block (Blöcke)</label>
+          <select id="maxblockS"><option selected>1</option><option>2</option><option>3</option></select></div>
+        <div><label>Max. Block (Blöcke)</label>
+          <select id="maxblock"><option>3</option><option selected>4</option><option>5</option></select></div>
+        <div><label>Min. Pause (Blöcke)</label><input type="number" id="sgap" value="" placeholder="3–4"></div>
+        <div><label>Min. Pause (Blöcke)</label><input type="number" id="tgap" value="" placeholder="2–4"></div>
       </div>
-      <label>Max. Lücke Schüler zwischen Prüfungen (min)</label>
+      <div class="hint">Max. = längste Folge eigener Prüfungen, Min. = fremde Prüfungen dazwischen.</div>
+      <label>Max. Lücke Schüler zwischen Prüfungen (Blöcke)</label>
       <input type="number" id="smaxgap" value="" placeholder="frei = unbegrenzt">
 
       <label>Tagesaufteilung</label>
@@ -459,7 +478,7 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
 
       <div class="tip-box">
         <span class="tip-title">💡 Tipps</span>
-        Den Plan kannst du <b>drucken</b> (Strg/Cmd + P) oder Zeilen in der Liste <b>manuell verschieben</b>, um die Reihenfolge zu tauschen.<br>
+        Den Plan kannst du <b>drucken</b> (Strg/Cmd + P) oder Zeilen in der Liste <b>tauschen</b>, indem du eine auf eine andere ziehst.<br>
         Zum <b>Zurücksetzen</b> einfach oben wieder auf <b>Volltag</b> oder <b>2 Gruppen</b> klicken — der optimierte Plan wird neu erstellt.
       </div>
       <div class="tip-box" style="background:linear-gradient(135deg,#e0972a14,#e0972a08);border-color:#f0d39a">
@@ -468,7 +487,8 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
 
       <details class="collapse"><summary>Erweitert / Hinweise</summary>
         <div class="hint" style="margin-top:8px">
-          • Min. Pause Schüler ≥ Vorbereitungszeit wird automatisch erzwungen (Schüler muss 30 min vorher rein).<br>
+          • Alle Pausen und Lücken sind in <b>Prüfungsblöcken</b> (1 Block = Prüfungsdauer in min).<br>
+          • Schüler-Pause wird automatisch ≥ Vorbereitungszeit erzwungen (Schüler muss rechtzeitig in den Vorbereitungsraum).<br>
           • Schüler mit den meisten Prüfungen starten die Liste.<br>
           • Solver minimiert Leerlauf der Lehrer + Wartezeit der Schüler.
         </div>
@@ -538,7 +558,7 @@ function solve(M,P){
   const exams=buildExamList(M);
   const dur=P.dur, prep=P.prep;
   const sgap=Math.max(P.sgap, prep);     // Schueler-Pause min (>= Vorbereitung)
-  const tgap=P.tgap, maxblock=P.maxblock;
+  const tgap=P.tgap, maxblock=P.maxblock, maxblockS=P.maxblockS||1;
 
   // Schueler mit meisten Pruefungen zuerst (Reihenfolge-Bias)
   const examCount={}; exams.forEach(e=>examCount[e.student]=(examCount[e.student]||0)+1);
@@ -554,20 +574,31 @@ function solve(M,P){
 
   // Earliest-feasible Vergabe: aus dem Pool stets die Pruefung waehlen, die am
   // fruehesten starten kann; gleicher Lehrer wird bevorzugt (kompakte Bloecke).
-  // Beginn-Uhrzeit = Tagesbeginn (erste Vorbereitung). Erste Pruefung erst nach Vorbereitung.
   const dayStart=hm2min(P.start); const firstExam=dayStart+prep; let cur=firstExam;
   const sched=[]; const lastStudentEnd={}, teacherRun={}, lastTeacher={};
-  // Mittagspause nur relevant, wenn der Tag vor 12:00 beginnt (sonst bereits Nachmittag)
+  // Slot-basiertes Tracking: Index des letzten Slots eines vollen Lehrerblocks
+  const teacherBlockEndIdx={}, studentRun={}, studentLastIdx={};
   let prev=null, lunchDone=(firstExam>=hm2min("12:00")); const lunchAt=hm2min("12:00");
   const pool=seq.slice();
   while(pool.length){
+    const N=sched.length; // Index, an den der nächste Slot kommt
+    // Welche Kandidaten sind NICHT durch Lehrer-tgap blockiert? (Slot-Abstand zum letzten Blockende)
+    const isTgapBlocked=e=>teacherBlockEndIdx[e.teacher]!=null &&
+      (N - teacherBlockEndIdx[e.teacher] - 1) < tgap;
+    // Schüler-Block-Sperre: Schüler darf nicht mehr als maxblockS direkt hintereinander
+    const isSBlocked=e=>studentLastIdx[e.student]===N-1 && (studentRun[e.student]||0)>=maxblockS;
+    const anyUnblocked=pool.some(e=>!isTgapBlocked(e) && !isSBlocked(e));
+    const curRun=teacherRun[prev]||0;
+    const mustSwitch = prev!==null && curRun>=maxblock && pool.some(e=>e.teacher!==prev);
+
     let best=-1, bestStart=Infinity, bestScore=Infinity;
-    for(let i=0;i<pool.length;i++){ const e=pool[i]; let s=cur;
+    for(let i=0;i<pool.length;i++){ const e=pool[i];
+      if(anyUnblocked && (isTgapBlocked(e) || isSBlocked(e))) continue;
+      let s=cur;
       if(lastStudentEnd[e.student]!=null) s=Math.max(s, lastStudentEnd[e.student]+sgap);
-      const run=(prev===e.teacher)?(teacherRun[e.teacher]||0):0;
-      if(prev===e.teacher && run>=maxblock) s=Math.max(s, lastTeacher[e.teacher]+tgap);
-      const blockPenalty=(prev!==null && e.teacher!==prev)?6:0;     // halte Lehrerbloecke zusammen
-      const score=(s-cur)+blockPenalty;
+      const switchPenalty = mustSwitch && e.teacher===prev ? 9999 : 0;
+      const blockPenalty=(prev!==null && e.teacher!==prev)?6:0;
+      const score=(s-cur)+blockPenalty+switchPenalty;
       if(score<bestScore || (score===bestScore && s<bestStart)){ bestScore=score; bestStart=s; best=i; }
     }
     const e=pool.splice(best,1)[0]; let s=bestStart;
@@ -575,10 +606,123 @@ function solve(M,P){
     const en=s+dur;
     sched.push({...e, start:s, end:en, prepStart:Math.max(dayStart,s-prep)});
     cur=en; lastStudentEnd[e.student]=en;
+    // Wenn Lehrer wechselt und der vorige Lehrer den Block voll hatte → Block-Ende-Index merken
+    if(prev!==null && prev!==e.teacher && (teacherRun[prev]||0)>=maxblock){
+      teacherBlockEndIdx[prev]=N-1;
+    }
     teacherRun[e.teacher]=(prev===e.teacher)?(teacherRun[e.teacher]||0)+1:1;
     lastTeacher[e.teacher]=en; prev=e.teacher;
+    // Schüler-Run: zählt nur wenn direkt aufeinanderfolgend (Index N-1 war derselbe Schüler)
+    if(studentLastIdx[e.student]===N-1) studentRun[e.student]=(studentRun[e.student]||1)+1;
+    else studentRun[e.student]=1;
+    studentLastIdx[e.student]=N;
   }
-  return analyze(sched,M,P);
+  // Back-Propagation: tgap-Verletzungen am Tagesende beheben durch Swap mit früheren fremden Slots
+  backPropagate(sched,P);
+  // Re-timing nach Swaps, damit Zeiten konsistent sind
+  retimeInPlace(sched,P);
+  // Validator durchlaufen, damit auch der initiale Plan hard/soft markiert
+  return validate(sched,P);
+}
+
+// Versucht tgap-Verletzungen zu reparieren, indem aus dem vorletzten Lehrer-Block
+// ein Slot weiter vorne eingefügt wird (Tausch mit einem fremden Slot)
+function backPropagate(sched,P){
+  const tgap=P.tgap, maxblock=P.maxblock;
+  const MAX_ITER=20;
+  for(let iter=0; iter<MAX_ITER; iter++){
+    const before=tgapDeficit(sched,P);
+    if(before===0) return;
+    // Finde 1. tgap-Verletzung: aBlock (Lehrer T) → bBlock (Lehrer T), Slots dazwischen < tgap
+    let viol=null;
+    const byT={};
+    sched.forEach((x,i)=>{ (byT[x.teacher]=byT[x.teacher]||[]).push(i); });
+    Object.entries(byT).forEach(([t,idxs])=>{
+      const blocks=[]; let cur=[idxs[0]];
+      for(let i=1;i<idxs.length;i++){
+        if(idxs[i]-idxs[i-1]===1) cur.push(idxs[i]);
+        else { blocks.push(cur); cur=[idxs[i]]; }
+      }
+      blocks.push(cur);
+      for(let bi=1;bi<blocks.length;bi++){
+        const aEnd=blocks[bi-1][blocks[bi-1].length-1];
+        const bStart=blocks[bi][0];
+        if(bStart-aEnd-1<tgap && blocks[bi-1].length>1 && !viol){
+          viol={teacher:t, aBlock:blocks[bi-1], bBlock:blocks[bi]};
+        }
+      }
+    });
+    if(!viol) return;
+    // Letzten Slot von aBlock holen, mit einem fremden Slot vor aBlock tauschen
+    const srcIdx=viol.aBlock[viol.aBlock.length-1];
+    // Bereich vor aBlock[0] durchsuchen — bevorzugt von rechts (näher zum aBlock-Anfang)
+    let swapped=false;
+    for(let tgt=viol.aBlock[0]-1; tgt>=0; tgt--){
+      const a=sched[srcIdx], b=sched[tgt];
+      if(b.teacher===viol.teacher) continue;
+      // Testweise tauschen
+      sched[srcIdx]=b; sched[tgt]=a;
+      const after=tgapDeficit(sched,P);
+      if(after<before && isValidSchedule(sched,P)){ swapped=true; break; }
+      // Zurücktauschen
+      sched[srcIdx]=a; sched[tgt]=b;
+    }
+    if(!swapped) return;
+  }
+}
+
+// Summe aller tgap-Verletzungen (fehlende Slots zwischen Lehrerblöcken)
+function tgapDeficit(sched,P){
+  const tgap=P.tgap;
+  const byT={};
+  sched.forEach((x,i)=>{ (byT[x.teacher]=byT[x.teacher]||[]).push(i); });
+  let total=0;
+  Object.values(byT).forEach(idxs=>{
+    const blocks=[]; let cur=[idxs[0]];
+    for(let i=1;i<idxs.length;i++){
+      if(idxs[i]-idxs[i-1]===1) cur.push(idxs[i]);
+      else { blocks.push(cur); cur=[idxs[i]]; }
+    }
+    blocks.push(cur);
+    for(let bi=1;bi<blocks.length;bi++){
+      const between=blocks[bi][0]-blocks[bi-1][blocks[bi-1].length-1]-1;
+      if(between<tgap) total += (tgap-between);
+    }
+  });
+  return total;
+}
+
+// Schnelle Validierungs-Hilfe: prüft maxblock, sgap zwischen Schülerprüfungen
+function isValidSchedule(sched,P){
+  const dur=P.dur, prep=P.prep, maxblock=P.maxblock, maxblockS=P.maxblockS||1;
+  const sgapBlocks=Math.max(P.sgapBlocks||4, Math.ceil(prep/dur));
+  let prev=null, run=0;
+  for(let i=0;i<sched.length;i++){
+    if(sched[i].teacher===prev) run++; else run=1;
+    if(run>maxblock) return false;
+    prev=sched[i].teacher;
+  }
+  const byS={};
+  sched.forEach((x,i)=>{ (byS[x.student]=byS[x.student]||[]).push(i); });
+  for(const arr of Object.values(byS)){
+    arr.sort((a,b)=>a-b);
+    for(let i=1;i<arr.length;i++){
+      if(arr[i]-arr[i-1]-1 < sgapBlocks) return false;
+    }
+  }
+  return true;
+}
+
+// Setzt start/end-Zeiten neu basierend auf der aktuellen Slot-Reihenfolge
+function retimeInPlace(sched,P){
+  const dur=P.dur, prep=P.prep, dayStart=hm2min(P.start);
+  let cur=dayStart+prep;
+  let lunchDone=(cur>=hm2min("12:00")); const lunchAt=hm2min("12:00");
+  for(const x of sched){
+    if(!lunchDone && cur>=lunchAt && P.lunch>0){ cur+=P.lunch; lunchDone=true; }
+    x.start=cur; x.end=cur+dur; x.prepStart=Math.max(dayStart,cur-prep);
+    cur=x.end;
+  }
 }
 
 /* Kennzahlen + Warnungen */
@@ -600,28 +744,42 @@ function analyze(sched,M,P){
   // Lehrer-Auslastung
   const perTeacher={};
   sched.forEach(x=>(perTeacher[x.teacher]=perTeacher[x.teacher]||[]).push(x));
-  let teacherIdle=0;
-  Object.values(perTeacher).forEach(arr=>{
+  let teacherIdle=0, maxTeacherSpan=0, longestTeacher="";
+  Object.entries(perTeacher).forEach(([t,arr])=>{
     arr.sort((a,b)=>a.start-b.start);
+    const span=arr[arr.length-1].end-arr[0].start;
+    if(span>maxTeacherSpan){ maxTeacherSpan=span; longestTeacher=t; }
     for(let i=1;i<arr.length;i++) teacherIdle+=Math.max(0,arr[i].start-arr[i-1].end);
   });
   return {sched, total:tEnd-tStart, end:tEnd, start:tStart,
-    maxStudentSpan, teacherIdle, gapViolations, perStudent, perTeacher};
+    maxStudentSpan, maxTeacherSpan, longestTeacher, teacherIdle, gapViolations, perStudent, perTeacher};
 }
 
-/* split: erste Haelfte Schueler vormittag, zweite nachmittag */
+/* split: 50/50-Aufteilung nach Prüfungs-Anzahl (Bin-Packing-Greedy):
+   Schüler werden absteigend nach Prüfungsanzahl sortiert und jeweils der Gruppe
+   mit aktuell weniger Prüfungen zugeordnet. Damit ist die Summe in beiden Gruppen
+   so ausgeglichen wie möglich (nicht die Schüler-Anzahl). */
 function solveSplit(M,P){
-  const half=Math.ceil(M.students.length/2);
-  const ec={}; M.students.forEach(s=>ec[s.name]=s.exams.length);
   const sorted=[...M.students].sort((a,b)=>b.exams.length-a.exams.length);
-  const g1={...M,students:sorted.slice(0,half)};
-  const g2={...M,students:sorted.slice(half)};
+  const g1Students=[], g2Students=[]; let n1=0,n2=0;
+  for(const s of sorted){
+    if(n1<=n2){ g1Students.push(s); n1+=s.exams.length; }
+    else { g2Students.push(s); n2+=s.exams.length; }
+  }
+  const g1={...M,students:g1Students};
+  const g2={...M,students:g2Students};
   const r1=solve(g1,P);
-  // 2. Gruppe: erste Pruefung bei r1.end+lunch; Vorbereitung laeuft in der Pause davor
-  const P2={...P,start:min2hm(Math.max(r1.end, r1.end+P.lunch-P.prep))};
+  r1.sched.forEach(x=>x.group=1);
+  // Gruppe 2 startet NACH der Mittagspause (Vorbereitung NICHT mehr in Mittagspause).
+  // Zusätzlich kleiner Offset, damit kein knapper Lehrer-Übergang oder visuelle Überlappung
+  // am Übergang entsteht. Erste Prüfung von Gruppe 2 = r1.end + lunch + prep + extraGap.
+  const extraGap=5; // Minuten Puffer
+  const g2Start = r1.end + P.lunch + extraGap;
+  const P2={...P,start:min2hm(g2Start - P.prep)};   // Vorbereitung beginnt prep min vor erster Prüfung
   const r2=solve(g2,P2);
+  r2.sched.forEach(x=>x.group=2);
   const merged={sched:[...r1.sched,...r2.sched]};
-  return {...analyze(merged.sched,M,P), groups:[r1,r2]};
+  return {...analyze(merged.sched,M,P), groups:[r1,r2], split:true};
 }
 
 /* ---------- Zeit-Helfer ---------- */
@@ -649,9 +807,11 @@ function renderGantt(res,M,title){
     h+=`<div class="glane"><div class="glabel">${st}</div><div class="gtrack">`;
     res.perStudent[st].forEach(x=>{
       const c=cmap[x.teacher];
+      // Index im sortierten Gesamtplan (für Click-to-Swap)
+      const idx=res.sched.indexOf(x);
       h+=`<div class="gblock prep" title="Vorbereitung ${min2hm(x.prepStart)}–${min2hm(x.start)}"
         style="left:${(x.prepStart-t0)*scale}px;width:${(x.start-x.prepStart)*scale}px;background:${c}"></div>`;
-      h+=`<div class="gblock" title="${x.subject} · ${x.teacher} · ${min2hm(x.start)}–${min2hm(x.end)}"
+      h+=`<div class="gblock gclick" data-i="${idx}" title="${x.subject} · ${x.teacher} · ${min2hm(x.start)}–${min2hm(x.end)} — klicken zum Tauschen"
         style="left:${(x.start-t0)*scale}px;width:${(x.end-x.start)*scale}px;background:${c}">${x.subject}</div>`;
     });
     h+=`</div></div>`;
@@ -678,8 +838,9 @@ function updateNowLine(){
 
 function legendHtml(M){
   const cmap=teacherColor(M);
+  const hint=LIVE?"":`<span class="legend-hint">⇄ 2 Prüfungen anklicken zum Tauschen</span>`;
   return `<div class="legend">`+M.teachers.map(t=>
-    `<span class="pill" style="background:${cmap[t]}">${t}</span>`).join("")+`</div>`;
+    `<span class="pill" style="background:${cmap[t]}">${t}</span>`).join("")+hint+`</div>`;
 }
 
 /* aktueller editierbarer Plan-Zustand */
@@ -715,7 +876,7 @@ function tableHtml(res,M){
     </div>`;
   } else {
     h+=`<div class="editbar">
-      <span>↕ Zeilen ziehen, um die Reihenfolge zu tauschen — Zeiten & Konflikte aktualisieren sich.</span>
+      <span>⇄ Zeile auf eine andere ziehen — beide Prüfungen werden <b>getauscht</b> (weniger Folgekonflikte als Verschieben).</span>
       ${vstat}${sstat}
       <button class="btn btn-ghost btn-sm" id="resetOrder">↺ Optimierte Reihenfolge</button>
     </div>`;
@@ -725,7 +886,14 @@ function tableHtml(res,M){
   h+=`<table id="planTable"><thead><tr><th>#</th><th>Beginn</th><th>Ende</th><th>Vorber.</th>
     <th>Schüler</th><th>Fach</th><th>Prüfer</th>${liveCol}</tr></thead><tbody>`;
   const nowM=nowMinutes();
+  const isSplit=rows.some(r=>r.group);
   rows.forEach((x,i)=>{
+    // Gruppen-Trenner einfügen, wenn sich die Gruppe ändert (2-Gruppen-Plan)
+    if(isSplit && i===0){
+      h+=`<tr class="group-sep"><td colspan="${LIVE?8:7}">Gruppe 1 — Vormittag</td></tr>`;
+    } else if(isSplit && i>0 && x.group!==rows[i-1].group){
+      h+=`<tr class="group-sep"><td colspan="${LIVE?8:7}">Gruppe 2 — Nachmittag</td></tr>`;
+    }
     const hardC=x.hard&&x.hard.length?"hard":"";
     const softC=(!hardC&&x.soft&&x.soft.length)?"soft":"";
     const flagTxt=[...(x.hard||[]),...(x.soft||[])];
@@ -819,37 +987,41 @@ function renderBeamer(){
 }
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&BEAMER_ON) closeBeamer(); });
 
-/* Drag&Drop verkabeln; ruft onReorder(newOrderExams) auf */
+/* Drag&Drop = TAUSCH zweier Zeilen: ruft onReorder(newOrderExams) auf.
+   Tausch statt Verschieben, weil das weniger Folgekonflikte erzeugt. */
 function bindDrag(getExams, onReorder, onReset){
   const tb=document.querySelector("#planTable tbody"); if(!tb)return;
   let dragEl=null;
   tb.querySelectorAll("tr.draggable").forEach(tr=>{
     tr.addEventListener("dragstart",e=>{dragEl=tr;tr.classList.add("dragging");e.dataTransfer.effectAllowed="move";});
     tr.addEventListener("dragend",()=>{tr.classList.remove("dragging");
-      tb.querySelectorAll("tr").forEach(r=>r.classList.remove("dropbefore"));});
+      tb.querySelectorAll("tr").forEach(r=>r.classList.remove("dropswap"));});
     tr.addEventListener("dragover",e=>{e.preventDefault();
-      tb.querySelectorAll("tr").forEach(r=>r.classList.remove("dropbefore"));
-      const rect=tr.getBoundingClientRect(); const after=e.clientY>rect.top+rect.height/2;
-      tr.classList.add("dropbefore"); tr._after=after;});
+      tb.querySelectorAll("tr").forEach(r=>r.classList.remove("dropswap"));
+      if(dragEl && dragEl!==tr) tr.classList.add("dropswap");});
     tr.addEventListener("drop",e=>{e.preventDefault();
       if(!dragEl||dragEl===tr)return;
       const exams=getExams();
-      const from=+dragEl.dataset.i; let to=+tr.dataset.i;
-      const item=exams.splice(from,1)[0];
-      if(from<to) to--; if(tr._after) to++;
-      exams.splice(Math.max(0,Math.min(exams.length,to)),0,item);
+      const from=+dragEl.dataset.i, to=+tr.dataset.i;
+      // TAUSCH der beiden Positionen — group-Attribut bleibt an der Position
+      const gFrom=exams[from].group, gTo=exams[to].group;
+      [exams[from],exams[to]]=[exams[to],exams[from]];
+      if(gFrom!==undefined||gTo!==undefined){
+        exams[from].group=gFrom; exams[to].group=gTo;
+      }
       onReorder(exams);});
   });
   const rb=document.getElementById("resetOrder"); if(rb) rb.onclick=onReset;
 }
 
 function statBlock(res){
-  return `<div style="margin-bottom:14px">
+  return `<div class="stat-grid">
     <div class="stat"><b>${min2hm(res.start)}–${min2hm(res.end)}</b><span>Zeitfenster</span></div>
     <div class="stat"><b>${Math.round(res.total)} min</b><span>Gesamtdauer</span></div>
-    <div class="stat"><b>${Math.round(res.maxStudentSpan)} min</b><span>längster Schülertag</span></div>
-    <div class="stat"><b>${Math.round(res.teacherIdle)} min</b><span>Lehrer-Leerlauf</span></div>
     <div class="stat"><b>${res.sched.length}</b><span>Prüfungen</span></div>
+    <div class="stat"><b>${Math.round(res.maxStudentSpan)} min</b><span>längster Schülertag</span></div>
+    <div class="stat"><b>${Math.round(res.maxTeacherSpan)} min</b><span>längster Lehrertag${res.longestTeacher?` (${res.longestTeacher})`:""}</span></div>
+    <div class="stat"><b>${Math.round(res.teacherIdle)} min</b><span>Lehrer-Leerlauf</span></div>
   </div>`;
 }
 
@@ -869,16 +1041,18 @@ function retime(seq,P){
   const dayStart=hm2min(P.start); let cur=dayStart+prep;
   const sched=[]; const lastStudentEnd={}, teacherRun={}, lastTeacher={};
   let prev=null, lunchDone=(cur>=hm2min("12:00")); const lunchAt=hm2min("12:00");
-  let runDelay=0; // kumulative Live-Verzögerung (Minuten)
+  let runDelay=0;
   for(const e of seq){
-    runDelay += (e.liveShift||0);   // Verzögerung ab dieser Prüfung wirkt auf alle folgenden
+    runDelay += (e.liveShift||0);
     let s=cur+runDelay;
     if(!lunchDone && s>=lunchAt && P.lunch>0){ s+=P.lunch; lunchDone=true; }
-    const en=s+dur, prepStart=Math.max(dayStart,s-prep);
-    sched.push({...e, start:s, end:en, prepStart, hard:[], soft:[], liveShift:e.liveShift||0, runDelay});
-    cur=en-runDelay; lastStudentEnd[e.student]=en;  // cur ohne Delay weiterführen, Delay wird kumuliert
+    // ! Objekt MUTIEREN statt neues erstellen, damit CUR.order und sched dieselben Referenzen haben
+    e.start=s; e.end=s+dur; e.prepStart=Math.max(dayStart,s-prep);
+    e.hard=[]; e.soft=[]; e.liveShift=e.liveShift||0; e.runDelay=runDelay;
+    sched.push(e);
+    cur=e.end-runDelay; lastStudentEnd[e.student]=e.end;
     teacherRun[e.teacher]=(prev===e.teacher)?(teacherRun[e.teacher]||0)+1:1;
-    lastTeacher[e.teacher]=en; prev=e.teacher;
+    lastTeacher[e.teacher]=e.end; prev=e.teacher;
   }
   const out=validate(sched,P); out.totalDelay=runDelay; return out;
 }
@@ -887,21 +1061,45 @@ function validate(sched,P){
   const byS={}, byT={};
   sched.forEach(x=>{ x.hard=[]; x.soft=[];
     (byS[x.student]=byS[x.student]||[]).push(x); (byT[x.teacher]=byT[x.teacher]||[]).push(x); });
-  // Schueler: Vorbereitung darf nicht in vorige eigene Pruefung ragen; sgap
+  // Slot-Indizes vorberechnen (für slot-basierte Checks)
+  const sorted=[...sched].sort((a,b)=>a.start-b.start);
+  const idxOf=new Map(); sorted.forEach((x,i)=>idxOf.set(x,i));
+  const sgapBlocks=P.sgapBlocks||Math.ceil(sgap/dur);
+  // Schueler: Vorbereitung darf nicht in vorige eigene Pruefung ragen; sgap slot-basiert
   Object.values(byS).forEach(a=>{ a.sort((x,y)=>x.start-y.start);
     for(let i=1;i<a.length;i++){
-      const gap=a[i].start-a[i-1].end;
+      // Bei Gruppen-Wechsel keine Pause-Warnung
+      const crossGroup = a[i].group && a[i-1].group && a[i].group!==a[i-1].group;
+      if(crossGroup) continue;
       if(a[i].prepStart < a[i-1].end) a[i].hard.push(`Vorbereitung überlappt vorige Prüfung (${a[i-1].subject})`);
-      else if(gap < sgap) a[i].hard.push(`Pause ${gap} min < ${sgap} min Minimum`);
-      if(P.smaxgap!=null && gap>P.smaxgap) a[i].soft.push(`Lücke ${gap} min > ${P.smaxgap} min`);
+      const slotsBetween=idxOf.get(a[i])-idxOf.get(a[i-1])-1;
+      if(slotsBetween<sgapBlocks) a[i].hard.push(`Schülerpause ${slotsBetween} < ${sgapBlocks} Blöcke`);
+      if(P.smaxgap!=null && (a[i].start-a[i-1].end)>P.smaxgap) a[i].soft.push(`Lücke > ${P.smaxgap} min`);
     }});
-  // Lehrer: Block > maxblock, oder Pause nach Block < tgap
+  // Lehrer: Block > maxblock; nach vollem Block min. tgap Slots Pause (slot-basiert)
   Object.values(byT).forEach(a=>{ a.sort((x,y)=>x.start-y.start);
     let run=1;
     for(let i=1;i<a.length;i++){
-      const contiguous=(a[i].start-a[i-1].end)<1; run=contiguous?run+1:1;
+      // Slot-basiert: aufeinanderfolgende Slot-Indizes = derselbe Block (auch über Mittagspause)
+      const slotsBetween=idxOf.get(a[i])-idxOf.get(a[i-1])-1;
+      const adjacent=slotsBetween===0;
+      run=adjacent?run+1:1;
       if(run>maxblock) a[i].soft.push(`Lehrerblock > ${maxblock} Prüfungen`);
-      if(!contiguous && (a[i].start-a[i-1].end)<tgap) a[i].soft.push(`Lehrerpause < ${tgap} min`);
+      if(!adjacent){
+        // Bei Gruppen-Wechsel keine tgap-Warnung (Vor-/Nachmittag separat)
+        const crossGroup = a[i].group && a[i-1].group && a[i].group!==a[i-1].group;
+        if(crossGroup) continue;
+        if(slotsBetween<P.tgap) a[i].soft.push(`Lehrerpause ${slotsBetween} < ${P.tgap} Blöcke`);
+      }
+    }});
+  // Schüler-Block: max maxblockS direkt hintereinander (Index-Abstand 1)
+  const maxblockS=P.maxblockS||1;
+  Object.values(byS).forEach(a=>{ a.sort((x,y)=>x.start-y.start);
+    let run=1;
+    for(let i=1;i<a.length;i++){
+      const adj=idxOf.get(a[i])-idxOf.get(a[i-1])===1;
+      run=adj?run+1:1;
+      if(run>maxblockS) a[i].soft.push(`Schülerblock > ${maxblockS} Prüfungen`);
     }});
   return analyze(sched,MATRIX,P);
 }
@@ -921,6 +1119,32 @@ function repaintPlan(res,P){
       ()=>{ CUR.order=CUR.optimal.slice();
         const r=retime(CUR.order,P); CUR.res=r; repaintPlan(r,P); }
     );
+    // Click-to-Swap im Gantt: 1. Klick markiert, 2. Klick auf anderen Block tauscht.
+    // 2. Klick auf denselben Block oder Klick ins Leere → abwählen.
+    let selI=null;
+    const clearSel=()=>{ selI=null;
+      document.querySelectorAll('.gblock.gsel').forEach(el=>el.classList.remove('gsel')); };
+    document.querySelectorAll('.gblock.gclick').forEach(g=>{
+      g.onclick=(ev)=>{
+        ev.stopPropagation();
+        const i=+g.dataset.i;
+        if(selI===null){ selI=i; g.classList.add('gsel'); return; }
+        if(selI===i){ clearSel(); return; } // gleicher Block → abwählen
+        // Tausch direkt in CUR.order — group-Attribut positions-stabil halten
+        if(CUR.order[selI] && CUR.order[i]){
+          const gA=CUR.order[selI].group, gB=CUR.order[i].group;
+          [CUR.order[selI],CUR.order[i]]=[CUR.order[i],CUR.order[selI]];
+          if(gA!==undefined||gB!==undefined){
+            CUR.order[selI].group=gA; CUR.order[i].group=gB;
+          }
+          const r=retime(CUR.order,P); CUR.res=r; clearSel(); repaintPlan(r,P); return;
+        }
+        clearSel();
+      };
+    });
+    // Klick außerhalb eines Gantt-Blocks → Selektion zurücksetzen
+    const gantt=document.querySelector('.gantt');
+    if(gantt) gantt.onclick=(ev)=>{ if(!ev.target.closest('.gblock.gclick')) clearSel(); };
   }
   // Live-Tag-Umschalter
   const lt=document.getElementById("liveToggle");
@@ -1059,19 +1283,33 @@ async function exportExcel(res){
   });
   headRow.height=22;
 
-  // Datenzeilen
+  // Datenzeilen (mit Gruppen-Trennern wenn 2-Gruppen-Plan)
+  const isSplit=rows.some(r=>r.group);
+  let curRow=6;
   rows.forEach((x,i)=>{
-    const r=ws.getRow(6+i);
+    // Gruppen-Trenner einfügen
+    if(isSplit && (i===0 || x.group!==rows[i-1].group)){
+      const sr=ws.getRow(curRow);
+      ws.mergeCells(`A${curRow}:G${curRow}`);
+      const sc=sr.getCell(1);
+      sc.value=`Gruppe ${x.group} — ${x.group===1?"Vormittag":"Nachmittag"}`;
+      sc.font={name:"Calibri",size:11,bold:true,color:{argb:argb("#0083aa")}};
+      sc.fill={type:"pattern",pattern:"solid",fgColor:{argb:argb("#e7f3f5")}};
+      sc.alignment={vertical:"middle",horizontal:"left",indent:1};
+      sc.border={top:{style:"medium",color:{argb:argb("#0083aa")}},
+                 bottom:{style:"thin",color:{argb:argb("#0083aa")}}};
+      sr.height=20;
+      curRow++;
+    }
+    const r=ws.getRow(curRow); curRow++;
     const vals=[i+1,min2hm(x.start),min2hm(x.end),min2hm(x.prepStart),x.student,x.subject,x.teacher];
     vals.forEach((v,ci)=>{
       const c=r.getCell(ci+1); c.value=v;
       c.font={name:"Calibri",size:10};
       c.alignment={vertical:"middle",horizontal:ci>=4?"left":"center"};
-      // Zebra
       if(i%2===1) c.fill={type:"pattern",pattern:"solid",fgColor:{argb:argb("#f2f7fa")}};
       c.border={bottom:{style:"hair",color:{argb:argb("#d8dee8")}}};
     });
-    // Prüfer-Zelle farbig (wie Gantt)
     const pc=r.getCell(7); const col=cmap[x.teacher]||"#0083aa";
     pc.fill={type:"pattern",pattern:"solid",fgColor:{argb:argb(col)}};
     pc.font={name:"Calibri",size:10,bold:true,color:{argb:"FFFFFFFF"}};
@@ -1080,7 +1318,7 @@ async function exportExcel(res){
   });
 
   // AV-Block unten
-  const avStart=6+rows.length+2;
+  const avStart=curRow+1;
   ws.mergeCells(`E${avStart}:G${avStart}`);
   const av1=ws.getCell(`E${avStart}`);
   av1.value="AV Mag. Dr. Peter Enzinger";
@@ -1142,12 +1380,18 @@ async function exportExcel(res){
 function getParams(){
   const dur=+$("dur").value||12, prep=+$("prep").value||0;
   const sgapIn=$("sgap").value, tgapIn=$("tgap").value, smaxIn=$("smaxgap").value;
+  // Schüler-Pause in Blöcken → intern min (mindestens prep wegen Vorbereitungsraum)
+  const sgapBlocks = sgapIn===""? 4 : +sgapIn;
+  const sgap = Math.max(sgapBlocks*dur, prep);
   return {
     dur, prep, start:$("start").value||"08:00", lunch:+$("lunch").value||0,
     maxblock:+$("maxblock").value||4,
-    sgap: sgapIn===""? Math.max(prep, dur*4) : +sgapIn,   // Std: 4 Prüfungen / >=prep
-    tgap: tgapIn===""? dur*2 : +tgapIn,                    // Std: 2 Prüfungen
-    smaxgap: smaxIn===""? null : +smaxIn,
+    maxblockS:+$("maxblockS").value||1,
+    sgap,                                                  // intern Minuten
+    sgapBlocks,                                            // für Anzeige
+    tgap: tgapIn===""? 2 : +tgapIn,                        // slot-basiert (Anzahl Slots)
+    smaxgap: smaxIn===""? null : (+smaxIn)*dur,            // Blöcke → Minuten
+    smaxgapBlocks: smaxIn===""? null : +smaxIn,
     layout:$("layout").value
   };
 }
@@ -1176,6 +1420,24 @@ $("run").onclick=()=>{
   if(!MATRIX){alert("Bitte zuerst eine Matrix laden oder die Demo verwenden.");return;}
   renderResult(getParams());
 };
+
+/* ---- Wechselseitige Sperre: Max-Block-Schüler > 1 widerspricht Min-Pause-Schüler > 0 ----
+   Wenn der Schüler 2+ Prüfungen direkt hintereinander hat, kann keine "Min-Pause in Blöcken"
+   gelten — und umgekehrt. Wir deaktivieren immer eines der beiden Felder. */
+function syncStudentParams(src){
+  const mb=$("maxblockS"), sg=$("sgap");
+  if(!mb||!sg) return;
+  if(src==="maxblockS"){
+    if(+mb.value>1){ sg.value="0"; sg.disabled=true; sg.placeholder="0 (durch Max-Block)"; }
+    else { sg.disabled=false; sg.placeholder="3–4"; if(sg.value==="0") sg.value=""; }
+  } else { // src==="sgap"
+    const v=sg.value;
+    if(v!=="" && +v>0){ mb.value="1"; mb.disabled=true; }
+    else { mb.disabled=false; }
+  }
+}
+$("maxblockS").addEventListener("change",()=>syncStudentParams("maxblockS"));
+$("sgap").addEventListener("input",()=>syncStudentParams("sgap"));
 
 /* ---- Retro-Digitaluhr (live) + Jetzt-Strich ---- */
 function tickClock(){
