@@ -1,0 +1,740 @@
+<meta charset="utf-8">
+<title>kranzlab · Matura-Einteilung</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  /* helle, schlichte Palette mit kühlen Markenakzenten */
+  --ink:#1b2330; --paper:#eef2f7; --line:#d8dee8; --panel:#ffffff; --muted:#7c879a;
+  --accent:#2bb6a8;        /* Türkis (Insulin) */
+  --accent2:#5577e6;       /* Blau (Zelle), etwas kräftiger fürs UI */
+  --good:#2bb6a8; --bad:#ef5d70; --warn:#e0972a;
+  --moon:#aeb8c6; --deep:#080b11;
+}
+*{box-sizing:border-box}
+html,body{margin:0;color:var(--ink);
+  font-family:'Lexend',ui-sans-serif,system-ui,sans-serif;font-weight:400;
+  background:transparent;}
+/* ---- abstrakter Planeten-Hintergrund: weit entfernte, sich überlagernde Sphären ---- */
+.bg{position:fixed;inset:0;z-index:-2;overflow:hidden;background:
+  radial-gradient(130% 100% at 78% 8%, #f3e9f6 0%, #e7ecf6 38%, #dde4ee 100%);}
+/* dedizierter Herz-Planet, garantiert sichtbar, hinter den Panels */
+.heart-planet{position:fixed;top:-200px;right:-150px;width:640px;height:640px;z-index:0;
+  pointer-events:none;filter:drop-shadow(0 30px 60px rgba(91,59,156,.25));opacity:.92}
+.heart-planet svg{width:100%;height:100%}
+@media(max-width:1100px){.heart-planet{width:420px;height:420px;top:-150px;right:-120px}}
+.bg svg{position:absolute;width:100%;height:100%}
+.bg::after{content:"";position:absolute;inset:0;
+  background:radial-gradient(60% 50% at 80% 110%, #5577e60d 0, transparent 60%),
+             radial-gradient(50% 40% at 12% 0%, #2bb6a814 0, transparent 60%);}
+.wrap{max-width:1300px;margin:0 auto;padding:0 22px 90px;position:relative;z-index:1}
+
+/* ---- Kopf mit Logo ---- */
+.topbar{display:flex;align-items:center;gap:18px;padding:26px 0 22px;flex-wrap:wrap}
+.logo-badge{background:rgba(14,22,46,0.78);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  border:1px solid rgba(120,150,210,0.3);border-radius:16px;padding:0;line-height:0;
+  box-shadow:0 16px 44px -20px rgba(10,16,38,.6), 0 1px 0 rgba(150,180,240,.25) inset;
+  flex:0 0 auto}
+.logo-badge svg{height:58px;width:auto;display:block;border-radius:16px}
+.title-stack{display:flex;flex-direction:column;gap:2px}
+.title-stack h1{font-size:25px;font-weight:600;letter-spacing:-.4px;margin:0}
+.title-stack .sub{color:var(--muted);font-size:13.5px;font-weight:300;font-style:normal}
+.title-stack .sub b{font-weight:500;color:var(--accent2)}
+
+.grid{display:grid;grid-template-columns:340px 1fr;gap:24px;align-items:start}
+.panel{background:rgba(255,255,255,0.74);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);
+  border:1px solid rgba(255,255,255,0.6);border-radius:16px;
+  box-shadow:0 1px 0 #fff inset,0 20px 50px -34px rgba(27,35,48,.5);padding:22px}
+.panel h2{font-size:11px;text-transform:uppercase;letter-spacing:2.2px;color:var(--accent2);
+  font-weight:600;margin:0 0 16px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+label{display:block;font-size:11.5px;color:var(--muted);margin:13px 0 5px;font-weight:400}
+input,select{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;
+  background:#fbfcfe;font-family:'Lexend',sans-serif;font-size:14px;font-weight:400;color:var(--ink);
+  transition:border-color .15s, box-shadow .15s}
+input:focus,select:focus{outline:none;border-color:var(--accent2);box-shadow:0 0 0 3px #5577e622}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.btn{display:inline-block;width:100%;padding:12px;border:none;border-radius:10px;cursor:pointer;
+  font-family:'Lexend',sans-serif;font-weight:500;font-size:14px;margin-top:12px;
+  transition:transform .08s,filter .15s,box-shadow .15s}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 130%);color:#fff;
+  box-shadow:0 10px 24px -12px var(--accent2)}
+.btn-primary:hover{filter:brightness(1.05)}
+.btn-ghost{background:transparent;color:var(--accent2);border:1px solid var(--line)}
+.btn-ghost:hover{border-color:var(--accent2);background:#5577e608}
+.hint{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.55;font-weight:300}
+.tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.tab{padding:8px 16px;border:1px solid var(--line);background:#fff;border-radius:22px;cursor:pointer;
+  font-family:'Lexend',sans-serif;font-size:13px;font-weight:400;color:var(--ink);transition:all .15s}
+.tab:hover{border-color:var(--accent2)}
+.tab.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.stat{display:inline-block;margin:0 18px 10px 0}
+.stat b{font-size:23px;font-weight:600;display:block;color:var(--accent2);letter-spacing:-.5px}
+.stat span{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:400}
+table{border-collapse:collapse;width:100%;font-size:13px;font-weight:400}
+th,td{border:1px solid var(--line);padding:7px 10px;text-align:left}
+th{background:#f4f7fb;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:500}
+tr:nth-child(even) td{background:#fafbfd}
+.pill{display:inline-block;padding:2px 9px;border-radius:11px;font-size:11px;color:#fff;font-weight:500}
+.gantt{overflow-x:auto;padding-bottom:10px}
+.glane{display:flex;align-items:center;border-bottom:1px solid var(--line);min-height:34px}
+.glabel{width:172px;min-width:172px;font-size:12px;font-weight:500;padding:4px 10px;
+  position:sticky;left:0;background:var(--panel);z-index:2}
+.gtrack{position:relative;flex:1;height:30px}
+.gblock{position:absolute;top:3px;height:24px;border-radius:7px;color:#fff;font-size:10px;font-weight:500;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;white-space:nowrap;
+  box-shadow:0 2px 8px -2px rgba(27,35,48,.35)}
+.gblock.prep{opacity:.32;background-image:repeating-linear-gradient(45deg,#0002 0 4px,#0000 4px 8px)}
+.gaxis{display:flex;margin-left:172px;border-top:2px solid var(--ink);font-size:10px;color:var(--muted);
+  font-family:ui-monospace,monospace;position:relative;height:18px}
+.tick{position:absolute;transform:translateX(-50%);padding-top:3px}
+.warnbox{background:#fff7e9;border:1px solid #f0d39a;border-radius:11px;padding:11px 14px;
+  font-size:12px;margin-bottom:16px;color:#8a6314;font-weight:300}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.cmp .panel{margin:0}
+.legend{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0;font-size:12px}
+.fileok{font-size:12px;color:var(--good);margin-top:8px;font-weight:400}
+footer{margin-top:34px;font-size:11px;color:var(--muted);font-weight:300;text-align:center}
+.collapse summary{cursor:pointer;font-size:12px;color:var(--accent2);margin-top:12px;font-weight:400}
+tr.draggable{cursor:grab}
+tr.draggable td:first-child::before{content:"⠿";color:var(--muted);margin-right:6px;font-size:11px}
+tr.dragging{opacity:.4}
+tr.dropbefore td{box-shadow:inset 0 3px 0 var(--accent2)}
+td.hard{background:#fde7ea !important;color:#a52138}
+td.soft{background:#fdf3df !important;color:#8a6314}
+.cell-flag{display:block;font-size:10px;margin-top:2px;font-weight:300;font-style:italic}
+.editbar{display:flex;gap:9px;align-items:center;margin:16px 0 9px;flex-wrap:wrap;
+  font-size:12px;color:var(--muted);font-weight:300}
+.editbar .vstat{padding:3px 10px;border-radius:13px;font-weight:500}
+.vstat.ok{background:#d8f3ee;color:#1a7a6f}
+.vstat.err{background:#fde7ea;color:#a52138}
+.btn-sm{padding:6px 13px;font-size:12px;width:auto;margin:0;border-radius:8px}
+input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
+</style>
+
+<div class="bg">
+  <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="pA" cx="38%" cy="34%"><stop offset="0%" stop-color="#ffffff"/>
+        <stop offset="60%" stop-color="#dfe7f1"/><stop offset="100%" stop-color="#c2cedd"/></radialGradient>
+      <radialGradient id="pB" cx="40%" cy="36%"><stop offset="0%" stop-color="#eaf6f4"/>
+        <stop offset="55%" stop-color="#bfe4de"/><stop offset="100%" stop-color="#94cdc4"/></radialGradient>
+      <radialGradient id="pC" cx="42%" cy="38%"><stop offset="0%" stop-color="#eef1fb"/>
+        <stop offset="55%" stop-color="#cdd6f3"/><stop offset="100%" stop-color="#aab9ec"/></radialGradient>
+      <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="9"/></filter>
+    </defs>
+    <g opacity="0.5">
+      <circle cx="300" cy="800" r="340" fill="url(#pB)" opacity="0.4"/>
+      <circle cx="150" cy="700" r="140" fill="url(#pC)" opacity="0.5"/>
+      <circle cx="780" cy="900" r="240" fill="url(#pA)" opacity="0.32"/>
+    </g>
+    
+    
+    <g fill="#b3a7c9" opacity="0.55">
+      <circle cx="430" cy="120" r="1.4"/><circle cx="640" cy="250" r="1"/><circle cx="560" cy="640" r="1.6"/>
+      <circle cx="1080" cy="640" r="1.1"/><circle cx="320" cy="380" r="1.3"/><circle cx="540" cy="560" r="1"/>
+      <circle cx="700" cy="180" r="1.1"/><circle cx="160" cy="220" r="1.2"/><circle cx="1280" cy="760" r="1.3"/>
+      <circle cx="760" cy="460" r="1"/><circle cx="500" cy="720" r="1.1"/><circle cx="980" cy="500" r="1.2"/>
+    </g>
+  </svg>
+</div>
+<div class="heart-planet" aria-hidden="true">
+  <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="hpGrad" cx="38%" cy="30%" r="80%">
+        <stop offset="0%" stop-color="#fbfdff"/>
+        <stop offset="38%" stop-color="#d4e2ee"/>
+        <stop offset="68%" stop-color="#a9bcd0"/>
+        <stop offset="100%" stop-color="#6f8298"/>
+      </radialGradient>
+      <radialGradient id="hpShade" cx="38%" cy="30%" r="80%">
+        <stop offset="0%" stop-color="#ffffff" stop-opacity="0.45"/>
+        <stop offset="52%" stop-color="#ffffff" stop-opacity="0"/>
+        <stop offset="100%" stop-color="#0b121d" stop-opacity="0.42"/>
+      </radialGradient>
+      <radialGradient id="hpHalo" cx="50%" cy="45%" r="55%">
+        <stop offset="50%" stop-color="#7fb8d8" stop-opacity="0"/>
+        <stop offset="100%" stop-color="#7fb8d8" stop-opacity="0.18"/>
+      </radialGradient>
+    </defs>
+    <circle cx="200" cy="185" r="195" fill="url(#hpHalo)"/>
+    <ellipse cx="200" cy="195" rx="180" ry="44" fill="none" stroke="#bcccdd" stroke-width="1.4" opacity="0.5" transform="rotate(-24 200 195)"/>
+    <path d="M 200.0,56.2 L 206.0,56.1 L 212.0,55.8 L 218.1,55.4 L 224.3,54.8 L 230.7,54.1 L 237.3,53.4 L 244.1,52.8 L 251.1,52.3 L 258.3,51.9 L 265.8,51.9 L 273.4,52.3 L 281.3,53.0 L 289.2,54.3 L 297.3,56.2 L 305.4,58.7 L 313.5,61.8 L 321.5,65.6 L 329.3,70.1 L 336.9,75.4 L 344.2,81.3 L 351.1,87.8 L 357.5,95.0 L 363.4,102.7 L 368.6,111.0 L 373.2,119.7 L 377.0,128.8 L 380.0,138.2 L 382.2,147.8 L 383.6,157.6 L 384.0,167.5 L 383.6,177.5 L 382.2,187.4 L 380.0,197.3 L 377.0,207.1 L 373.2,216.8 L 368.6,226.3 L 363.4,235.7 L 357.5,244.8 L 351.1,253.8 L 344.2,262.5 L 336.9,271.0 L 329.3,279.3 L 321.5,287.3 L 313.5,295.1 L 305.4,302.6 L 297.3,309.8 L 289.2,316.8 L 281.3,323.4 L 273.4,329.7 L 265.8,335.6 L 258.3,341.0 L 251.1,346.1 L 244.1,350.6 L 237.3,354.6 L 230.7,358.1 L 224.3,361.0 L 218.1,363.3 L 212.0,364.9 L 206.0,365.9 L 200.0,366.2 L 194.0,365.9 L 188.0,364.9 L 181.9,363.3 L 175.7,361.0 L 169.3,358.1 L 162.7,354.6 L 155.9,350.6 L 148.9,346.1 L 141.7,341.0 L 134.2,335.6 L 126.6,329.7 L 118.7,323.4 L 110.8,316.8 L 102.7,309.8 L 94.6,302.6 L 86.5,295.1 L 78.5,287.3 L 70.7,279.3 L 63.1,271.0 L 55.8,262.5 L 48.9,253.8 L 42.5,244.8 L 36.6,235.7 L 31.4,226.3 L 26.8,216.8 L 23.0,207.1 L 20.0,197.3 L 17.8,187.4 L 16.4,177.5 L 16.0,167.5 L 16.4,157.6 L 17.8,147.8 L 20.0,138.2 L 23.0,128.8 L 26.8,119.7 L 31.4,111.0 L 36.6,102.7 L 42.5,95.0 L 48.9,87.8 L 55.8,81.3 L 63.1,75.4 L 70.7,70.1 L 78.5,65.6 L 86.5,61.8 L 94.6,58.7 L 102.7,56.2 L 110.8,54.3 L 118.7,53.0 L 126.6,52.3 L 134.2,51.9 L 141.7,51.9 L 148.9,52.3 L 155.9,52.8 L 162.7,53.4 L 169.3,54.1 L 175.7,54.8 L 181.9,55.4 L 188.0,55.8 L 194.0,56.1 L 200.0,56.2 Z" fill="url(#hpGrad)"/>
+    <path d="M 200.0,56.2 L 206.0,56.1 L 212.0,55.8 L 218.1,55.4 L 224.3,54.8 L 230.7,54.1 L 237.3,53.4 L 244.1,52.8 L 251.1,52.3 L 258.3,51.9 L 265.8,51.9 L 273.4,52.3 L 281.3,53.0 L 289.2,54.3 L 297.3,56.2 L 305.4,58.7 L 313.5,61.8 L 321.5,65.6 L 329.3,70.1 L 336.9,75.4 L 344.2,81.3 L 351.1,87.8 L 357.5,95.0 L 363.4,102.7 L 368.6,111.0 L 373.2,119.7 L 377.0,128.8 L 380.0,138.2 L 382.2,147.8 L 383.6,157.6 L 384.0,167.5 L 383.6,177.5 L 382.2,187.4 L 380.0,197.3 L 377.0,207.1 L 373.2,216.8 L 368.6,226.3 L 363.4,235.7 L 357.5,244.8 L 351.1,253.8 L 344.2,262.5 L 336.9,271.0 L 329.3,279.3 L 321.5,287.3 L 313.5,295.1 L 305.4,302.6 L 297.3,309.8 L 289.2,316.8 L 281.3,323.4 L 273.4,329.7 L 265.8,335.6 L 258.3,341.0 L 251.1,346.1 L 244.1,350.6 L 237.3,354.6 L 230.7,358.1 L 224.3,361.0 L 218.1,363.3 L 212.0,364.9 L 206.0,365.9 L 200.0,366.2 L 194.0,365.9 L 188.0,364.9 L 181.9,363.3 L 175.7,361.0 L 169.3,358.1 L 162.7,354.6 L 155.9,350.6 L 148.9,346.1 L 141.7,341.0 L 134.2,335.6 L 126.6,329.7 L 118.7,323.4 L 110.8,316.8 L 102.7,309.8 L 94.6,302.6 L 86.5,295.1 L 78.5,287.3 L 70.7,279.3 L 63.1,271.0 L 55.8,262.5 L 48.9,253.8 L 42.5,244.8 L 36.6,235.7 L 31.4,226.3 L 26.8,216.8 L 23.0,207.1 L 20.0,197.3 L 17.8,187.4 L 16.4,177.5 L 16.0,167.5 L 16.4,157.6 L 17.8,147.8 L 20.0,138.2 L 23.0,128.8 L 26.8,119.7 L 31.4,111.0 L 36.6,102.7 L 42.5,95.0 L 48.9,87.8 L 55.8,81.3 L 63.1,75.4 L 70.7,70.1 L 78.5,65.6 L 86.5,61.8 L 94.6,58.7 L 102.7,56.2 L 110.8,54.3 L 118.7,53.0 L 126.6,52.3 L 134.2,51.9 L 141.7,51.9 L 148.9,52.3 L 155.9,52.8 L 162.7,53.4 L 169.3,54.1 L 175.7,54.8 L 181.9,55.4 L 188.0,55.8 L 194.0,56.1 L 200.0,56.2 Z" fill="url(#hpShade)"/>
+    <ellipse cx="170" cy="140" rx="18" ry="11" fill="#ffffff" opacity="0.4" transform="rotate(-20 170 140)"/>
+    <path d="M 30,215 A 180 44 -24 0 0 360 135" fill="none" stroke="#8fb0c8" stroke-width="1.2" opacity="0.4"/>
+    <circle cx="36" cy="211" r="5.5" fill="#ffffff" opacity="0.85"/>
+  </svg>
+</div>
+</style>
+
+<div class="wrap">
+  <div class="topbar">
+    <span class="logo-badge">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 140" font-family="'Lexend', sans-serif" role="img" aria-label="kranzlab">
+        <defs>
+          <radialGradient id="moonGrad" cx="36%" cy="34%">
+            <stop offset="0%" stop-color="#f6f8fb"/><stop offset="55%" stop-color="#c2ccd9"/><stop offset="100%" stop-color="#8a98ab"/>
+          </radialGradient>
+          <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#d6dde6"/><stop offset="100%" stop-color="#7a8696"/>
+          </linearGradient>
+          <filter id="moonGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="1.0" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <clipPath id="moonClip"><circle cx="70" cy="70" r="42"/></clipPath>
+          <radialGradient id="sphereShade" cx="36%" cy="34%" r="72%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/><stop offset="55%" stop-color="#ffffff" stop-opacity="0"/><stop offset="100%" stop-color="#05070b" stop-opacity="0.55"/>
+          </radialGradient>
+        </defs>
+        <rect x="0" y="0" width="440" height="140" rx="16" fill="none"/>
+        <g>
+          <circle cx="70" cy="70" r="59" fill="none" stroke="url(#ringGrad)" stroke-width="8.4"/>
+          <g filter="url(#moonGlow)">
+            <circle cx="70" cy="70" r="42" fill="url(#moonGrad)"/>
+            <g clip-path="url(#moonClip)">
+              <g transform="rotate(-10 70 70)">
+                <g><animateTransform attributeName="transform" type="translate" from="0 0" to="-84 0" dur="7s" repeatCount="indefinite"/>
+                  <circle cx="49" cy="63" r="7" fill="#8a98ab" opacity="0.5"/><circle cx="70" cy="84" r="4.9" fill="#8a98ab" opacity="0.45"/>
+                  <circle cx="88" cy="56" r="6" fill="#8a98ab" opacity="0.5"/><circle cx="105" cy="77" r="3.9" fill="#8a98ab" opacity="0.4"/></g>
+                <g transform="translate(84 0)"><animateTransform attributeName="transform" type="translate" from="84 0" to="0 0" dur="7s" repeatCount="indefinite"/>
+                  <circle cx="49" cy="63" r="7" fill="#8a98ab" opacity="0.5"/><circle cx="70" cy="84" r="4.9" fill="#8a98ab" opacity="0.45"/>
+                  <circle cx="88" cy="56" r="6" fill="#8a98ab" opacity="0.5"/><circle cx="105" cy="77" r="3.9" fill="#8a98ab" opacity="0.4"/></g>
+              </g>
+              <circle cx="94.5" cy="54" r="37" fill="#05070b" opacity="0.78"/>
+              <circle cx="70" cy="70" r="42" fill="url(#sphereShade)"/>
+            </g>
+          </g>
+          <circle cx="103" cy="42" r="5.2" fill="#f6f8fb"/>
+        </g>
+        <text x="158" y="84" font-size="58" font-weight="500" letter-spacing="-0.3">
+          <tspan fill="#ffffff">kranz</tspan><tspan fill="#aeb8c6">lab</tspan>
+        </text>
+      </svg>
+    </span>
+    <div class="title-stack">
+      <h1>Matura-Einteilung</h1>
+      <div class="sub">Mündliche Reife- &amp; Diplomprüfung · <b>zeitoptimierter Prüfungsplan</b> für Schüler &amp; Lehrer</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- ===== STEUERPANEL ===== -->
+    <div class="panel">
+      <h2>1 · Eingabematrix</h2>
+      <input type="file" id="file" accept=".xlsx,.xls">
+      <div class="hint">Format: Spalte A = Schüler, weitere Spalten = Fächer.
+        Zelle enthält das <b>Lehrer-Kürzel</b> des Prüfers (leer = keine Prüfung).</div>
+      <div id="fileok" class="fileok"></div>
+      <button class="btn btn-ghost" id="loadDemo">Demo-Matrix laden</button>
+
+      <h2 style="margin-top:22px">2 · Parameter</h2>
+      <div class="row2">
+        <div><label>Prüfungsdauer (min)</label><input type="number" id="dur" value="12" min="3"></div>
+        <div><label>Vorbereitung (min)</label><input type="number" id="prep" value="30" min="0"></div>
+      </div>
+      <div class="row2">
+        <div><label>Tagesbeginn (Vorber.)</label><input type="time" id="start" value="08:00"></div>
+        <div><label>Mittagspause (min)</label><input type="number" id="lunch" value="40" min="0"></div>
+      </div>
+      <div class="hint">Ab dem Tagesbeginn läuft die Vorbereitung; die erste Prüfung startet entsprechend später (Tagesbeginn + Vorbereitungszeit).</div>
+
+      <label>Max. Blocklänge (Prüfungen am Stück)</label>
+      <select id="maxblock"><option>3</option><option selected>4</option><option>5</option></select>
+      <div class="hint">Längster ununterbrochener Block je Lehrer.</div>
+
+      <div class="row2">
+        <div><label>Min. Pause Schüler (min)</label><input type="number" id="sgap" value="" placeholder="4–6 (Std)"></div>
+        <div><label>Min. Pause Lehrer (min)</label><input type="number" id="tgap" value="" placeholder="2–4 (Std)"></div>
+      </div>
+      <label>Max. Lücke Schüler zwischen Prüfungen (min)</label>
+      <input type="number" id="smaxgap" value="" placeholder="frei = unbegrenzt">
+
+      <label>Tagesaufteilung</label>
+      <select id="layout">
+        <option value="compare" selected>Vergleichen (Volltag vs. 2 Gruppen)</option>
+        <option value="full">Volltag</option>
+        <option value="split">2 Gruppen (Vor-/Nachmittag)</option>
+      </select>
+
+      <button class="btn btn-primary" id="run">Plan berechnen →</button>
+
+      <details class="collapse"><summary>Erweitert / Hinweise</summary>
+        <div class="hint" style="margin-top:8px">
+          • Min. Pause Schüler ≥ Vorbereitungszeit wird automatisch erzwungen (Schüler muss 30 min vorher rein).<br>
+          • Schüler mit den meisten Prüfungen starten die Liste.<br>
+          • Solver minimiert Leerlauf der Lehrer + Wartezeit der Schüler.
+        </div>
+      </details>
+    </div>
+
+    <!-- ===== AUSGABE ===== -->
+    <div>
+      <div id="warn"></div>
+      <div class="panel" id="out">
+        <h2>Ergebnis</h2>
+        <div style="color:var(--muted);font-family:ui-sans-serif,system-ui;font-size:14px">
+          Matrix laden (oder Demo) und auf <b>Plan berechnen</b> klicken.
+        </div>
+      </div>
+    </div>
+  </div>
+  <footer>Erstellt offline im Browser · Daten verlassen das Gerät nicht · XLSX-Import/-Export via SheetJS</footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let MATRIX=null; // {students:[{name, exams:[{subject,teacher}]}], subjects:[], teachers:[]}
+let LAST=null;   // letztes Ergebnis fuer Export
+
+const COLORS=["#5577e6","#2bb6a8","#e0972a","#7c5fd3","#ef5d70","#3aa0c8","#6aa84f",
+  "#c8557e","#4a6b8a","#2a9c8e","#9c6bd3","#d3825f","#5b8ad3","#8a6bd3","#3ab0a0"];
+
+/* ---------- XLSX einlesen ---------- */
+function parseWorkbook(wb){
+  const ws=wb.Sheets[wb.SheetNames[0]];
+  const arr=XLSX.utils.sheet_to_json(ws,{header:1,defval:""});
+  if(arr.length<2) throw new Error("Leeres Sheet");
+  const head=arr[0].map(x=>(""+x).trim());
+  const subjects=head.slice(1).filter(h=>h!=="");
+  const students=[]; const tset=new Set();
+  for(let r=1;r<arr.length;r++){
+    const row=arr[r]; const name=(""+row[0]).trim();
+    if(!name) continue;
+    const exams=[];
+    for(let c=1;c<head.length;c++){
+      const t=(""+(row[c]||"")).trim();
+      if(t){ exams.push({subject:head[c], teacher:t}); tset.add(t); }
+    }
+    if(exams.length) students.push({name,exams});
+  }
+  return {students,subjects,teachers:[...tset].sort()};
+}
+
+/* ---------- Solver ----------
+ Ziel: Folge von "Slots" (je 1 Pruefung) bauen.
+ Constraints: gleicher Lehrer -> max. maxblock am Stueck, danach Pause >= tgap.
+   Schueler: zwischen zwei eigenen Pruefungen >= sgap (>=prep), <= smaxgap.
+ Heuristik: greedy + lokale Optimierung. Lehrer-kompakt priorisiert.       */
+function buildExamList(M){
+  // jede Pruefung = ein Slot
+  const exams=[];
+  M.students.forEach((s,si)=>s.exams.forEach(e=>exams.push({
+    student:s.name, si, subject:e.subject, teacher:e.teacher
+  })));
+  return exams;
+}
+
+function solve(M,P){
+  const exams=buildExamList(M);
+  const dur=P.dur, prep=P.prep;
+  const sgap=Math.max(P.sgap, prep);     // Schueler-Pause min (>= Vorbereitung)
+  const tgap=P.tgap, maxblock=P.maxblock;
+
+  // Schueler mit meisten Pruefungen zuerst (Reihenfolge-Bias)
+  const examCount={}; exams.forEach(e=>examCount[e.student]=(examCount[e.student]||0)+1);
+  const byTeacher={};
+  exams.forEach(e=>{(byTeacher[e.teacher]=byTeacher[e.teacher]||[]).push(e);});
+  const order=Object.keys(byTeacher).sort((a,b)=>byTeacher[b].length-byTeacher[a].length);
+  order.forEach(t=>byTeacher[t].sort((a,b)=>examCount[b.student]-examCount[a.student]));
+
+  // Start-Sequenz: Lehrerbloecke (bis maxblock), durch Lehrer rotierend
+  const seq=[]; const ptr={}; order.forEach(t=>ptr[t]=0); let rem=exams.length;
+  while(rem>0){ for(const t of order){ let p=0;
+    while(ptr[t]<byTeacher[t].length && p<maxblock){ seq.push(byTeacher[t][ptr[t]]); ptr[t]++; p++; rem--; } } }
+
+  // Earliest-feasible Vergabe: aus dem Pool stets die Pruefung waehlen, die am
+  // fruehesten starten kann; gleicher Lehrer wird bevorzugt (kompakte Bloecke).
+  // Beginn-Uhrzeit = Tagesbeginn (erste Vorbereitung). Erste Pruefung erst nach Vorbereitung.
+  const dayStart=hm2min(P.start); const firstExam=dayStart+prep; let cur=firstExam;
+  const sched=[]; const lastStudentEnd={}, teacherRun={}, lastTeacher={};
+  // Mittagspause nur relevant, wenn der Tag vor 12:00 beginnt (sonst bereits Nachmittag)
+  let prev=null, lunchDone=(firstExam>=hm2min("12:00")); const lunchAt=hm2min("12:00");
+  const pool=seq.slice();
+  while(pool.length){
+    let best=-1, bestStart=Infinity, bestScore=Infinity;
+    for(let i=0;i<pool.length;i++){ const e=pool[i]; let s=cur;
+      if(lastStudentEnd[e.student]!=null) s=Math.max(s, lastStudentEnd[e.student]+sgap);
+      const run=(prev===e.teacher)?(teacherRun[e.teacher]||0):0;
+      if(prev===e.teacher && run>=maxblock) s=Math.max(s, lastTeacher[e.teacher]+tgap);
+      const blockPenalty=(prev!==null && e.teacher!==prev)?6:0;     // halte Lehrerbloecke zusammen
+      const score=(s-cur)+blockPenalty;
+      if(score<bestScore || (score===bestScore && s<bestStart)){ bestScore=score; bestStart=s; best=i; }
+    }
+    const e=pool.splice(best,1)[0]; let s=bestStart;
+    if(!lunchDone && s>=lunchAt && P.lunch>0){ s+=P.lunch; lunchDone=true; }
+    const en=s+dur;
+    sched.push({...e, start:s, end:en, prepStart:Math.max(dayStart,s-prep)});
+    cur=en; lastStudentEnd[e.student]=en;
+    teacherRun[e.teacher]=(prev===e.teacher)?(teacherRun[e.teacher]||0)+1:1;
+    lastTeacher[e.teacher]=en; prev=e.teacher;
+  }
+  return analyze(sched,M,P);
+}
+
+/* Kennzahlen + Warnungen */
+function analyze(sched,M,P){
+  const tEnd=Math.max(...sched.map(x=>x.end));
+  const tStart=Math.min(...sched.map(x=>x.start));
+  // Schueler-Luecken
+  const perStudent={};
+  sched.forEach(x=>(perStudent[x.student]=perStudent[x.student]||[]).push(x));
+  let maxStudentSpan=0, gapViolations=[];
+  Object.entries(perStudent).forEach(([st,arr])=>{
+    arr.sort((a,b)=>a.start-b.start);
+    const span=arr[arr.length-1].end-arr[0].start; if(span>maxStudentSpan)maxStudentSpan=span;
+    for(let i=1;i<arr.length;i++){
+      const gap=arr[i].start-arr[i-1].end;
+      if(P.smaxgap!=null && gap>P.smaxgap) gapViolations.push(`${st}: ${gap} min Lücke`);
+    }
+  });
+  // Lehrer-Auslastung
+  const perTeacher={};
+  sched.forEach(x=>(perTeacher[x.teacher]=perTeacher[x.teacher]||[]).push(x));
+  let teacherIdle=0;
+  Object.values(perTeacher).forEach(arr=>{
+    arr.sort((a,b)=>a.start-b.start);
+    for(let i=1;i<arr.length;i++) teacherIdle+=Math.max(0,arr[i].start-arr[i-1].end);
+  });
+  return {sched, total:tEnd-tStart, end:tEnd, start:tStart,
+    maxStudentSpan, teacherIdle, gapViolations, perStudent, perTeacher};
+}
+
+/* split: erste Haelfte Schueler vormittag, zweite nachmittag */
+function solveSplit(M,P){
+  const half=Math.ceil(M.students.length/2);
+  const ec={}; M.students.forEach(s=>ec[s.name]=s.exams.length);
+  const sorted=[...M.students].sort((a,b)=>b.exams.length-a.exams.length);
+  const g1={...M,students:sorted.slice(0,half)};
+  const g2={...M,students:sorted.slice(half)};
+  const r1=solve(g1,P);
+  // 2. Gruppe: erste Pruefung bei r1.end+lunch; Vorbereitung laeuft in der Pause davor
+  const P2={...P,start:min2hm(Math.max(r1.end, r1.end+P.lunch-P.prep))};
+  const r2=solve(g2,P2);
+  const merged={sched:[...r1.sched,...r2.sched]};
+  return {...analyze(merged.sched,M,P), groups:[r1,r2]};
+}
+
+/* ---------- Zeit-Helfer ---------- */
+function hm2min(s){const[h,m]=s.split(":").map(Number);return h*60+m;}
+function min2hm(m){m=Math.round(m);const h=Math.floor(m/60),mm=m%60;
+  return `${String(h).padStart(2,"0")}:${String(mm).padStart(2,"0")}`;}
+
+/* ---------- Rendering ---------- */
+function teacherColor(M){const map={};M.teachers.forEach((t,i)=>map[t]=COLORS[i%COLORS.length]);return map;}
+
+function renderGantt(res,M,title){
+  const cmap=teacherColor(M);
+  const t0=res.start-P_prep(), t1=res.end+5;
+  const scale=900/(t1-t0); // px
+  const lanes=Object.keys(res.perStudent);
+  // Schueler mit meisten Pruefungen oben
+  lanes.sort((a,b)=>res.perStudent[b].length-res.perStudent[a].length||a.localeCompare(b));
+  let h=`<div class="gantt"><div style="min-width:${170+ (t1-t0)*scale}px">`;
+  lanes.forEach(st=>{
+    h+=`<div class="glane"><div class="glabel">${st}</div><div class="gtrack">`;
+    res.perStudent[st].forEach(x=>{
+      const c=cmap[x.teacher];
+      // prep block
+      h+=`<div class="gblock prep" title="Vorbereitung ${min2hm(x.prepStart)}–${min2hm(x.start)}"
+        style="left:${(x.prepStart-t0)*scale}px;width:${(x.start-x.prepStart)*scale}px;background:${c}"></div>`;
+      h+=`<div class="gblock" title="${x.subject} · ${x.teacher} · ${min2hm(x.start)}–${min2hm(x.end)}"
+        style="left:${(x.start-t0)*scale}px;width:${(x.end-x.start)*scale}px;background:${c}">${x.subject}</div>`;
+    });
+    h+=`</div></div>`;
+  });
+  // Achse
+  h+=`<div class="gaxis">`;
+  for(let m=Math.ceil(t0/30)*30;m<=t1;m+=30)
+    h+=`<div class="tick" style="left:${(m-t0)*scale}px">${min2hm(m)}</div>`;
+  h+=`</div></div></div>`;
+  return h;
+}
+let _prep=30; function P_prep(){return _prep;}
+
+function legendHtml(M){
+  const cmap=teacherColor(M);
+  return `<div class="legend">`+M.teachers.map(t=>
+    `<span class="pill" style="background:${cmap[t]}">${t}</span>`).join("")+`</div>`;
+}
+
+/* aktueller editierbarer Plan-Zustand */
+let CUR=null; // {order:[exam...], P, M}
+
+function tableHtml(res,M){
+  const rows=[...res.sched].sort((a,b)=>a.start-b.start);
+  const cmap=teacherColor(M);
+  // validierungs-zusammenfassung
+  const nHard=rows.reduce((n,x)=>n+(x.hard?x.hard.length:0),0);
+  const nSoft=rows.reduce((n,x)=>n+(x.soft?x.soft.length:0),0);
+  const vstat = nHard? `<span class="vstat err">${nHard} harte Konflikte</span>`
+              : `<span class="vstat ok">✓ keine harten Konflikte</span>`;
+  const sstat = nSoft? `<span class="vstat soft" style="background:#fdf0d4;color:#7a5a12">${nSoft} weiche Hinweise</span>`:"";
+  let h=`<div class="editbar">
+      <span>↕ Zeilen ziehen, um die Reihenfolge zu tauschen — Zeiten & Konflikte aktualisieren sich.</span>
+      ${vstat}${sstat}
+      <button class="btn btn-ghost btn-sm" id="resetOrder">↺ Optimierte Reihenfolge</button>
+    </div>`;
+  h+=`<table id="planTable"><thead><tr><th>#</th><th>Beginn</th><th>Ende</th><th>Vorber.</th>
+    <th>Schüler</th><th>Fach</th><th>Prüfer</th></tr></thead><tbody>`;
+  rows.forEach((x,i)=>{
+    const hardC=x.hard&&x.hard.length?"hard":"";
+    const softC=(!hardC&&x.soft&&x.soft.length)?"soft":"";
+    const flagTxt=[...(x.hard||[]),...(x.soft||[])];
+    const flagHtml=flagTxt.length?`<span class="cell-flag">${flagTxt.join("; ")}</span>`:"";
+    h+=`<tr class="draggable" draggable="true" data-i="${i}">
+      <td class="${hardC||softC}">${i+1}</td>
+      <td>${min2hm(x.start)}</td><td>${min2hm(x.end)}</td>
+      <td class="${hardC}">${min2hm(x.prepStart)}</td>
+      <td class="${hardC||softC}">${x.student}${flagHtml}</td>
+      <td>${x.subject}</td>
+      <td><span class="pill" style="background:${cmap[x.teacher]}">${x.teacher}</span></td></tr>`;
+  });
+  return h+`</tbody></table>`;
+}
+
+/* Drag&Drop verkabeln; ruft onReorder(newOrderExams) auf */
+function bindDrag(getExams, onReorder, onReset){
+  const tb=document.querySelector("#planTable tbody"); if(!tb)return;
+  let dragEl=null;
+  tb.querySelectorAll("tr.draggable").forEach(tr=>{
+    tr.addEventListener("dragstart",e=>{dragEl=tr;tr.classList.add("dragging");e.dataTransfer.effectAllowed="move";});
+    tr.addEventListener("dragend",()=>{tr.classList.remove("dragging");
+      tb.querySelectorAll("tr").forEach(r=>r.classList.remove("dropbefore"));});
+    tr.addEventListener("dragover",e=>{e.preventDefault();
+      tb.querySelectorAll("tr").forEach(r=>r.classList.remove("dropbefore"));
+      const rect=tr.getBoundingClientRect(); const after=e.clientY>rect.top+rect.height/2;
+      tr.classList.add("dropbefore"); tr._after=after;});
+    tr.addEventListener("drop",e=>{e.preventDefault();
+      if(!dragEl||dragEl===tr)return;
+      const exams=getExams();
+      const from=+dragEl.dataset.i; let to=+tr.dataset.i;
+      const item=exams.splice(from,1)[0];
+      if(from<to) to--; if(tr._after) to++;
+      exams.splice(Math.max(0,Math.min(exams.length,to)),0,item);
+      onReorder(exams);});
+  });
+  const rb=document.getElementById("resetOrder"); if(rb) rb.onclick=onReset;
+}
+
+function statBlock(res){
+  return `<div style="margin-bottom:14px">
+    <div class="stat"><b>${min2hm(res.start)}–${min2hm(res.end)}</b><span>Zeitfenster</span></div>
+    <div class="stat"><b>${Math.round(res.total)} min</b><span>Gesamtdauer</span></div>
+    <div class="stat"><b>${Math.round(res.maxStudentSpan)} min</b><span>längster Schülertag</span></div>
+    <div class="stat"><b>${Math.round(res.teacherIdle)} min</b><span>Lehrer-Leerlauf</span></div>
+    <div class="stat"><b>${res.sched.length}</b><span>Prüfungen</span></div>
+  </div>`;
+}
+
+function warnHtml(res){
+  if(!res.gapViolations||!res.gapViolations.length)return"";
+  return `<div class="warnbox"><b>⚠ Lücken über Limit:</b> `+
+    res.gapViolations.slice(0,8).join(" · ")+
+    (res.gapViolations.length>8?` …(+${res.gapViolations.length-8})`:"")+`</div>`;
+}
+
+/* ---------- Manuelles Re-Timing (Drag&Drop) ----------
+ Nimmt eine fixe Reihenfolge und vergibt Zeiten dicht gepackt OHNE umzusortieren.
+ Constraints werden NICHT erzwungen, sondern als Verletzung markiert, damit der
+ Nutzer die Folge seiner Verschiebung sieht. Rot = hart, Gelb = weich.            */
+function retime(seq,P){
+  const dur=P.dur, prep=P.prep, sgap=Math.max(P.sgap,prep), tgap=P.tgap, maxblock=P.maxblock;
+  const dayStart=hm2min(P.start); let cur=dayStart+prep;
+  const sched=[]; const lastStudentEnd={}, teacherRun={}, lastTeacher={};
+  let prev=null, lunchDone=(cur>=hm2min("12:00")); const lunchAt=hm2min("12:00");
+  for(const e of seq){
+    let s=cur;
+    if(!lunchDone && s>=lunchAt && P.lunch>0){ s+=P.lunch; lunchDone=true; }
+    const en=s+dur, prepStart=Math.max(dayStart,s-prep);
+    sched.push({...e, start:s, end:en, prepStart, hard:[], soft:[]});
+    cur=en; lastStudentEnd[e.student]=en;
+    teacherRun[e.teacher]=(prev===e.teacher)?(teacherRun[e.teacher]||0)+1:1;
+    lastTeacher[e.teacher]=en; prev=e.teacher;
+  }
+  return validate(sched,P);
+}
+function validate(sched,P){
+  const dur=P.dur, prep=P.prep, sgap=Math.max(P.sgap,prep), tgap=P.tgap, maxblock=P.maxblock;
+  const byS={}, byT={};
+  sched.forEach(x=>{ x.hard=[]; x.soft=[];
+    (byS[x.student]=byS[x.student]||[]).push(x); (byT[x.teacher]=byT[x.teacher]||[]).push(x); });
+  // Schueler: Vorbereitung darf nicht in vorige eigene Pruefung ragen; sgap
+  Object.values(byS).forEach(a=>{ a.sort((x,y)=>x.start-y.start);
+    for(let i=1;i<a.length;i++){
+      const gap=a[i].start-a[i-1].end;
+      if(a[i].prepStart < a[i-1].end) a[i].hard.push(`Vorbereitung überlappt vorige Prüfung (${a[i-1].subject})`);
+      else if(gap < sgap) a[i].hard.push(`Pause ${gap} min < ${sgap} min Minimum`);
+      if(P.smaxgap!=null && gap>P.smaxgap) a[i].soft.push(`Lücke ${gap} min > ${P.smaxgap} min`);
+    }});
+  // Lehrer: Block > maxblock, oder Pause nach Block < tgap
+  Object.values(byT).forEach(a=>{ a.sort((x,y)=>x.start-y.start);
+    let run=1;
+    for(let i=1;i<a.length;i++){
+      const contiguous=(a[i].start-a[i-1].end)<1; run=contiguous?run+1:1;
+      if(run>maxblock) a[i].soft.push(`Lehrerblock > ${maxblock} Prüfungen`);
+      if(!contiguous && (a[i].start-a[i-1].end)<tgap) a[i].soft.push(`Lehrerpause < ${tgap} min`);
+    }});
+  return analyze(sched,MATRIX,P);
+}
+
+/* ---------- Tabs / Ausgabe ---------- */
+// zeichnet Gantt + Tabelle eines (ggf. manuell umsortierten) Ergebnisses
+function repaintPlan(res,P){
+  $("warn").innerHTML=warnHtml(res);
+  $("planView").innerHTML=legendHtml(MATRIX)+renderGantt(res,MATRIX)+
+    `<div style="margin-top:18px"></div>`+tableHtml(res,MATRIX)+exportBar();
+  bindExport(res);
+  bindDrag(
+    ()=>CUR.order.slice(),                                  // aktuelle Reihenfolge
+    (newOrder)=>{ CUR.order=newOrder;                       // nach Drag: re-timen
+      const r=retime(newOrder,P); CUR.res=r; repaintPlan(r,P); },
+    ()=>{ CUR.order=CUR.optimal.slice();                    // Reset auf Solver-Optimum
+      const r=retime(CUR.order,P); CUR.res=r; repaintPlan(r,P); }
+  );
+}
+
+function renderResult(P){
+  _prep=P.prep;
+  if(P.layout==="compare"){
+    const full=solve(MATRIX,P);
+    const split=solveSplit(MATRIX,P);
+    LAST={full,split,mode:"compare",M:MATRIX};
+    const reco = recommend(full,split);
+    $("out").innerHTML=`<h2>Vergleich & Empfehlung</h2>
+      <div class="warnbox" style="background:#eef3ec;border-color:var(--good);color:#234">
+        <b>Empfehlung:</b> ${reco}</div>
+      <div class="cmp">
+        <div class="panel"><h2>Volltag</h2>${statBlock(full)}</div>
+        <div class="panel"><h2>2 Gruppen (Vor-/Nachmittag)</h2>${statBlock(split)}</div>
+      </div>
+      <div class="tabs" style="margin-top:18px">
+        <button class="tab active" data-v="full">Volltag-Plan</button>
+        <button class="tab" data-v="split">2-Gruppen-Plan</button>
+      </div>
+      <div id="planView"></div>`;
+    const show=v=>{
+      const r=v==="full"?full:split;
+      const order=[...r.sched].sort((a,b)=>a.start-b.start);
+      CUR={order, optimal:order.slice(), P, res:r};
+      repaintPlan(r,P);
+    };
+    document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+      document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+      t.classList.add("active"); show(t.dataset.v);
+    });
+    show("full");
+  } else {
+    const r = P.layout==="split"?solveSplit(MATRIX,P):solve(MATRIX,P);
+    LAST={r,mode:"single",M:MATRIX};
+    $("out").innerHTML=`<h2>Prüfungsplan</h2>${statBlock(r)}<div id="planView"></div>`;
+    const order=[...r.sched].sort((a,b)=>a.start-b.start);
+    CUR={order, optimal:order.slice(), P, res:r};
+    repaintPlan(r,P);
+  }
+}
+
+function recommend(full,split){
+  // 2 Gruppen sinnvoll wenn Schuelertag dadurch viel kuerzer & Gesamtdauer ok
+  const spanGain=full.maxStudentSpan-split.maxStudentSpan;
+  if(split.maxStudentSpan < full.maxStudentSpan*0.7)
+    return `<b>2 Gruppen</b> — verkürzt den längsten Schülertag um ~${Math.round(spanGain)} min;
+      Schüler warten deutlich weniger. Geeignet bei vielen Mehrfachprüfungen.`;
+  if(full.total <= split.total)
+    return `<b>Volltag</b> — geringere Gesamtdauer (${Math.round(full.total)} vs.
+      ${Math.round(split.total)} min) und nur eine Kommissions-Aufstellung nötig.`;
+  return `<b>Volltag</b> — ausgewogen; 2-Gruppen bringt hier keinen relevanten Vorteil.`;
+}
+
+/* ---------- Export ---------- */
+function exportBar(){
+  return `<div style="margin-top:18px"><button class="btn btn-primary" id="exp" style="max-width:260px">
+    ⤓ Plan als XLSX exportieren</button></div>`;
+}
+function bindExport(res){
+  const b=$("exp"); if(!b)return;
+  b.onclick=()=>{
+    const rows=[...res.sched].sort((a,b)=>a.start-b.start)
+      .map((x,i)=>({"#":i+1,Beginn:min2hm(x.start),Ende:min2hm(x.end),
+        Vorbereitung:min2hm(x.prepStart),Schüler:x.student,Fach:x.subject,Prüfer:x.teacher}));
+    const ws=XLSX.utils.json_to_sheet(rows);
+    ws["!cols"]=[{wch:4},{wch:8},{wch:8},{wch:11},{wch:22},{wch:8},{wch:10}];
+    // zweites sheet: Lehrer-Sicht
+    const tw=[]; Object.entries(res.perTeacher).forEach(([t,arr])=>
+      arr.sort((a,b)=>a.start-b.start).forEach(x=>
+        tw.push({Prüfer:t,Beginn:min2hm(x.start),Ende:min2hm(x.end),Schüler:x.student,Fach:x.subject})));
+    const ws2=XLSX.utils.json_to_sheet(tw);
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,"Plan");
+    XLSX.utils.book_append_sheet(wb,ws2,"Lehrersicht");
+    XLSX.writeFile(wb,"Pruefungsplan.xlsx");
+  };
+}
+
+/* ---------- Param sammeln ---------- */
+function getParams(){
+  const dur=+$("dur").value||12, prep=+$("prep").value||0;
+  const sgapIn=$("sgap").value, tgapIn=$("tgap").value, smaxIn=$("smaxgap").value;
+  return {
+    dur, prep, start:$("start").value||"08:00", lunch:+$("lunch").value||0,
+    maxblock:+$("maxblock").value||4,
+    sgap: sgapIn===""? Math.max(prep, dur*4) : +sgapIn,   // Std: 4 Prüfungen / >=prep
+    tgap: tgapIn===""? dur*2 : +tgapIn,                    // Std: 2 Prüfungen
+    smaxgap: smaxIn===""? null : +smaxIn,
+    layout:$("layout").value
+  };
+}
+
+/* ---------- Events ---------- */
+$("file").addEventListener("change",e=>{
+  const f=e.target.files[0]; if(!f)return;
+  const rd=new FileReader();
+  rd.onload=ev=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(ev.target.result),{type:"array"});
+      MATRIX=parseWorkbook(wb);
+      $("fileok").textContent=`✓ ${MATRIX.students.length} Schüler, ${MATRIX.teachers.length} Prüfer, ${MATRIX.subjects.length} Fächer`;
+    }catch(err){$("fileok").style.color="var(--bad)";$("fileok").textContent="Fehler: "+err.message;}
+  };
+  rd.readAsArrayBuffer(f);
+});
+
+$("loadDemo").onclick=async()=>{
+  // eingebettete Demo (gleiche Daten wie Demo_Matrix.xlsx)
+  MATRIX=DEMO();
+  $("fileok").textContent=`✓ Demo: ${MATRIX.students.length} Schüler, ${MATRIX.teachers.length} Prüfer`;
+};
+
+$("run").onclick=()=>{
+  if(!MATRIX){alert("Bitte zuerst eine Matrix laden oder die Demo verwenden.");return;}
+  renderResult(getParams());
+};
+
+/* eingebettete Demo-Daten */
+function DEMO(){
+  const subjects=["E","ES","AT","IE","FI","Wir"];
+  const raw=[
+    ["Bektasevic Benan",["Kun","","","","Kr",""]],
+    ["Guerkan Diyar",["Kun","Mp","","La","En",""]],
+    ["Lembo Giacomo",["Kun","Mp","","Pe","En",""]],
+    ["Martinschitz Matt",["Kun","Ln","","","En",""]],
+    ["Reinitzhuber Simon",["Kun","Mp","","La","En",""]],
+    ["Kadic Armin",["Kun","","","La","","Pe"]],
+    ["Lamprecht Hannes",["Kun","Ln","","","","Pe"]],
+    ["Sadiku Erdi",["Kun","Ln","La","","",""]],
+    ["Thalhammer Chris",["Kun","Ln","","","","Pe"]],
+    ["Pecher Timo",["Kun","Mp","","","",""]],
+    ["Puck Nicolas",["","Mp","","","",""]],
+    ["August Kevin",["","Mp","","","",""]],
+    ["Senk Ferdinand",["","Ln","","","",""]],
+  ];
+  const students=[],tset=new Set();
+  raw.forEach(([name,cells])=>{
+    const exams=[];
+    cells.forEach((t,i)=>{if(t){exams.push({subject:subjects[i],teacher:t});tset.add(t);}});
+    students.push({name,exams});
+  });
+  return {students,subjects,teachers:[...tset].sort()};
+}
+</script>
