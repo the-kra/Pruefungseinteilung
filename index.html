@@ -1319,7 +1319,7 @@ function validate(sched,P){
       if(slotsBetween<sgapBlocks) a[i].hard.push(`Schülerpause ${slotsBetween} < ${sgapBlocks} Blöcke`);
       if(P.smaxgap!=null && (a[i].start-a[i-1].end)>P.smaxgap) a[i].soft.push(`Lücke > ${P.smaxgap} min`);
     }});
-  // Lehrer: Block > maxblock; nach vollem Block min. tgap Slots Pause (slot-basiert)
+  // Lehrer: Block > maxblock; nach vollem Block min. tgap fremde Prüfungen Pause
   Object.values(byT).forEach(a=>{ a.sort((x,y)=>x.start-y.start);
     let run=1;
     for(let i=1;i<a.length;i++){
@@ -1329,11 +1329,15 @@ function validate(sched,P){
       const backToBack = a[i].start === a[i-1].end && !crossGroup;
       run = backToBack ? run+1 : 1;
       if(run>maxblock) a[i].soft.push(`Lehrerblock > ${maxblock} Prüfungen`);
-      if(!backToBack){
-        // Gruppenwechsel oder echte Zeitlücke (Mittagspause) → keine tgap-Warnung
-        const timeGap = a[i].start > a[i-1].end;
-        if(crossGroup || timeGap) continue;
-        if(slotsBetween<P.tgap) a[i].soft.push(`Lehrerpause ${slotsBetween} < ${P.tgap} Blöcke`);
+      if(!backToBack && !crossGroup){
+        // Reicht die Lücke zwischen den beiden Blöcken? Eine echte Mittagspause / großer
+        // Leerlauf (mehr als die dazwischenliegenden fremden Prüfungen ausfüllen) zählt als
+        // ausreichende Unterbrechung. Sonst muss die Pause >= tgap fremde Prüfungen sein.
+        const gapMin = a[i].start - a[i-1].end;          // tatsächliche Zeitlücke
+        const filledByExams = slotsBetween * dur;        // davon durch fremde Prüfungen belegt
+        const hasLongBreak = (gapMin - filledByExams) >= (P.lunch||0) && (P.lunch||0)>0;
+        if(!hasLongBreak && slotsBetween<P.tgap)
+          a[i].soft.push(`Lehrerpause ${slotsBetween} < ${P.tgap} Blöcke`);
       }
     }});
   // Schüler-Block: max maxblockS direkt hintereinander (zeitlich am Stück)
