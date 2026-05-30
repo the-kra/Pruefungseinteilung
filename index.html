@@ -1323,30 +1323,27 @@ function validate(sched,P){
   Object.values(byT).forEach(a=>{ a.sort((x,y)=>x.start-y.start);
     let run=1;
     for(let i=1;i<a.length;i++){
-      // Slot-basiert: aufeinanderfolgende Slot-Indizes ...
       const slotsBetween=idxOf.get(a[i])-idxOf.get(a[i-1])-1;
-      // ... aber ein Gruppenwechsel (Vor-/Nachmittag) ODER eine echte Zeitlücke
-      // (z.B. Mittagspause) unterbricht den Block wie eine Pause.
       const crossGroup = a[i].group && a[i-1].group && a[i].group!==a[i-1].group;
-      const timeGap = a[i].start > a[i-1].end; // Lücke/Mittagspause zwischen den Prüfungen
-      const adjacent = slotsBetween===0 && !crossGroup && !timeGap;
-      run=adjacent?run+1:1;
+      // "am Stück" = unmittelbar zeitlich aneinander (kein Gap/Mittagspause) UND gleiche Gruppe
+      const backToBack = a[i].start === a[i-1].end && !crossGroup;
+      run = backToBack ? run+1 : 1;
       if(run>maxblock) a[i].soft.push(`Lehrerblock > ${maxblock} Prüfungen`);
-      if(!adjacent){
-        // Bei Gruppen-Wechsel oder Mittagspause keine tgap-Warnung
+      if(!backToBack){
+        // Gruppenwechsel oder echte Zeitlücke (Mittagspause) → keine tgap-Warnung
+        const timeGap = a[i].start > a[i-1].end;
         if(crossGroup || timeGap) continue;
         if(slotsBetween<P.tgap) a[i].soft.push(`Lehrerpause ${slotsBetween} < ${P.tgap} Blöcke`);
       }
     }});
-  // Schüler-Block: max maxblockS direkt hintereinander (Index-Abstand 1)
+  // Schüler-Block: max maxblockS direkt hintereinander (zeitlich am Stück)
   const maxblockS=P.maxblockS||1;
   Object.values(byS).forEach(a=>{ a.sort((x,y)=>x.start-y.start);
     let run=1;
     for(let i=1;i<a.length;i++){
       const crossGroup = a[i].group && a[i-1].group && a[i].group!==a[i-1].group;
-      const timeGap = a[i].start > a[i-1].end;
-      const adj=(idxOf.get(a[i])-idxOf.get(a[i-1])===1) && !crossGroup && !timeGap;
-      run=adj?run+1:1;
+      const backToBack = a[i].start === a[i-1].end && !crossGroup;
+      run=backToBack?run+1:1;
       if(run>maxblockS) a[i].soft.push(`Schülerblock > ${maxblockS} Prüfungen`);
     }});
   return analyze(sched,MATRIX,P);
