@@ -113,6 +113,7 @@ html,body{margin:0;color:var(--ink);
 .clock .lbl{font-family:'Lexend',sans-serif;font-size:9.5px;letter-spacing:3px;color:#c44;
   text-transform:uppercase;margin-top:6px;text-align:center;font-weight:500;opacity:.85}
 @media(max-width:900px){.clock .time{font-size:36px}}
+@media(max-width:560px){.clock{padding:9px 14px}.clock .time{font-size:30px;letter-spacing:2px}.clock .lbl{font-size:8.5px;letter-spacing:2px}}
 
 .grid{display:block}
 .controls-bar{background:rgba(255,255,255,0.74);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);
@@ -161,10 +162,15 @@ input:focus,select:focus{outline:none;border-color:var(--accent2);box-shadow:0 0
 .tab:hover{border-color:var(--accent2)}
 .tab.active{background:var(--ink);color:#fff;border-color:var(--ink)}
 .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 22px;margin-bottom:14px}
+@media(max-width:760px){.stat-grid{grid-template-columns:repeat(2,1fr);gap:12px 16px}}
 .stat{display:block}
 .stat b{font-size:23px;font-weight:600;display:block;color:var(--accent2);letter-spacing:-.5px;line-height:1.15}
 .stat span{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:400}
 table{border-collapse:collapse;width:100%;font-size:13px;font-weight:400}
+.tbl-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:12px}
+@media(max-width:760px){
+  .tbl-wrap #planTable{min-width:680px}
+}
 th,td{border:1px solid var(--line);padding:7px 10px;text-align:left}
 th{background:#f4f7fb;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:500}
 tr:nth-child(even) td{background:#fafbfd}
@@ -208,6 +214,7 @@ tr:nth-child(even) td{background:#fafbfd}
 .warnbox{background:#fff7e9;border:1px solid #f0d39a;border-radius:11px;padding:11px 14px;
   font-size:12px;margin-bottom:16px;color:#8a6314;font-weight:300}
 .cmp{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:760px){.cmp{grid-template-columns:1fr}}
 .cmp .panel{margin:0}
 .legend{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0;font-size:12px;align-items:center}
 .legend-hint{margin-left:auto;color:var(--muted);font-size:11px;font-style:italic;
@@ -301,13 +308,34 @@ td.delayed{background:#fff3f3 !important}
 .beamer{position:fixed;inset:0;z-index:9999;background:linear-gradient(160deg,#0c1018,#05070b);
   color:#e8eef6;display:none;flex-direction:column;padding:34px 44px;overflow:hidden}
 .beamer.on{display:flex}
-.beamer-head{display:flex;align-items:center;gap:24px;border-bottom:1px solid #1e2a3a;padding-bottom:20px}
+.beamer-head{display:flex;align-items:center;gap:24px;border-bottom:1px solid #1e2a3a;padding-bottom:20px;flex-wrap:wrap}
 .beamer-head .blogo{height:68px;width:auto;background:rgba(255,255,255,0.92);padding:8px 14px;
   border-radius:12px;flex:0 0 auto;box-shadow:0 4px 14px -4px rgba(0,0,0,.5)}
 .beamer-head h2{font-size:30px;font-weight:600;margin:0;letter-spacing:-.5px;color:#fff}
 .beamer-head .bsub{font-size:14px;color:#7c93b0;font-weight:300}
 .beamer .bclock{margin-left:18px;font-family:"DSEG7 Classic",ui-monospace,monospace;font-size:54px;
   color:#ff2323;letter-spacing:3px;text-shadow:0 0 8px rgba(255,40,40,.8),0 0 22px rgba(255,20,20,.5);position:relative}
+@media(max-width:900px){
+  .beamer-head{gap:14px}
+  .beamer-head .blogo{height:50px}
+  .beamer-head h2{font-size:23px}
+  .beamer-head .bsub{font-size:12px}
+  .beamer .bclock{font-size:40px;letter-spacing:2px;margin-left:14px}
+  .beamer-room{padding:6px 12px}
+  .beamer-room .lb-text{font-size:22px;letter-spacing:3px}
+  .beamer-room .lb-arrow{font-size:16px}
+}
+@media(max-width:560px){
+  .beamer-head{gap:10px 12px}
+  .beamer-head .blogo{height:42px}
+  .beamer-head h2{font-size:19px}
+  .beamer-head .bsub{font-size:11px}
+  /* Uhr + Raum in eigene Zeile, links ausgerichtet, garantiert ohne Überlauf */
+  .beamer-room{margin-left:0}
+  .beamer .bclock{font-size:34px;letter-spacing:1px;margin-left:auto}
+  .beamer .bdelay{font-size:13px;padding:4px 11px}
+  .beamer .bclose{position:absolute;top:14px;right:14px;width:36px;height:36px}
+}
 .beamer .bclose{background:#1e2a3a;border:none;color:#9fb3cc;font-size:22px;cursor:pointer;
   width:42px;height:42px;border-radius:10px;flex:0 0 auto}
 .beamer .bclose:hover{background:#2a3a4f;color:#fff}
@@ -1052,7 +1080,7 @@ function tableHtml(res,M){
   }
 
   const liveCol = LIVE? `<th>Live-Verzögerung</th>`:``;
-  h+=`<table id="planTable"><thead><tr><th>#</th><th>Beginn</th><th>Ende</th><th>Vorber.</th>
+  h+=`<div class="tbl-wrap"><table id="planTable"><thead><tr><th>#</th><th>Beginn</th><th>Ende</th><th>Vorber.</th>
     <th>Schüler</th><th>Fach</th><th>Prüfer</th><th>Raum</th>${liveCol}</tr></thead><tbody>`;
   const nowM=nowMinutes();
   const isSplit=rows.some(r=>r.group);
@@ -1089,7 +1117,7 @@ function tableHtml(res,M){
       <td><span class="pill" style="background:${cmap[x.teacher]}">${x.teacher}</span></td>
       <td class="room-cell">${roomOf(x.teacher)}</td>${liveCell}</tr>`;
   });
-  return h+`</tbody></table>`;
+  return h+`</tbody></table></div>`;
 }
 function nowMinutes(){ const n=new Date(); return n.getHours()*60+n.getMinutes()+n.getSeconds()/60; }
 
