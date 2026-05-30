@@ -1237,8 +1237,51 @@ function warnHtml(res){
  Constraints werden NICHT erzwungen, sondern als Verletzung markiert, damit der
  Nutzer die Folge seiner Verschiebung sieht. Rot = hart, Gelb = weich.            */
 function retime(seq,P){
-  const dur=P.dur, prep=P.prep, sgap=Math.max(P.sgap,prep), tgap=P.tgap, maxblock=P.maxblock;
-  const dayStart=hm2min(P.start); let cur=dayStart+prep;
+  const dur=P.dur, prep=P.prep;
+  const dayStart=hm2min(P.start);
+  // 2-Gruppen-Plan erkennen: Prüfungen tragen group=1/2
+  const hasGroups = seq.some(e=>e.group===1) && seq.some(e=>e.group===2);
+
+  if(hasGroups){
+    // Reihenfolge je Gruppe beibehalten (Stabilität beim Tauschen),
+    // Gruppe 1 vormittags, Gruppe 2 ab Nachmittags-Start getrennt timen.
+    const g1=seq.filter(e=>e.group===1);
+    const g2=seq.filter(e=>e.group!==1);
+    let runDelay=0;
+    // --- Gruppe 1 (Vormittag) ---
+    let cur=dayStart+prep;
+    for(const e of g1){
+      runDelay += (e.liveShift||0);
+      const s=cur+runDelay;
+      e.start=s; e.end=s+dur; e.prepStart=Math.max(dayStart,s-prep);
+      e.hard=[]; e.soft=[]; e.liveShift=e.liveShift||0; e.runDelay=runDelay;
+      cur=e.end-runDelay;
+    }
+    const amEnd = g1.length? Math.max(...g1.map(e=>e.end)) : dayStart+prep;
+    // Nachmittags-Start: manuell (PM_START) oder automatisch (amEnd + Mittagspause, auf 5 gerundet)
+    const autoPM = Math.ceil((amEnd + (P.lunch||0) + 5)/5)*5;
+    const pmFirst = (PM_START!=null) ? PM_START : autoPM;
+    const g2First = Math.max(pmFirst, amEnd + 5);
+    // --- Gruppe 2 (Nachmittag) ---
+    let cur2 = g2First; // erste Prüfung von Gruppe 2 startet hier
+    let runDelay2 = 0;
+    for(let i=0;i<g2.length;i++){
+      const e=g2[i];
+      runDelay2 += (e.liveShift||0);
+      const s = (i===0 ? cur2 : cur2) + runDelay2;
+      e.start=s; e.end=s+dur; e.prepStart=Math.max(dayStart,s-prep);
+      e.hard=[]; e.soft=[]; e.liveShift=e.liveShift||0; e.runDelay=runDelay2;
+      cur2=e.end-runDelay2;
+    }
+    const sched=[...g1,...g2];
+    const out=validate(sched,P);
+    out.totalDelay=runDelay+runDelay2;
+    out.split=true; out.pmStart=g2First; out.amEnd=amEnd; out.autoPM=autoPM;
+    return out;
+  }
+
+  // --- Einzelplan (Volltag) ---
+  let cur=dayStart+prep;
   const sched=[]; const lastStudentEnd={}, teacherRun={}, lastTeacher={};
   let prev=null, lunchDone=(cur>=hm2min("12:00")); const lunchAt=hm2min("12:00");
   let runDelay=0;
@@ -1280,15 +1323,18 @@ function validate(sched,P){
   Object.values(byT).forEach(a=>{ a.sort((x,y)=>x.start-y.start);
     let run=1;
     for(let i=1;i<a.length;i++){
-      // Slot-basiert: aufeinanderfolgende Slot-Indizes = derselbe Block (auch über Mittagspause)
+      // Slot-basiert: aufeinanderfolgende Slot-Indizes ...
       const slotsBetween=idxOf.get(a[i])-idxOf.get(a[i-1])-1;
-      const adjacent=slotsBetween===0;
+      // ... aber ein Gruppenwechsel (Vor-/Nachmittag) ODER eine echte Zeitlücke
+      // (z.B. Mittagspause) unterbricht den Block wie eine Pause.
+      const crossGroup = a[i].group && a[i-1].group && a[i].group!==a[i-1].group;
+      const timeGap = a[i].start > a[i-1].end; // Lücke/Mittagspause zwischen den Prüfungen
+      const adjacent = slotsBetween===0 && !crossGroup && !timeGap;
       run=adjacent?run+1:1;
       if(run>maxblock) a[i].soft.push(`Lehrerblock > ${maxblock} Prüfungen`);
       if(!adjacent){
-        // Bei Gruppen-Wechsel keine tgap-Warnung (Vor-/Nachmittag separat)
-        const crossGroup = a[i].group && a[i-1].group && a[i].group!==a[i-1].group;
-        if(crossGroup) continue;
+        // Bei Gruppen-Wechsel oder Mittagspause keine tgap-Warnung
+        if(crossGroup || timeGap) continue;
         if(slotsBetween<P.tgap) a[i].soft.push(`Lehrerpause ${slotsBetween} < ${P.tgap} Blöcke`);
       }
     }});
@@ -1297,7 +1343,9 @@ function validate(sched,P){
   Object.values(byS).forEach(a=>{ a.sort((x,y)=>x.start-y.start);
     let run=1;
     for(let i=1;i<a.length;i++){
-      const adj=idxOf.get(a[i])-idxOf.get(a[i-1])===1;
+      const crossGroup = a[i].group && a[i-1].group && a[i].group!==a[i-1].group;
+      const timeGap = a[i].start > a[i-1].end;
+      const adj=(idxOf.get(a[i])-idxOf.get(a[i-1])===1) && !crossGroup && !timeGap;
       run=adj?run+1:1;
       if(run>maxblockS) a[i].soft.push(`Schülerblock > ${maxblockS} Prüfungen`);
     }});
