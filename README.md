@@ -17,6 +17,21 @@ Aus einer einfachen Excel-Matrix (Schüler × Fach → Prüfer-Kürzel) berechne
 
 Der Plan lässt sich manuell per Drag-and-drop nachjustieren — Constraints (Vorbereitung, Pausen, Lehrerblöcke) werden live geprüft und Konflikte rot markiert.
 
+## So funktioniert die Einteilung
+
+Das Tool „lernt" nichts und ist keine KI — es arbeitet wie ein gewissenhafter Mensch mit Stundenplan und Stoppuhr, der den Tag von früh nach spät Block für Block füllt. Jede gleich lange Prüfung ist ein **Block**; gleiche Prüfer werden zu zusammenhängenden Blöcken gebündelt, damit niemand ständig kommen und gehen muss. Diese Logik ist im Tool als aufklappbarer Erklärblock direkt eingebaut.
+
+Bei jedem freien Termin vergibt das Tool den Platz an die Prüfung, die sechs einfache **Spielregeln** am besten erfüllt:
+
+1. **Schüler nicht hetzen** — zwischen zwei eigenen Prüfungen liegt mindestens die Vorbereitungszeit *(Felder: Vorbereitung, Max. Block Schüler)*
+2. **Prüfer am Stück lassen** — kompakte Lehrerblöcke bis zum erlaubten Maximum *(Feld: Max. Block Lehrer)*
+3. **Schülerpause einhalten** — fremde Prüfungen dazwischen, bevor derselbe Schüler wieder dran ist *(Feld: Min. Pause Schüler)*
+4. **Lehrerpause einhalten** — Zeit für Administratives (Protokolle, Notenbesprechung) zwischen Lehrerblöcken *(Feld: Min. Pause Lehrer)*
+5. **Keine unnötige Leerzeit** — es startet stets die früheste erlaubte Prüfung *(Feld: Max. Lücke Schüler)*
+6. **Mittag & Gruppen trennen** — Mittagspause und der Wechsel Vormittag→Nachmittag unterbrechen jeden Block *(Felder: Mittagspause, Tagesaufteilung)*
+
+Die interne „Punktezahl" ist dabei nur eine simple Rechenregel, die diese Spielregeln gegeneinander abwägt — kein maschinelles Lernen. Der eingebaute Erklärblock zeigt zusätzlich pro Regel, **welches Eingabefeld** sie steuert und **was passiert, wenn man daran dreht** (mehr/weniger).
+
 ## Funktionen
 
 - **Excel-Import** der Eingabematrix
@@ -26,7 +41,8 @@ Der Plan lässt sich manuell per Drag-and-drop nachjustieren — Constraints (Vo
 - **Live-Tag-Modus** zum Mitloggen am Prüfungstag: pro Zeile +5/+10/−5-min-Buttons, alle folgenden Prüfungen verschieben sich automatisch
 - **Beamer-Ansicht** (Vollbild, read-only) zum Aushängen oder Projizieren — mit großer 7-Segment-Live-Uhr, aktueller & nächster Prüfung, Status-Liste
 - **Excel-Export** professionell formatiert: HTL-Logo, Titelblock, farbcodierte Prüferzellen, AV-Block, zwei Sheets (Schüler- und Lehrersicht)
-- **Retro 7-Segment-Digitaluhr** im Header (DSEG7, live)
+- **Retro 7-Segment-Digitaluhr** im Header (DSEG7, live) mit Wochentag & Datum
+- **Integrierte Erklärung** — aufklappbarer „So funktioniert die Einteilung"-Block direkt im Tool: erklärt die Block-Idee und die Logik in einfachen Worten, ohne Programmierwissen
 
 ## Eingabeformat
 
@@ -87,8 +103,8 @@ Eine einzige `index.html`-Datei — keine Installation, kein Build, keine Abhän
 ## Hosting auf GitHub Pages
 
 ```bash
-git clone https://github.com/DEIN-USERNAME/DEIN-REPO.git
-cd DEIN-REPO
+git clone https://github.com/the-kra/Pruefungseinteilung.git
+cd Pruefungseinteilung
 # index.html und Demo_Matrix.xlsx hinzufügen
 git add index.html Demo_Matrix.xlsx README.md
 git commit -m "Initial commit"
@@ -96,7 +112,7 @@ git push
 ```
 
 Dann im Repo: **Settings → Pages → Source: Deploy from a branch → main / root → Save**.
-Nach ein paar Minuten ist das Tool unter `https://DEIN-USERNAME.github.io/DEIN-REPO/` erreichbar.
+Nach ein paar Minuten ist das Tool unter `https://the-kra.github.io/Pruefungseinteilung/` erreichbar.
 
 > **Hinweis:** Die HTML-Datei muss in `index.html` umbenannt sein, damit GitHub Pages sie als Startseite anzeigt.
 
