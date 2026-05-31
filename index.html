@@ -2039,17 +2039,17 @@ async function exportExcel(res){
 
   // AV-Block unten
   const avStart=curRow+1;
-  ws.mergeCells(`E:H`);
-  const av1=ws.getCell(`E`);
+  ws.mergeCells(`E${avStart}:H${avStart}`);
+  const av1=ws.getCell(`E${avStart}`);
   av1.value="AV Mag. Dr. Peter Enzinger";
   av1.font={name:"Calibri",size:11,bold:true,color:{argb:argb("#222222")}};
   av1.alignment={horizontal:"right"};
-  ws.mergeCells(`E:H`);
+  ws.mergeCells(`E${avStart+1}:H${avStart+1}`);
   const av2=ws.getCell(`E${avStart+1}`);
   av2.value="Abteilungsvorstand Elektrotechnik";
   av2.font={name:"Calibri",size:10,italic:true,color:{argb:argb("#0083aa")}};
   av2.alignment={horizontal:"right"};
-  ws.mergeCells(`E:H`);
+  ws.mergeCells(`E${avStart+2}:H${avStart+2}`);
   const av3=ws.getCell(`E${avStart+2}`);
   av3.value="htl1-klagenfurt.at/elektrotechnik";
   av3.font={name:"Calibri",size:9,color:{argb:argb("#888888")}};
