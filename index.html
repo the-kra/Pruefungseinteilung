@@ -98,22 +98,24 @@ html,body{margin:0;color:var(--ink);
 .title-stack .sub{color:var(--muted);font-size:13.5px;font-weight:300;font-style:normal}
 .title-stack .sub b{font-weight:500;color:var(--accent2)}
 /* Retro 7-Segment Digitaluhr */
-.clock{flex:0 0 auto;background:linear-gradient(160deg,#1c0708,#0c0304);border:1px solid #4a1010;
-  border-radius:14px;padding:13px 24px;
-  box-shadow:0 18px 46px -20px rgba(50,0,0,.75),0 1px 0 rgba(255,90,90,.15) inset,0 0 0 1px rgba(0,0,0,.4);
-  position:relative;overflow:hidden}
-.clock::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:14px;
-  background:linear-gradient(180deg,rgba(255,255,255,.06),transparent 35%)}
+.clock{flex:0 0 auto;background:transparent;border:none;
+  border-radius:14px;padding:4px 6px;
+  box-shadow:none;
+  position:relative;overflow:visible}
 .clock .time{font-family:"DSEG7 Classic","DSEG7Classic",ui-monospace,monospace;font-weight:700;
   font-size:48px;line-height:1;letter-spacing:3px;position:relative;display:inline-block}
 .clock .time .lit{color:#ff2323;position:relative;z-index:2;
-  text-shadow:0 0 5px rgba(255,40,40,.9),0 0 14px rgba(255,25,25,.6),0 0 30px rgba(255,0,0,.35)}
-.clock .time .off{color:#000;opacity:.55;position:absolute;left:0;top:0;z-index:1;
+  text-shadow:0 0 6px rgba(255,40,40,.85),0 0 16px rgba(255,40,40,.5)}
+.clock .time .off{color:#ff2323;opacity:.12;position:absolute;left:0;top:0;z-index:1;
   text-shadow:none}
-.clock .lbl{font-family:'Lexend',sans-serif;font-size:9.5px;letter-spacing:3px;color:#c44;
-  text-transform:uppercase;margin-top:6px;text-align:center;font-weight:500;opacity:.85}
+.clock .meta{display:flex;align-items:center;justify-content:center;gap:7px;margin-top:6px;flex-wrap:wrap}
+.clock .date{font-family:'Lexend',sans-serif;font-size:12px;letter-spacing:.5px;color:#e2848e;
+  font-weight:600;opacity:.95}
+.clock .meta .sep{color:#e2848e;opacity:.5;font-size:11px}
+.clock .lbl{font-family:'Lexend',sans-serif;font-size:9.5px;letter-spacing:3px;color:#e2848e;
+  text-transform:uppercase;font-weight:500;opacity:.95}
 @media(max-width:900px){.clock .time{font-size:36px}}
-@media(max-width:560px){.clock{padding:9px 14px}.clock .time{font-size:30px;letter-spacing:2px}.clock .lbl{font-size:8.5px;letter-spacing:2px}}
+@media(max-width:560px){.clock{padding:2px 4px}.clock .time{font-size:30px;letter-spacing:2px}.clock .lbl{font-size:8.5px;letter-spacing:2px}.clock .date{font-size:11px}}
 
 .grid{display:block}
 .controls-bar{background:rgba(255,255,255,0.74);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);
@@ -409,6 +411,73 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
 .tip-box .tip-title{font-weight:600;color:var(--ink);font-size:12px;display:block;margin-bottom:5px;letter-spacing:.3px}
 .soon{display:inline-block;font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;
   background:var(--accent);color:#fff;padding:1px 7px;border-radius:8px;margin-right:5px;vertical-align:middle}
+/* ===== Info-Erklärung (aufklappbar) ===== */
+.info-explainer{background:rgba(255,255,255,0.74);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);
+  border:1px solid var(--line);border-radius:18px;margin-bottom:20px;overflow:hidden}
+.info-explainer>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;
+  padding:14px 20px;user-select:none}
+.info-explainer>summary::-webkit-details-marker{display:none}
+.info-explainer>summary .ie-ico{width:30px;height:30px;flex:0 0 auto;border-radius:9px;
+  display:inline-flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 130%);color:#fff}
+.info-explainer>summary .ie-title{font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent2);font-weight:600}
+.info-explainer>summary .ie-sub{margin-left:auto;font-size:12px;color:var(--muted);font-weight:400;display:flex;align-items:center;gap:8px}
+.info-explainer>summary .ie-chev{transition:transform .2s;color:var(--accent2);font-size:13px}
+.info-explainer[open]>summary .ie-chev{transform:rotate(90deg)}
+.info-explainer .ie-body{padding:4px 22px 24px}
+.ie-block{margin-top:18px}
+.ie-block:first-child{margin-top:6px}
+.ie-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2.2px;color:var(--accent2);font-weight:600;margin:0 0 8px}
+.ie-h{font-size:18px;font-weight:600;margin:0 0 10px;letter-spacing:-0.3px;color:var(--ink)}
+.ie-p{margin:0 0 12px;font-size:14px;color:#2c3647;font-weight:300;line-height:1.6}
+.ie-p b{font-weight:500;color:var(--ink)}
+.ie-hero{background:linear-gradient(135deg,#0e162e 0%,#1b2742 60%,#243a5e 130%);color:#fff;border-radius:14px;padding:22px 24px}
+.ie-hero .ie-eyebrow{color:#8fe6db}
+.ie-hero .ie-h{color:#fff}
+.ie-hero .ie-p{color:#c7d2e2}
+.ie-hero .ie-p b{color:#fff}
+.ie-settings{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.ie-setbox{flex:1 1 130px;min-width:118px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.16);border-radius:12px;padding:11px 14px}
+.ie-setbox .lab{font-size:11px;letter-spacing:.5px;color:#9fb2cc;font-weight:300;margin-bottom:4px}
+.ie-setbox .val{font-size:18px;font-weight:600;color:#fff;line-height:1.1}
+.ie-setbox .val small{font-size:12px;font-weight:300;color:#bcd0e6;margin-left:2px}
+.ie-note{font-size:12px;color:#9fb2cc;font-weight:300;margin-top:10px}
+.ie-rules{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.ie-rule{border:1px solid var(--line);border-radius:14px;padding:18px 20px;background:#fbfcfe;position:relative}
+.ie-rule .num{position:absolute;top:16px;right:18px;font-size:30px;font-weight:600;color:var(--line);line-height:1}
+.ie-rule h4{margin:0 0 8px;font-size:15px;font-weight:600;padding-right:36px;color:var(--ink)}
+.ie-rule p{font-size:13px;color:#46505f;font-weight:300;margin:0;line-height:1.5}
+.ie-rule.r1{border-left:4px solid var(--accent)}
+.ie-rule.r2{border-left:4px solid var(--accent2)}
+.ie-rule.r3{border-left:4px solid var(--warn)}
+.ie-rule.r4{border-left:4px solid #7d6cd6}
+.ie-rule.r5{border-left:4px solid #d4537e}
+.ie-rule.r6{border-left:4px solid #639922}
+.ie-flds{display:flex;flex-wrap:wrap;gap:6px;margin-top:13px}
+.ie-chip{font-size:11px;font-weight:500;padding:4px 10px;border-radius:7px;background:#5577e612;color:var(--accent2);border:1px solid #5577e633}
+.ie-turn{margin-top:12px;border-top:1px dashed var(--line);padding-top:11px;display:flex;flex-direction:column;gap:7px}
+.ie-tn{display:flex;align-items:flex-start;gap:8px;font-size:12.5px;color:#46505f;font-weight:300;line-height:1.4}
+.ie-tn .ar{flex:0 0 auto;font-weight:600;font-size:12px;min-width:34px;text-align:center;border-radius:6px;padding:1px 7px;margin-top:1px;white-space:nowrap}
+.ie-tn.up .ar{background:#e0972a18;color:#9a6710}
+.ie-tn.dn .ar{background:#2bb6a818;color:#15776c}
+.ie-fgrp{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.6px;font-weight:600;margin:18px 0 8px}
+.ie-fields{display:flex;flex-direction:column;gap:8px}
+.ie-frow{display:grid;grid-template-columns:160px 1fr 140px;gap:14px;align-items:center;padding:12px 16px;border:1px solid var(--line);border-radius:11px;background:#fbfcfe}
+.ie-frow .fname{font-weight:500;font-size:13.5px;color:var(--ink)}
+.ie-frow .fdesc{font-size:13px;color:#46505f;font-weight:300;line-height:1.45}
+.ie-frow .ftag{font-size:11px;font-weight:500;padding:5px 10px;border-radius:20px;text-align:center;line-height:1.25}
+.ie-frow .t-rule{background:#e0972a18;color:#9a6710;border:1px solid #e0972a44}
+.ie-frow .t-time{background:#5577e615;color:var(--accent2);border:1px solid #5577e633}
+.ie-frow .t-none{background:#7c879a18;color:#5a6473;border:1px solid #7c879a33}
+@media(max-width:760px){
+  .info-explainer .ie-body{padding:4px 16px 20px}
+  .ie-rules{grid-template-columns:1fr}
+  .ie-hero{padding:18px 18px}
+  .ie-rule .num{font-size:24px;top:15px;right:15px}
+  .ie-frow{grid-template-columns:1fr auto;grid-template-areas:"name tag" "desc desc";gap:4px 10px}
+  .ie-frow .fname{grid-area:name}.ie-frow .ftag{grid-area:tag;justify-self:end}.ie-frow .fdesc{grid-area:desc}
+  .info-explainer>summary .ie-sub .ie-subtxt{display:none}
+}
 </style>
 
 <div class="bg">
@@ -537,7 +606,7 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
     </div>
     <div class="clock" aria-label="Uhrzeit">
       <div class="time"><span class="off">88:88:88</span><span class="lit" id="clockTime">00:00:00</span></div>
-      <div class="lbl">Live · Prüfungszeit</div>
+      <div class="meta"><span class="date" id="clockDate">—</span><span class="sep">·</span><span class="lbl">Live · Prüfungszeit</span></div>
     </div>
     <button class="btn-sm btn-ghost topbar-beamer" id="beamerTop" title="Beamer-Ansicht öffnen">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto">
@@ -545,9 +614,120 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
       </svg><span class="tb-txt">Beamer</span></button>
   </div>
 
+  <!-- ===== INFO-ERKLÄRUNG (aufklappbar) ===== -->
+  <details class="info-explainer" id="infoExplainer">
+    <summary>
+      <span class="ie-ico" aria-hidden="true">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.5h.01"/></svg>
+      </span>
+      <span class="ie-title">So funktioniert die Einteilung</span>
+      <span class="ie-sub"><span class="ie-subtxt">Block-Idee &amp; Regeln einfach erklärt</span><span class="ie-chev">▶</span></span>
+    </summary>
+    <div class="ie-body">
+
+      <div class="ie-block ie-hero">
+        <p class="ie-eyebrow">Die Grundidee</p>
+        <h3 class="ie-h">Ein Tag wie ein Puzzle aus Blöcken</h3>
+        <p class="ie-p">Jede mündliche Prüfung ist gleich lang — das ist ein <b>Block</b>. Der ganze Prüfungstag wird Block für Block gefüllt, von früh nach spät. Das Tool arbeitet dabei wie ein gewissenhafter Mensch mit Stundenplan und Stoppuhr: Es legt bei jedem freien Termin nach festen, fairen Regeln fest, wer als Nächstes dran ist.</p>
+        <p class="ie-p">Das Ziel: Prüfer arbeiten in <b>zusammenhängenden Blöcken</b> statt ständig zu kommen und zu gehen, Schüler bekommen genug Ruhe- und Vorbereitungszeit, und der Tag bleibt so kurz wie möglich.</p>
+        <div class="ie-settings">
+          <div class="ie-setbox"><div class="lab">Tagesbeginn</div><div class="val">08:00</div></div>
+          <div class="ie-setbox"><div class="lab">Vorbereitung</div><div class="val">30 <small>min</small></div></div>
+          <div class="ie-setbox"><div class="lab">Prüfungsdauer</div><div class="val">12 <small>min</small></div></div>
+          <div class="ie-setbox"><div class="lab">Mittagspause</div><div class="val">40 <small>min</small></div></div>
+        </div>
+        <p class="ie-note">Beispiel-Standardwerte — diese kannst du oben jederzeit anpassen.</p>
+      </div>
+
+      <div class="ie-block">
+        <p class="ie-eyebrow">Die Spielregeln &amp; deine Felder</p>
+        <h3 class="ie-h">Was jede Regel steuert — und was passiert, wenn du daran drehst</h3>
+        <p class="ie-p" style="margin-bottom:16px">Bei jedem freien Termin vergibt das Tool den Platz an die Prüfung, die diese sechs Regeln am besten erfüllt. Jede Karte zeigt, welche Eingabefelder sie beeinflussen und wie sich Verstellen auswirkt.</p>
+        <div class="ie-rules">
+
+          <div class="ie-rule r1">
+            <span class="num">1</span>
+            <h4>Schüler nicht hetzen</h4>
+            <p>Zwischen zwei eigenen Prüfungen liegt immer genug Pause — mindestens die Vorbereitungszeit, damit der Schüler rechtzeitig im Vorbereitungsraum sitzt.</p>
+            <div class="ie-flds"><span class="ie-chip">Vorbereitung</span><span class="ie-chip">Max. Block Schüler</span></div>
+            <div class="ie-turn">
+              <div class="ie-tn up"><span class="ar">mehr</span><span>Längere Schülerpausen, entspannter — aber der Tag wird länger.</span></div>
+              <div class="ie-tn dn"><span class="ar">weniger</span><span>Dichterer Plan, kürzerer Tag — Schüler haben weniger Luft.</span></div>
+            </div>
+          </div>
+
+          <div class="ie-rule r2">
+            <span class="num">2</span>
+            <h4>Prüfer am Stück lassen</h4>
+            <p>Solange ein Lehrer prüft, bleibt er dran — das hält seine Prüfungen kompakt. Beim erlaubten Maximum am Stück übernimmt ein anderer.</p>
+            <div class="ie-flds"><span class="ie-chip">Max. Block Lehrer</span></div>
+            <div class="ie-turn">
+              <div class="ie-tn up"><span class="ar">mehr</span><span>Größere kompakte Prüferblöcke, weniger Wechsel — Schüler warten evtl. länger.</span></div>
+              <div class="ie-tn dn"><span class="ar">weniger</span><span>Häufigere Lehrerwechsel, gleichmäßiger verteilt.</span></div>
+            </div>
+          </div>
+
+          <div class="ie-rule r3">
+            <span class="num">3</span>
+            <h4>Schülerpause einhalten</h4>
+            <p>Bevor derselbe Schüler wieder geprüft wird, liegen ein paar fremde Prüfungen dazwischen — er soll sich zwischen den Fächern erholen können.</p>
+            <div class="ie-flds"><span class="ie-chip">Min. Pause Schüler</span></div>
+            <div class="ie-turn">
+              <div class="ie-tn up"><span class="ar">mehr</span><span>Größerer Abstand zwischen den Fächern eines Schülers — entspannter, aber der Tag wird länger.</span></div>
+              <div class="ie-tn dn"><span class="ar">weniger</span><span>Der Schüler ist schneller wieder dran — kompakter, aber dichter getaktet.</span></div>
+            </div>
+          </div>
+
+          <div class="ie-rule r4">
+            <span class="num">4</span>
+            <h4>Lehrerpause einhalten</h4>
+            <p>Nach einem vollen Lehrerblock liegen ein paar fremde Prüfungen dazwischen, bevor derselbe Prüfer wieder drankommt — als Zeit für Administratives (Protokolle, Notenbesprechung).</p>
+            <div class="ie-flds"><span class="ie-chip">Min. Pause Lehrer</span></div>
+            <div class="ie-turn">
+              <div class="ie-tn up"><span class="ar">mehr</span><span>Mehr Zeit für Administratives zwischen den Blöcken — dehnt den Tag.</span></div>
+              <div class="ie-tn dn"><span class="ar">weniger</span><span>Der Prüfer kommt schneller wieder dran — kompakter, aber anstrengender.</span></div>
+            </div>
+          </div>
+
+          <div class="ie-rule r5">
+            <span class="num">5</span>
+            <h4>Keine unnötige Leerzeit</h4>
+            <p>Unter allen erlaubten Prüfungen wird die genommen, die am frühesten beginnen kann — so bleibt der Tag so kurz wie möglich.</p>
+            <div class="ie-flds"><span class="ie-chip">Max. Lücke Schüler</span></div>
+            <div class="ie-turn">
+              <div class="ie-tn up"><span class="ar">mehr</span><span>Mehr Leerlauf erlaubt — leichter lösbar, Schüler bleiben länger im Haus.</span></div>
+              <div class="ie-tn dn"><span class="ar">weniger</span><span>Schüler kürzer im Haus — der Plan wird straffer und schwerer lösbar.</span></div>
+            </div>
+          </div>
+
+          <div class="ie-rule r6">
+            <span class="num">6</span>
+            <h4>Mittag &amp; Gruppen trennen</h4>
+            <p>Die Mittagspause und der Wechsel Vormittag→Nachmittag unterbrechen jeden Block wie eine echte Pause — danach beginnt die Zählung neu.</p>
+            <div class="ie-flds"><span class="ie-chip">Mittagspause</span><span class="ie-chip">Tagesaufteilung</span></div>
+            <div class="ie-turn">
+              <div class="ie-tn up"><span class="ar">2 Gruppen</span><span>Vor- und Nachmittag getrennt geplant — verkürzt meist den längsten Schülertag.</span></div>
+              <div class="ie-tn dn"><span class="ar">Volltag</span><span>Alles an einem Stück; die Mittagspause bleibt die einzige große Zäsur.</span></div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="ie-fgrp">Zusätzlich · ohne direkte Regel</div>
+        <div class="ie-fields">
+          <div class="ie-frow"><span class="fname">Prüfungsdauer</span><span class="fdesc">Länge einer einzelnen Prüfung — die Größe eines „Blocks". Größer = weniger Prüfungen passen in den Tag.</span><span class="ftag t-time">Taktung</span></div>
+          <div class="ie-frow"><span class="fname">Tagesbeginn</span><span class="fdesc">Frühester Startpunkt; ab hier läuft die Vorbereitung. Später = der ganze Tag verschiebt sich nach hinten.</span><span class="ftag t-time">Startzeit</span></div>
+          <div class="ie-frow"><span class="fname">Tagesaufteilung</span><span class="fdesc">Steuert Spielregel 6 (siehe oben) — Volltag oder zwei Gruppen.</span><span class="ftag t-rule">Spielregel 6</span></div>
+          <div class="ie-frow"><span class="fname">Prüfungsraum</span><span class="fdesc">Erscheint nur in Plan, Tabelle und Anzeige — beeinflusst die Einteilung nicht.</span><span class="ftag t-none">Anzeige</span></div>
+        </div>
+      </div>
+
+    </div>
+  </details>
+
   <div class="grid">
     <!-- ===== STEUERLEISTE (quer, ausblendbar) ===== -->
-    <details class="controls-bar" id="controlsBar" open>
+    <details class="controls-bar" id="controlsBar">
       <summary>
         <span class="cb-chevron">▶</span>
         <span class="cb-title">Einstellungen</span>
@@ -643,7 +823,7 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
       <div class="panel" id="out">
         <h2>Ergebnis</h2>
         <div style="color:var(--muted);font-family:ui-sans-serif,system-ui;font-size:14px">
-          Matrix laden (oder Demo) und auf <b>Plan berechnen</b> klicken.
+          Matrix laden (oder Demo) und auf <b>Plan berechnen</b> klicken — im <a href="#controlsBar" onclick="openSettings();return false;" style="color:var(--accent2);font-weight:600;text-decoration:none;cursor:pointer">Einstellungsbereich</a> oben (zum Aufklappen antippen).
         </div>
       </div>
     </div>
@@ -1722,6 +1902,17 @@ function scrollToPlan(){
     window.scrollTo({top:Math.max(0,y), behavior:"smooth"});
   }, 80);
 }
+// Einstellungsbereich aufklappen und hinscrollen (Link im Ergebnis-Hinweis)
+function openSettings(){
+  const cb=$("controlsBar"); if(cb) cb.open=true;
+  setTimeout(()=>{
+    if(!cb) return;
+    const bar=document.querySelector(".topbar");
+    const off=(bar?bar.getBoundingClientRect().height:0)+14;
+    const y=cb.getBoundingClientRect().top + window.pageYOffset - off;
+    window.scrollTo({top:Math.max(0,y), behavior:"smooth"});
+  }, 60);
+}
 // Beamer-Ansicht über Button im linken Bereich UND oben neben der Uhr öffnen
 (function(){ const open=()=>{ if(!CUR){ alert("Bitte zuerst einen Plan berechnen."); return; } openBeamer(); };
   const bl=$("beamerLeft"); if(bl) bl.onclick=open;
@@ -1758,6 +1949,12 @@ function tickClock(){
   const p=x=>String(x).padStart(2,"0");
   const el=$("clockTime");
   if(el) el.textContent=`${p(n.getHours())}:${p(n.getMinutes())}:${p(n.getSeconds())}`;
+  const dEl=$("clockDate");
+  if(dEl){
+    const wd=["So","Mo","Di","Mi","Do","Fr","Sa"][n.getDay()];
+    const mo=["Jän.","Feb.","März","Apr.","Mai","Juni","Juli","Aug.","Sep.","Okt.","Nov.","Dez."][n.getMonth()];
+    dEl.textContent=`${wd} ${n.getDate()}. ${mo}`;
+  }
   if(typeof updateNowLine==="function") updateNowLine();
 }
 setInterval(tickClock,1000); tickClock();
