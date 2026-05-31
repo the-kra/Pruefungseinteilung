@@ -139,12 +139,33 @@ html,body{margin:0;color:var(--ink);
 .panel h2{font-size:11px;text-transform:uppercase;letter-spacing:2.2px;color:var(--accent2);
   font-weight:600;margin:0 0 16px;padding-bottom:10px;border-bottom:1px solid var(--line)}
 label{display:block;font-size:11.5px;color:var(--muted);margin:13px 0 5px;font-weight:400}
+label small{font-size:10px;color:#9aa4b3;font-weight:400}
+.settings-explain{margin-bottom:14px;font-size:12.5px;color:#46505f;font-weight:300}
+.settings-explain .se-acc{border-bottom:1px solid var(--line)}
+.settings-explain .se-acc>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;
+  font-size:10.5px;font-weight:600;letter-spacing:1.4px;text-transform:uppercase;color:var(--accent2);
+  padding:9px 0;user-select:none}
+.settings-explain .se-acc>summary::-webkit-details-marker{display:none}
+.settings-explain .se-pm{width:15px;height:15px;flex:0 0 auto;position:relative}
+.settings-explain .se-pm::before,.settings-explain .se-pm::after{content:"";position:absolute;background:var(--accent2);border-radius:1px}
+.settings-explain .se-pm::before{left:0;top:7px;width:15px;height:2px}
+.settings-explain .se-pm::after{left:7px;top:0;width:2px;height:15px;transition:opacity .15s,transform .15s}
+.settings-explain .se-acc[open] .se-pm::after{opacity:0;transform:rotate(90deg)}
+.settings-explain .se-body{padding:2px 0 10px 8px}
+.settings-explain .se-row{display:grid;grid-template-columns:130px 1fr;gap:14px;padding:4px 0;align-items:baseline}
+.settings-explain .se-term{font-weight:600;color:var(--ink)}
+.settings-explain .se-def{line-height:1.55}
+.settings-explain .se-def b{font-weight:600;color:var(--ink)}
+.settings-explain .se-note{margin-top:10px;font-size:11.5px;color:var(--muted)}
+@media(max-width:560px){.settings-explain .se-row{grid-template-columns:1fr;gap:2px}}
 input,select{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;
   background:#fbfcfe;font-family:'Lexend',sans-serif;font-size:14px;font-weight:400;color:var(--ink);
   transition:border-color .15s, box-shadow .15s}
 input:focus,select:focus{outline:none;border-color:var(--accent2);box-shadow:0 0 0 3px #5577e622}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
 .param-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;margin-top:6px}
+/* einheitliche Boxhöhe in 2·Parameter und 3·Regeln, unabhängig vom Feldtyp (number/time/text/select) */
+.row2 input,.row2 select,.param-grid input,.param-grid select{height:40px}
 .param-grid input:disabled,.param-grid select:disabled{background:#eef2f7;color:#9aa4b3;cursor:not-allowed}
 .param-grid .ph{font-size:11px;font-weight:600;color:var(--accent);letter-spacing:1.5px;text-transform:uppercase;
   padding-bottom:2px;border-bottom:1.5px solid var(--accent);margin-bottom:2px;text-align:center}
@@ -215,6 +236,8 @@ tr:nth-child(even) td{background:#fafbfd}
   font-weight:700;color:#ff2b2b;background:#fff;padding:0 3px;border-radius:3px;white-space:nowrap}
 .warnbox{background:#fff7e9;border:1px solid #f0d39a;border-radius:11px;padding:11px 14px;
   font-size:12px;margin-bottom:16px;color:#8a6314;font-weight:300}
+.warnbox.warn-hard{background:#fde7ea;border-color:#e9a6b1;color:#a52138}
+.warnbox .warn-note{margin-top:7px;font-size:11.5px;line-height:1.5;opacity:.9}
 .cmp{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 @media(max-width:760px){.cmp{grid-template-columns:1fr}}
 .cmp .panel{margin:0}
@@ -341,6 +364,16 @@ td.delayed{background:#fff3f3 !important}
 .beamer .bclose{background:#1e2a3a;border:none;color:#9fb3cc;font-size:22px;cursor:pointer;
   width:42px;height:42px;border-radius:10px;flex:0 0 auto}
 .beamer .bclose:hover{background:#2a3a4f;color:#fff}
+.beamer .bprep-toggle{background:#1e2a3a;border:1px solid #2a3a4f;color:#9fb3cc;
+  font-family:'Lexend',sans-serif;font-size:14px;font-weight:600;letter-spacing:.5px;
+  padding:0 16px;height:42px;border-radius:10px;cursor:pointer;flex:0 0 auto;
+  display:inline-flex;align-items:center;gap:8px}
+.beamer .bprep-toggle:hover{background:#2a3a4f;color:#dce6f2}
+.beamer .bprep-toggle .bpt-state{font-size:13px;padding:2px 9px;border-radius:8px;
+  background:#33445c;color:#9fb3cc;text-transform:uppercase;letter-spacing:1px}
+.beamer .bprep-toggle.on{border-color:#2a4a44;color:#cdd9e6}
+.beamer .bprep-toggle.on .bpt-state{background:#1b322c;color:#6fae9f}
+@media(max-width:560px){.beamer .bprep-toggle{font-size:12px;padding:0 11px;height:36px}}
 .beamer .bdelay{font-family:'Lexend',sans-serif;font-size:15px;font-weight:600;padding:5px 14px;border-radius:14px;align-self:center}
 .beamer .bdelay.zero{background:#13332b;color:#4fd6bf}
 .beamer .bdelay.late{background:#3a1416;color:#ff6b6b}
@@ -362,7 +395,11 @@ td.delayed{background:#fff3f3 !important}
 .beamer-list tbody td:first-child{border-left:1px solid #1f2c3e;border-radius:11px 0 0 11px}
 .beamer-list tbody td:last-child{border-right:1px solid #1f2c3e;border-radius:0 11px 11px 0}
 .beamer-list .st{width:34px;text-align:center;font-size:18px}
+.beamer-list table.has-prep .st{width:auto;min-width:62px}
+.beamer-list .st .bprep-st{display:block;font-family:ui-monospace,monospace;font-size:12px;font-weight:600;color:#4fd6bf;letter-spacing:.3px;margin-top:2px;white-space:nowrap}
+.beamer-list tr.done .st .bprep-st{color:#3a8a6f}
 .beamer-list .bt{font-family:ui-monospace,monospace;font-size:18px;color:#aebfd4;letter-spacing:.5px;white-space:nowrap}
+.beamer-list .bprep{color:#4fd6bf;font-size:16px}
 .beamer-list .bnm{font-weight:600;font-size:20px;color:#fff}
 .beamer-list .bf{font-size:16px;color:#9fb3cc}
 /* erledigt */
@@ -401,10 +438,12 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
 .file-drop .ico{font-size:22px;line-height:1;flex:0 0 auto}
 .file-drop .ftxt{font-size:13.5px;font-weight:500;color:var(--ink)}
 .file-drop .fsub{font-size:11px;font-weight:300;color:var(--muted);margin-top:1px}
-.demo-link{display:inline-block;margin-top:10px;font-size:11.5px;color:var(--muted);
-  background:none;border:none;cursor:pointer;font-family:'Lexend',sans-serif;text-decoration:underline;
-  text-decoration-color:var(--line);text-underline-offset:3px;padding:2px 0;transition:color .15s}
+.demo-link{display:inline-flex;align-items:center;gap:6px;margin-top:10px;font-size:11.5px;color:var(--muted);
+  background:none;border:none;cursor:pointer;font-family:'Lexend',sans-serif;text-decoration:none;
+  padding:3px 2px;transition:color .15s}
+.demo-link::before{content:"▸";font-size:10px;color:var(--accent2);transition:transform .15s}
 .demo-link:hover{color:var(--accent2)}
+.demo-link:hover::before{transform:translateX(2px)}
 .tip-box{background:linear-gradient(135deg,#5577e60a,#2bb6a80a);border:1px solid var(--line);
   border-radius:11px;padding:12px 14px;font-size:11.5px;font-weight:300;color:#4a5568;line-height:1.6;margin-top:14px}
 .tip-box b{font-weight:600;color:var(--accent2)}
@@ -478,6 +517,21 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
   .ie-frow .fname{grid-area:name}.ie-frow .ftag{grid-area:tag;justify-self:end}.ie-frow .fdesc{grid-area:desc}
   .info-explainer>summary .ie-sub .ie-subtxt{display:none}
 }
+/* ===== Matrix-Editor ===== */
+.me-table{border-collapse:separate;border-spacing:4px;font-family:'Lexend',sans-serif}
+.me-table th,.me-table td{padding:0}
+.me-table input{width:100%;min-width:74px;padding:7px 8px;border:1px solid var(--line);border-radius:8px;
+  background:#fbfcfe;font-family:'Lexend',sans-serif;font-size:13px;color:var(--ink)}
+.me-table input:focus{outline:none;border-color:var(--accent2);box-shadow:0 0 0 3px #5577e622}
+.me-table .me-corner{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);text-align:left;padding:0 6px}
+.me-table .me-name input{min-width:120px;font-weight:500}
+.me-table .me-subj input{min-width:84px;font-weight:600;color:var(--accent2);text-align:center}
+.me-table .me-cell input{text-align:center;min-width:64px}
+.me-table .me-del{width:26px;height:26px;border:none;border-radius:7px;background:#ef5d7016;color:var(--bad);
+  cursor:pointer;font-size:14px;line-height:1;display:inline-flex;align-items:center;justify-content:center}
+.me-table .me-del:hover{background:#ef5d7028}
+.me-table .me-delcol{padding:0 2px}
+.me-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 </style>
 
 <div class="bg">
@@ -546,6 +600,7 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
     <span class="bdelay zero" id="bDelay">pünktlich</span>
     <div class="beamer-room letterboard"><span class="lb-arrow">→</span><span class="lb-text" id="bRoom">H211</span></div>
     <div class="bclock"><span id="bClock">00:00:00</span></div>
+    <button class="bprep-toggle" id="bPrepToggle" title="Vorbereitungszeiten ein-/ausblenden" aria-pressed="false">Vorber. <span class="bpt-state">aus</span></button>
     <button class="bclose" id="bClose" title="Schließen">✕</button>
   </div>
   <div class="beamer-now">
@@ -577,7 +632,7 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
         </defs>
         <rect x="0" y="0" width="440" height="140" rx="16" fill="none"/>
         <g>
-          <circle cx="70" cy="70" r="59" fill="none" stroke="url(#ringGrad)" stroke-width="8.4"/>
+          <circle cx="70" cy="70" r="61" fill="none" stroke="url(#ringGrad)" stroke-width="4" opacity="0.85"/>
           <g filter="url(#moonGlow)">
             <circle cx="70" cy="70" r="42" fill="url(#moonGrad)"/>
             <g clip-path="url(#moonClip)">
@@ -595,7 +650,7 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
           </g>
           <circle cx="103" cy="42" r="5.2" fill="#f6f8fb"/>
         </g>
-        <text x="158" y="84" font-size="58" font-weight="500" letter-spacing="-0.3">
+        <text x="158" y="86" font-size="70" font-weight="500" letter-spacing="-1.6" transform="translate(23.7 0) scale(0.85 1)">
           <tspan fill="#ffffff">kranz</tspan><tspan fill="#aeb8c6">lab</tspan>
         </text>
       </svg>
@@ -621,104 +676,103 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.5h.01"/></svg>
       </span>
       <span class="ie-title">So funktioniert die Einteilung</span>
-      <span class="ie-sub"><span class="ie-subtxt">Block-Idee &amp; Regeln einfach erklärt</span><span class="ie-chev">▶</span></span>
+      <span class="ie-sub"><span class="ie-subtxt">Blöcke &amp; Einstellungen erklärt</span><span class="ie-chev">▶</span></span>
     </summary>
     <div class="ie-body">
 
       <div class="ie-block ie-hero">
-        <p class="ie-eyebrow">Die Grundidee</p>
-        <h3 class="ie-h">Ein Tag wie ein Puzzle aus Blöcken</h3>
-        <p class="ie-p">Jede mündliche Prüfung ist gleich lang — das ist ein <b>Block</b>. Der ganze Prüfungstag wird Block für Block gefüllt, von früh nach spät. Das Tool arbeitet dabei wie ein gewissenhafter Mensch mit Stundenplan und Stoppuhr: Es legt bei jedem freien Termin nach festen, fairen Regeln fest, wer als Nächstes dran ist.</p>
-        <p class="ie-p">Das Ziel: Prüfer arbeiten in <b>zusammenhängenden Blöcken</b> statt ständig zu kommen und zu gehen, Schüler bekommen genug Ruhe- und Vorbereitungszeit, und der Tag bleibt so kurz wie möglich.</p>
+        <p class="ie-eyebrow">Grundprinzip</p>
+        <h3 class="ie-h">Der Tag besteht aus gleich langen Blöcken</h3>
+        <p class="ie-p">Jede mündliche Prüfung ist gleich lang — ein <b>Block</b>. Der Prüfungstag wird Block für Block von früh nach spät belegt. An jedem freien Termin wählt das Tool nach den unten beschriebenen Einstellungen die nächste Prüfung aus.</p>
+        <p class="ie-p">Prüfungen desselben Prüfers werden dabei zu zusammenhängenden Blöcken gebündelt, und zwischen den Prüfungen eines Schülers wird ein Mindestabstand eingehalten. Es handelt sich um eine feste Rechenregel, kein maschinelles Lernen.</p>
         <div class="ie-settings">
           <div class="ie-setbox"><div class="lab">Tagesbeginn</div><div class="val">08:00</div></div>
           <div class="ie-setbox"><div class="lab">Vorbereitung</div><div class="val">30 <small>min</small></div></div>
           <div class="ie-setbox"><div class="lab">Prüfungsdauer</div><div class="val">12 <small>min</small></div></div>
           <div class="ie-setbox"><div class="lab">Mittagspause</div><div class="val">40 <small>min</small></div></div>
         </div>
-        <p class="ie-note">Beispiel-Standardwerte — diese kannst du oben jederzeit anpassen.</p>
+        <p class="ie-note">Standardwerte — oben jederzeit anpassbar.</p>
       </div>
 
       <div class="ie-block">
-        <p class="ie-eyebrow">Die Spielregeln &amp; deine Felder</p>
-        <h3 class="ie-h">Was jede Regel steuert — und was passiert, wenn du daran drehst</h3>
-        <p class="ie-p" style="margin-bottom:16px">Bei jedem freien Termin vergibt das Tool den Platz an die Prüfung, die diese sechs Regeln am besten erfüllt. Jede Karte zeigt, welche Eingabefelder sie beeinflussen und wie sich Verstellen auswirkt.</p>
+        <p class="ie-eyebrow">Die Einstellungen im Detail</p>
+        <h3 class="ie-h">Was jedes Feld bewirkt</h3>
+        <p class="ie-p" style="margin-bottom:16px">Die folgenden Felder steuern, wie die Prüfungen über den Tag verteilt werden. Jede Karte beschreibt das Feld und die Wirkung beim Erhöhen oder Verringern.</p>
         <div class="ie-rules">
 
           <div class="ie-rule r1">
             <span class="num">1</span>
-            <h4>Schüler nicht hetzen</h4>
-            <p>Zwischen zwei eigenen Prüfungen liegt immer genug Pause — mindestens die Vorbereitungszeit, damit der Schüler rechtzeitig im Vorbereitungsraum sitzt.</p>
-            <div class="ie-flds"><span class="ie-chip">Vorbereitung</span><span class="ie-chip">Max. Block Schüler</span></div>
+            <h4>Max. Block Schüler (Vorbereitung + Prüfung) = 1</h4>
+            <p>Vorbereitung und Prüfung bilden eine untrennbare Einheit (Vorber. → Prüfung). Zwei solche Einheiten können nicht wirklich am Stück liegen, weil die Vorbereitung der zweiten sonst in die laufende erste Prüfung fiele. Deshalb ist der Wert fest auf 1: Zwischen zwei eigenen Prüfungen liegt immer mindestens die Vorbereitungszeit.</p>
+            <div class="ie-flds"><span class="ie-chip">Max. Block Schüler</span></div>
             <div class="ie-turn">
-              <div class="ie-tn up"><span class="ar">mehr</span><span>Längere Schülerpausen, entspannter — aber der Tag wird länger.</span></div>
-              <div class="ie-tn dn"><span class="ar">weniger</span><span>Dichterer Plan, kürzerer Tag — Schüler haben weniger Luft.</span></div>
+              <div class="ie-tn dn"><span class="ar">fix 1</span><span>Nach jeder Vorbereitung-Prüfung-Einheit folgt mindestens die Vorbereitungszeit, bevor die nächste eigene Prüfung beginnt.</span></div>
             </div>
           </div>
 
           <div class="ie-rule r2">
             <span class="num">2</span>
-            <h4>Prüfer am Stück lassen</h4>
-            <p>Solange ein Lehrer prüft, bleibt er dran — das hält seine Prüfungen kompakt. Beim erlaubten Maximum am Stück übernimmt ein anderer.</p>
+            <h4>Max. Block Lehrer (Prüfungsblöcke)</h4>
+            <p>Legt fest, wie viele Prüfungen ein Prüfer direkt hintereinander abnimmt, bevor zwingend ein anderer Prüfer übernimmt (sofern eine andere Prüfung verfügbar ist). Bestimmt die Länge eines zusammenhängenden Prüferblocks.</p>
             <div class="ie-flds"><span class="ie-chip">Max. Block Lehrer</span></div>
             <div class="ie-turn">
-              <div class="ie-tn up"><span class="ar">mehr</span><span>Größere kompakte Prüferblöcke, weniger Wechsel — Schüler warten evtl. länger.</span></div>
-              <div class="ie-tn dn"><span class="ar">weniger</span><span>Häufigere Lehrerwechsel, gleichmäßiger verteilt.</span></div>
+              <div class="ie-tn up"><span class="ar">höher</span><span>Längere Prüferblöcke, seltenere Wechsel.</span></div>
+              <div class="ie-tn dn"><span class="ar">niedriger</span><span>Kürzere Blöcke, häufigere Prüferwechsel.</span></div>
             </div>
           </div>
 
           <div class="ie-rule r3">
             <span class="num">3</span>
-            <h4>Schülerpause einhalten</h4>
-            <p>Bevor derselbe Schüler wieder geprüft wird, liegen ein paar fremde Prüfungen dazwischen — er soll sich zwischen den Fächern erholen können.</p>
+            <h4>Min. Pause Schüler zw. Prüfung u. Vorbereitung (Prüfungsblöcke)</h4>
+            <p>Wie viele Prüfungszeiten nach dem abgeschlossenen Block freibleiben, bis der Schüler in seine nächste eigene Vorbereitung geht. Gemessen in Prüfungszeit-Blöcken. Standard ist 1; 0 ist möglich, aber nicht sinnvoll, weil dann keine Zeit für die nächste Vorbereitung bleibt.</p>
             <div class="ie-flds"><span class="ie-chip">Min. Pause Schüler</span></div>
             <div class="ie-turn">
-              <div class="ie-tn up"><span class="ar">mehr</span><span>Größerer Abstand zwischen den Fächern eines Schülers — entspannter, aber der Tag wird länger.</span></div>
-              <div class="ie-tn dn"><span class="ar">weniger</span><span>Der Schüler ist schneller wieder dran — kompakter, aber dichter getaktet.</span></div>
+              <div class="ie-tn up"><span class="ar">höher</span><span>Größerer Abstand nach dem Block bis zur nächsten eigenen Vorbereitung; der Tag wird länger.</span></div>
+              <div class="ie-tn dn"><span class="ar">niedriger</span><span>Geringerer Abstand; der Schüler ist früher wieder an der Reihe (0 = nicht sinnvoll).</span></div>
             </div>
           </div>
 
           <div class="ie-rule r4">
             <span class="num">4</span>
-            <h4>Lehrerpause einhalten</h4>
-            <p>Nach einem vollen Lehrerblock liegen ein paar fremde Prüfungen dazwischen, bevor derselbe Prüfer wieder drankommt — als Zeit für Administratives (Protokolle, Notenbesprechung).</p>
+            <h4>Min. Pause Lehrer (Prüfungsblöcke)</h4>
+            <p>Mindestanzahl an Fremdprüfungen zwischen dem Ende eines Prüferblocks und der nächsten Prüfung desselben Prüfers, in Prüfungsblöcken. Leer = Standardwert.</p>
             <div class="ie-flds"><span class="ie-chip">Min. Pause Lehrer</span></div>
             <div class="ie-turn">
-              <div class="ie-tn up"><span class="ar">mehr</span><span>Mehr Zeit für Administratives zwischen den Blöcken — dehnt den Tag.</span></div>
-              <div class="ie-tn dn"><span class="ar">weniger</span><span>Der Prüfer kommt schneller wieder dran — kompakter, aber anstrengender.</span></div>
+              <div class="ie-tn up"><span class="ar">höher</span><span>Größerer Abstand zwischen den Blöcken eines Prüfers.</span></div>
+              <div class="ie-tn dn"><span class="ar">niedriger</span><span>Der Prüfer kommt früher zum nächsten Block.</span></div>
             </div>
           </div>
 
           <div class="ie-rule r5">
             <span class="num">5</span>
-            <h4>Keine unnötige Leerzeit</h4>
-            <p>Unter allen erlaubten Prüfungen wird die genommen, die am frühesten beginnen kann — so bleibt der Tag so kurz wie möglich.</p>
+            <h4>Max. Lücke Schüler zwischen Prüfungen (Prüfungsblöcke)</h4>
+            <p>Obergrenze für die Leerzeit zwischen zwei aufeinanderfolgenden Prüfungen eines Schülers, in Prüfungsblöcken. Sie betrifft dieselbe Strecke wie die Min. Pause und kann deshalb nicht kleiner sein als diese. Hartes unteres Limit ist aufrunden(Vorbereitung ÷ Prüfungszeit), da in die Lücke die nächste Vorbereitung passen muss. Leer = unbegrenzt.</p>
             <div class="ie-flds"><span class="ie-chip">Max. Lücke Schüler</span></div>
             <div class="ie-turn">
-              <div class="ie-tn up"><span class="ar">mehr</span><span>Mehr Leerlauf erlaubt — leichter lösbar, Schüler bleiben länger im Haus.</span></div>
-              <div class="ie-tn dn"><span class="ar">weniger</span><span>Schüler kürzer im Haus — der Plan wird straffer und schwerer lösbar.</span></div>
+              <div class="ie-tn up"><span class="ar">höher</span><span>Mehr Leerzeit zwischen den Prüfungen eines Schülers zulässig.</span></div>
+              <div class="ie-tn dn"><span class="ar">niedriger</span><span>Prüfungen eines Schülers liegen enger beieinander; der Plan ist schwerer lösbar (nicht unter das harte Limit).</span></div>
             </div>
           </div>
 
           <div class="ie-rule r6">
             <span class="num">6</span>
-            <h4>Mittag &amp; Gruppen trennen</h4>
-            <p>Die Mittagspause und der Wechsel Vormittag→Nachmittag unterbrechen jeden Block wie eine echte Pause — danach beginnt die Zählung neu.</p>
+            <h4>Mittagspause &amp; Tagesaufteilung</h4>
+            <p>Die Mittagspause fügt um die Mittagszeit eine feste Pause ein. Die Tagesaufteilung bestimmt, ob der Tag als Volltag oder in zwei Gruppen (Vor-/Nachmittag) geplant wird; beim Gruppenwechsel beginnt die Blockzählung neu.</p>
             <div class="ie-flds"><span class="ie-chip">Mittagspause</span><span class="ie-chip">Tagesaufteilung</span></div>
             <div class="ie-turn">
-              <div class="ie-tn up"><span class="ar">2 Gruppen</span><span>Vor- und Nachmittag getrennt geplant — verkürzt meist den längsten Schülertag.</span></div>
-              <div class="ie-tn dn"><span class="ar">Volltag</span><span>Alles an einem Stück; die Mittagspause bleibt die einzige große Zäsur.</span></div>
+              <div class="ie-tn up"><span class="ar">2 Gruppen</span><span>Vor- und Nachmittag werden getrennt geplant.</span></div>
+              <div class="ie-tn dn"><span class="ar">Volltag</span><span>Durchgehende Planung; die Mittagspause ist die einzige feste Unterbrechung.</span></div>
             </div>
           </div>
 
         </div>
 
-        <div class="ie-fgrp">Zusätzlich · ohne direkte Regel</div>
+        <div class="ie-fgrp">Weitere Felder</div>
         <div class="ie-fields">
-          <div class="ie-frow"><span class="fname">Prüfungsdauer</span><span class="fdesc">Länge einer einzelnen Prüfung — die Größe eines „Blocks". Größer = weniger Prüfungen passen in den Tag.</span><span class="ftag t-time">Taktung</span></div>
-          <div class="ie-frow"><span class="fname">Tagesbeginn</span><span class="fdesc">Frühester Startpunkt; ab hier läuft die Vorbereitung. Später = der ganze Tag verschiebt sich nach hinten.</span><span class="ftag t-time">Startzeit</span></div>
-          <div class="ie-frow"><span class="fname">Tagesaufteilung</span><span class="fdesc">Steuert Spielregel 6 (siehe oben) — Volltag oder zwei Gruppen.</span><span class="ftag t-rule">Spielregel 6</span></div>
-          <div class="ie-frow"><span class="fname">Prüfungsraum</span><span class="fdesc">Erscheint nur in Plan, Tabelle und Anzeige — beeinflusst die Einteilung nicht.</span><span class="ftag t-none">Anzeige</span></div>
+          <div class="ie-frow"><span class="fname">Prüfungsdauer</span><span class="fdesc">Länge einer einzelnen Prüfung und damit eines Blocks. Ein größerer Wert verlängert jeden Block.</span><span class="ftag t-time">Zeit</span></div>
+          <div class="ie-frow"><span class="fname">Vorbereitung</span><span class="fdesc">Dauer der Vorbereitungszeit vor der Prüfung; bildet zugleich die Untergrenze der Min. Pause Schüler.</span><span class="ftag t-time">Zeit</span></div>
+          <div class="ie-frow"><span class="fname">Tagesbeginn</span><span class="fdesc">Frühester Startzeitpunkt; ab hier läuft die erste Vorbereitung. Ein späterer Wert verschiebt den gesamten Tag.</span><span class="ftag t-time">Zeit</span></div>
+          <div class="ie-frow"><span class="fname">Prüfungsraum</span><span class="fdesc">Wird nur in Plan, Tabelle und Anzeige ausgegeben und beeinflusst die Einteilung nicht.</span><span class="ftag t-none">Anzeige</span></div>
         </div>
       </div>
 
@@ -736,6 +790,12 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
       <div class="controls-inner">
       <div class="cb-col">
       <h2>1 · Eingabematrix</h2>
+      <!-- gleicher unsichtbarer Platzhalter wie in 2·Parameter / 3·Regeln, damit alle drei Spalten
+           auf gleicher Höhe beginnen -->
+      <div class="param-grid" aria-hidden="true" style="margin-bottom:8px">
+        <div class="ph" style="visibility:hidden">·</div>
+        <div class="ph" style="visibility:hidden">·</div>
+      </div>
       <label class="file-drop">
         <input type="file" id="file" accept=".xlsx,.xls">
         <span class="ico">📊</span>
@@ -744,7 +804,10 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
       <div id="fileok" class="fileok"></div>
 
       <button class="btn btn-primary" id="run" style="margin-top:12px">Plan berechnen →</button>
-      <button class="demo-link" id="loadDemo">oder Demo-Matrix laden</button>
+      <button class="btn-sm btn-ghost" id="editMatrixBtn" style="margin-top:10px;display:inline-flex;align-items:center;gap:7px">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto">
+          <path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+        </svg>Matrix bearbeiten</button>
       <button class="btn-sm btn-ghost" id="beamerLeft" style="margin-top:10px;display:inline-flex;align-items:center;gap:7px">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto">
           <rect x="3" y="4" width="18" height="12" rx="1.5"></rect><path d="M12 16v4"></path><path d="M8 20h8"></path>
@@ -756,19 +819,24 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
 
       <div class="cb-col">
       <h2>2 · Parameter</h2>
+      <!-- unsichtbarer Platzhalter in Höhe der SCHÜLER/LEHRER-Unterüberschrift aus 3·Regeln,
+           damit die erste Eingabezeile (Vorbereitung) mit "Min. Pause" auf gleicher Höhe liegt -->
+      <div class="param-grid" aria-hidden="true" style="margin-bottom:8px">
+        <div class="ph" style="visibility:hidden">·</div>
+        <div class="ph" style="visibility:hidden">·</div>
+      </div>
       <div class="row2">
         <div><label>Prüfungsdauer (min)</label><input type="number" id="dur" value="12" min="3"></div>
         <div><label>Vorbereitung (min)</label><input type="number" id="prep" value="30" min="0"></div>
       </div>
-      <div class="row2">
+      <div class="row2" style="margin-top:8px">
         <div><label>Tagesbeginn (Vorber.)</label><input type="time" id="start" value="08:00"></div>
         <div><label>Mittagspause (min)</label><input type="number" id="lunch" value="40" min="0"></div>
       </div>
-      <div class="row2">
+      <div class="row2" style="margin-top:8px">
         <div><label>Prüfungsraum (zentral)</label><input type="text" id="roomIn" value="H211" placeholder="z. B. H211"></div>
         <div></div>
       </div>
-      <div class="hint">Ab dem Tagesbeginn läuft die Vorbereitung; die erste Prüfung startet entsprechend später (Tagesbeginn + Vorbereitungszeit).</div>
       </div>
 
       <div class="cb-col">
@@ -776,45 +844,80 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
       <div class="param-grid">
         <div class="ph">Schüler</div>
         <div class="ph">Lehrer</div>
-        <div><label>Max. Block (Blöcke)</label>
-          <select id="maxblockS"><option selected>1</option><option>2</option><option>3</option></select></div>
-        <div><label>Max. Block (Blöcke)</label>
+        <!-- Max. Block (Schüler) nur ausgeblendet – intern weiterhin fix 1.
+             Zum Wiedereinblenden: style="display:none" am Wrapper entfernen und diesen Block
+             als erstes Feldpaar wieder vor "Min. Pause"/"Max. Block (Prüf.)" einsortieren. -->
+        <div style="display:none"><label>Max. Block <small>(Vorber.+Prüf.)</small></label>
+          <select id="maxblockS" disabled title="Vorbereitung und Prüfung sind untrennbar – mehr als 1 am Stück ist nicht möglich (die nächste Vorbereitung würde in die laufende Prüfung fallen)."><option selected>1</option></select></div>
+        <div><label>Min. Pause <small>(Prüf.)</small></label><input type="number" id="sgap" value="" placeholder="Standard 1" min="0"></div>
+        <div><label>Max. Block <small>(Prüf.)</small></label>
           <select id="maxblock"><option>3</option><option selected>4</option><option>5</option></select></div>
-        <div><label>Min. Pause (Blöcke)</label><input type="number" id="sgap" value="" placeholder="3–4"></div>
-        <div><label>Min. Pause (Blöcke)</label><input type="number" id="tgap" value="" placeholder="2–4"></div>
+        <div><label>Max. Lücke <small>(Prüf.)</small></label><input type="number" id="smaxgap" value="" placeholder="unbegrenzt" min="3"></div>
+        <div><label>Min. Pause <small>(Prüf.)</small></label><input type="number" id="tgap" value="" placeholder="2–4" min="0"></div>
       </div>
-      <div class="hint">Max. = längste Folge eigener Prüfungen, Min. = fremde Prüfungen dazwischen.</div>
-      <label>Max. Lücke Schüler zwischen Prüfungen (Blöcke)</label>
-      <input type="number" id="smaxgap" value="" placeholder="frei = unbegrenzt">
-
-      <label>Tagesaufteilung</label>
-      <select id="layout">
-        <option value="compare" selected>Vergleichen (Volltag vs. 2 Gruppen)</option>
-        <option value="full">Volltag</option>
-        <option value="split">2 Gruppen (Vor-/Nachmittag)</option>
-      </select>
+      <div class="hint" id="sgapWarn" style="display:none;color:var(--warn)">⚠ Min. Pause Schüler = 0 ist nicht sinnvoll: keine Zeit für die nächste Vorbereitung.</div>
       </div>
 
       <div class="cb-wide">
+      <div class="settings-explain">
+        <details class="se-acc"><summary><span class="se-pm"></span>Parameter</summary>
+          <div class="se-body">
+            <div class="se-row"><span class="se-term">Zeiten</span><span class="se-def">Ab dem Tagesbeginn läuft die Vorbereitung; die erste Prüfung startet entsprechend später (Tagesbeginn + Vorbereitungszeit). Eine Prüfung gibt es nie ohne vorherige Vorbereitung.</span></div>
+          </div>
+        </details>
+        <details class="se-acc"><summary><span class="se-pm"></span>Regeln · Schüler</summary>
+          <div class="se-body">
+            <div class="se-row"><span class="se-term">Max. Block</span><span class="se-def">Vorbereitung + Prüfung als untrennbare Einheit; fest auf 1, da zwei Einheiten nicht wirklich am Stück liegen können (Überschneidung der Vorbereitung).</span></div>
+            <div class="se-row"><span class="se-term">Min. Pause</span><span class="se-def">Anzahl Prüfungsblöcke nach dem abgeschlossenen Block bis zur nächsten eigenen Vorbereitung (Standard 1). Frei mit Max. Block kombinierbar; die Pause gilt erst nach dem Block.</span></div>
+            <div class="se-row"><span class="se-term">Max. Lücke</span><span class="se-def">Obergrenze für die gesamte Lücke zwischen zwei eigenen Prüfungen (Ende → Beginn, inkl. der nächsten Vorbereitung). Mindestens <b id="smaxFloorHint">3</b> Prüfungsblöcke = aufrunden(Vorbereitung ÷ Prüfungszeit) + Min. Pause, damit Vorbereitung und Pause hineinpassen (leer = unbegrenzt).</span></div>
+          </div>
+        </details>
+        <details class="se-acc"><summary><span class="se-pm"></span>Regeln · Lehrer</summary>
+          <div class="se-body">
+            <div class="se-row"><span class="se-term">Max. Block</span><span class="se-def">Länge eines zusammenhängenden Prüferblocks in Prüfungsblöcken.</span></div>
+            <div class="se-row"><span class="se-term">Min. Pause</span><span class="se-def">Anzahl Prüfungsblöcke, bis derselbe Prüfer wieder dran ist.</span></div>
+          </div>
+        </details>
+        <details class="se-acc"><summary><span class="se-pm"></span>Regeln · Tagesaufteilung</summary>
+          <div class="se-body">
+            <div class="se-row"><span class="se-term">Aufteilung</span><span class="se-def">Volltag oder zwei Gruppen (Vor-/Nachmittag); beim Gruppenwechsel beginnt die Blockzählung neu. „Vergleichen" rechnet beide Varianten.</span></div>
+            <div class="se-note">Alle Pausen und Lücken zählen in Prüfungsblöcken (1 Block = Prüfungsdauer).</div>
+          </div>
+        </details>
+      </div>
       <div class="tip-box">
         <span class="tip-title">💡 Tipps</span>
-        Den Plan kannst du <b>drucken</b> (Strg/Cmd + P) oder Zeilen in der Liste <b>tauschen</b>, indem du eine auf eine andere ziehst.<br>
+        Zeilen in der Liste lassen sich <b>verschieben</b>, indem du eine Zeile auf eine andere ziehst. Im <b>Gantt-Diagramm</b> kannst du zwei Zeitslots <b>vertauschen</b>, indem du sie anklickst.<br>
         Zum <b>Zurücksetzen</b> einfach oben wieder auf <b>Volltag</b> oder <b>2 Gruppen</b> klicken — der optimierte Plan wird neu erstellt.
-      </div>
-      <div class="tip-box" style="background:linear-gradient(135deg,#e0972a14,#e0972a08);border-color:#f0d39a">
-        <span class="soon">Bald</span><b>Lehrer-Fixierung:</b> In einer kommenden Erweiterung kannst du gewünschte Lehrer-Wünsche &amp; feste Zeiten vorab eintragen, die der Solver dann berücksichtigt.
       </div>
 
       <details class="collapse"><summary>Erweitert / Hinweise</summary>
         <div class="hint" style="margin-top:8px">
           • Alle Pausen und Lücken sind in <b>Prüfungsblöcken</b> (1 Block = Prüfungsdauer in min).<br>
-          • Schüler-Pause wird automatisch ≥ Vorbereitungszeit erzwungen (Schüler muss rechtzeitig in den Vorbereitungsraum).<br>
           • Schüler mit den meisten Prüfungen starten die Liste.<br>
           • Solver minimiert Leerlauf der Lehrer + Wartezeit der Schüler.
+        </div>
+        <div class="tip-box" style="background:linear-gradient(135deg,#e0972a14,#e0972a08);border-color:#f0d39a;margin-top:10px">
+          <span class="soon">Bald</span><b>Lehrer-Fixierung:</b> In einer kommenden Erweiterung kannst du gewünschte Lehrer-Wünsche &amp; feste Zeiten vorab eintragen, die der Solver dann berücksichtigt.
         </div>
       </details>
       </div>
       </div><!-- /controls-inner -->
+    </details>
+
+    <!-- ===== MATRIX-EDITOR ===== -->
+    <details class="controls-bar" id="matrixEditor">
+      <summary><span class="cb-chevron">▶</span><span class="cb-title">Matrix bearbeiten</span><span class="cb-sub" id="meSub">Schüler, Fächer &amp; Prüfer</span></summary>
+      <div style="padding:4px 20px 20px">
+        <div class="hint" style="margin:0 0 12px">Erste Spalte = Schüler, Kopfzeile = Fächer, Zellen = <b>Lehrer-Kürzel</b> des Prüfers (leer = keine Prüfung). Änderungen wirken beim nächsten <b>Plan berechnen</b>.</div>
+        <div id="meEmpty" class="hint" style="display:none">Noch keine Matrix geladen — lade die Demo oder eine Excel-Datei, oder lege hier eine neue an.</div>
+        <div style="overflow-x:auto"><table id="meTable" class="me-table"></table></div>
+        <div class="me-actions">
+          <button class="btn-sm btn-ghost" id="meAddStudent">+ Schüler</button>
+          <button class="btn-sm btn-ghost" id="meAddSubject">+ Fach</button>
+          <button class="btn-sm btn-ghost" id="meNewEmpty">Leere Matrix anlegen</button>
+        </div>
+      </div>
     </details>
 
     <!-- ===== AUSGABE ===== -->
@@ -886,10 +989,58 @@ function buildExamList(M){
   return exams;
 }
 
+/* Warnungs-Reduktion (lokale Suche).
+   Nimmt einen fertigen Plan und versucht, durch Vertauschen von Slot-Paderaaren die Anzahl
+   der Warnungen (vor allem "Lehrerpause"-Hinweise) zu senken – damit der Nutzer nicht von Hand
+   nachziehen muss. First-Improvement-Hill-Climbing mit Zeitbudget, damit große Pläne nie
+   einfrieren. Es werden nur Slots DERSELBEN Gruppe getauscht (Vor-/Nachmittag bleiben getrennt).
+   `validate` ist die einzige Quelle der Bewertung – so kann diese Funktion keine Verletzung
+   übersehen, die der Validator kennt. */
+function warnScore(sched,P,reTimer){
+  reTimer(sched,P);
+  validate(sched,P);
+  let hard=0,soft=0;
+  for(const x of sched){ hard+=(x.hard?x.hard.length:0); soft+=(x.soft?x.soft.length:0); }
+  return hard*1000+soft;   // harte Konflikte wiegen weit schwerer als weiche Hinweise
+}
+function reduceWarnings(sched,P,budgetMs){
+  budgetMs = budgetMs||500;
+  const now = ()=> (typeof performance!=="undefined" && performance.now) ? performance.now() : Date.now();
+  const t0 = now();
+  // Gruppen-bewusst re-timen: bei 2-Gruppen-Plänen MUSS retime() genutzt werden, damit der
+  // Nachmittags-Start (PM_START / Mittagspause) erhalten bleibt; sonst packt retimeInPlace alles
+  // ab Tagesbeginn zusammen. retime() gibt ein neues Objekt zurück und mutiert die Slots in-place,
+  // daher hier nur als Re-Timer kapseln.
+  const hasGroups = sched.some(e=>e.group===1) && sched.some(e=>e.group===2);
+  const reTimer = hasGroups ? (s)=>{ retime(s,P); } : (s)=>{ retimeInPlace(s,P); };
+  let best = warnScore(sched,P,reTimer);
+  if(best===0) return sched;
+  const N=sched.length;
+  for(let iter=0; iter<100 && best>0; iter++){
+    let improved=false;
+    for(let i=0;i<N && !improved;i++){
+      for(let j=i+1;j<N && !improved;j++){
+        // Nur innerhalb derselben Gruppe tauschen (Vormittag/Nachmittag nicht vermischen)
+        if(sched[i].group!==sched[j].group) continue;
+        const a=sched[i], b=sched[j];
+        sched[i]=b; sched[j]=a;
+        const c=warnScore(sched,P,reTimer);
+        if(c<best){ best=c; improved=true; }
+        else { sched[i]=a; sched[j]=b; }
+        if(now()-t0>budgetMs){ reTimer(sched,P); validate(sched,P); return sched; }
+      }
+    }
+    if(!improved) break;   // lokales Optimum erreicht
+  }
+  reTimer(sched,P); validate(sched,P);
+  return sched;
+}
+
 function solve(M,P){
   const exams=buildExamList(M);
   const dur=P.dur, prep=P.prep;
-  const sgap=Math.max(P.sgap, prep);     // Schueler-Pause min (>= Vorbereitung)
+  const sgapPause=Math.max(0,P.sgap);    // ECHTE Freipause (min) NACH der Prüfung, vor nächster Vorbereitung
+  const sgap=sgapPause;                  // (Kompat. mit Variablennamen weiter unten)
   const tgap=P.tgap, maxblock=P.maxblock, maxblockS=P.maxblockS||1;
 
   // Schueler mit meisten Pruefungen zuerst (Reihenfolge-Bias)
@@ -927,7 +1078,12 @@ function solve(M,P){
     for(let i=0;i<pool.length;i++){ const e=pool[i];
       if(anyUnblocked && (isTgapBlocked(e) || isSBlocked(e))) continue;
       let s=cur;
-      if(lastStudentEnd[e.student]!=null) s=Math.max(s, lastStudentEnd[e.student]+sgap);
+      // Block-Fortsetzung: gleicher Schüler direkt davor und Block noch nicht voll → Prüfung direkt anschließen (keine Min.-Pause innerhalb des Blocks)
+      const inBlock = studentLastIdx[e.student]===N-1 && (studentRun[e.student]||0)<maxblockS;
+      // Getrennte eigene Prüfung: nach Ende der vorigen Prüfung kommt zuerst die echte
+      // Freipause (Min.Pause = sgapPause), DANN erst die Vorbereitung der nächsten Prüfung.
+      // Abstand Ende→Beginn = Vorbereitung + Min.Pause.
+      if(lastStudentEnd[e.student]!=null && !inBlock) s=Math.max(s, lastStudentEnd[e.student]+prep+sgapPause);
       const switchPenalty = mustSwitch && e.teacher===prev ? 9999 : 0;
       const blockPenalty=(prev!==null && e.teacher!==prev)?6:0;
       const score=(s-cur)+blockPenalty+switchPenalty;
@@ -938,8 +1094,10 @@ function solve(M,P){
     const en=s+dur;
     sched.push({...e, start:s, end:en, prepStart:Math.max(dayStart,s-prep)});
     cur=en; lastStudentEnd[e.student]=en;
-    // Wenn Lehrer wechselt und der vorige Lehrer den Block voll hatte → Block-Ende-Index merken
-    if(prev!==null && prev!==e.teacher && (teacherRun[prev]||0)>=maxblock){
+    // Bei jedem Lehrerwechsel das Block-Ende des vorigen Lehrers merken (für die tgap-Pause).
+    // WICHTIG: nach JEDEM Block, nicht nur nach vollen maxblock-Blöcken – sonst greift die
+    // Lehrer-Min.-Pause bei kürzeren Blöcken nicht und der Lehrer ist zu früh wieder dran.
+    if(prev!==null && prev!==e.teacher){
       teacherBlockEndIdx[prev]=N-1;
     }
     teacherRun[e.teacher]=(prev===e.teacher)?(teacherRun[e.teacher]||0)+1:1;
@@ -953,6 +1111,10 @@ function solve(M,P){
   backPropagate(sched,P);
   // Re-timing nach Swaps, damit Zeiten konsistent sind
   retimeInPlace(sched,P);
+  // Warnungen automatisch reduzieren – nur beim eigenständigen Volltag-Plan. Beim 2-Gruppen-Plan
+  // ruft solveSplit() solve() pro Gruppe auf; dort wird NICHT optimiert (P._noReduce gesetzt),
+  // sondern erst der fertige Gesamtplan (mit group-Feldern) in solveSplit.
+  if(!P._noReduce) reduceWarnings(sched,P,500);
   // Validator durchlaufen, damit auch der initiale Plan hard/soft markiert
   return validate(sched,P);
 }
@@ -1048,13 +1210,24 @@ function isValidSchedule(sched,P){
 // Setzt start/end-Zeiten neu basierend auf der aktuellen Slot-Reihenfolge
 function retimeInPlace(sched,P){
   const dur=P.dur, prep=P.prep, dayStart=hm2min(P.start);
+  const sgap=P.sgap||0, maxblockS=P.maxblockS||1;
+  // Mindestabstand zwischen zwei GETRENNTEN eigenen Prüfungen (Ende→Beginn):
+  // Vorbereitung + echte Freipause (Min.Pause). Die Pause liegt NACH der Prüfung, vor der nächsten Vorbereitung.
+  const ownGap=prep+Math.max(0,sgap);
   let cur=dayStart+prep;
   let lunchDone=(cur>=hm2min("12:00")); const lunchAt=hm2min("12:00");
-  for(const x of sched){
+  const lastEnd={}, runOf={}, lastIdx={};
+  sched.forEach((x,i)=>{
     if(!lunchDone && cur>=lunchAt && P.lunch>0){ cur+=P.lunch; lunchDone=true; }
-    x.start=cur; x.end=cur+dur; x.prepStart=Math.max(dayStart,cur-prep);
-    cur=x.end;
-  }
+    let s=cur;
+    // Block-Fortsetzung (gleicher Schüler direkt davor, Block noch nicht voll) → kein Zwangsabstand
+    const inBlock = lastIdx[x.student]===i-1 && (runOf[x.student]||0)<maxblockS;
+    if(lastEnd[x.student]!=null && !inBlock) s=Math.max(s, lastEnd[x.student]+ownGap);
+    x.start=s; x.end=s+dur; x.prepStart=Math.max(dayStart,s-prep);
+    cur=x.end; lastEnd[x.student]=x.end;
+    runOf[x.student] = (lastIdx[x.student]===i-1) ? (runOf[x.student]||1)+1 : 1;
+    lastIdx[x.student]=i;
+  });
 }
 
 /* Kennzahlen + Warnungen */
@@ -1100,21 +1273,24 @@ function solveSplit(M,P){
   }
   const g1={...M,students:g1Students};
   const g2={...M,students:g2Students};
-  const r1=solve(g1,P);
+  const r1=solve(g1,{...P,_noReduce:true});
   r1.sched.forEach(x=>x.group=1);
-  // Vorschlag für Nachmittags-Start: Vormittagsende + Mittagspause (+ kleiner Puffer),
+  // Vorschlag für Nachmittags-Start (= Beginn der Vorbereitung): Vormittagsende + Mittagspause,
   // auf nächste 5 min aufgerundet. Per PM_START (+/-) überschreibbar.
-  const autoPM = Math.ceil((r1.end + P.lunch + 5)/5)*5;
-  const pmFirst = (PM_START!=null) ? PM_START : autoPM;   // erste Prüfung Gruppe 2
-  // Falls eingestellter Nachmittag vor erstem möglichen Start liegt: trotzdem erlauben,
-  // aber nicht vor Vormittagsende (sonst Überlappung).
-  const g2First = Math.max(pmFirst, r1.end + 5);
-  const P2={...P,start:min2hm(g2First - P.prep)};   // Vorbereitung beginnt prep min vorher
+  const autoPM = Math.ceil((r1.end + P.lunch)/5)*5;
+  const pmPrep = (PM_START!=null) ? PM_START : autoPM;   // Beginn der Vorbereitung Gruppe 2
+  // Erste Prüfung = Vorbereitungsbeginn + Vorbereitung; nicht vor Vormittagsende (sonst Überlappung).
+  const g2First = Math.max(pmPrep + P.prep, r1.end + 5);
+  const P2={...P,start:min2hm(g2First - P.prep),_noReduce:true};   // Tagesbeginn(=Vorber.) der Gruppe 2
   const r2=solve(g2,P2);
   r2.sched.forEach(x=>x.group=2);
-  const merged={sched:[...r1.sched,...r2.sched]};
+  const mergedSched=[...r1.sched,...r2.sched].sort((a,b)=>a.start-b.start);
+  // Warnungen automatisch reduzieren (z.B. Lehrerpause), damit der Plan ohne manuelles
+  // Nachziehen möglichst sauber ist. Tauscht nur innerhalb je einer Gruppe.
+  reduceWarnings(mergedSched,P,500);
+  const merged={sched:mergedSched};
   const out={...analyze(merged.sched,M,P), groups:[r1,r2], split:true};
-  out.pmStart=g2First; out.amEnd=r1.end; out.autoPM=autoPM;
+  out.pmStart=g2First - P.prep; out.amEnd=r1.end; out.autoPM=autoPM;   // angezeigt: Vorbereitungsbeginn
   return out;
 }
 
@@ -1260,7 +1436,7 @@ function tableHtml(res,M){
   }
 
   const liveCol = LIVE? `<th>Live-Verzögerung</th>`:``;
-  h+=`<div class="tbl-wrap"><table id="planTable"><thead><tr><th>#</th><th>Beginn</th><th>Ende</th><th>Vorber.</th>
+  h+=`<div class="tbl-wrap"><table id="planTable"><thead><tr><th>#</th><th>Vorber.</th><th>Beginn</th><th>Ende</th>
     <th>Schüler</th><th>Fach</th><th>Prüfer</th><th>Raum</th>${liveCol}</tr></thead><tbody>`;
   const nowM=nowMinutes();
   const isSplit=rows.some(r=>r.group);
@@ -1290,8 +1466,8 @@ function tableHtml(res,M){
     }
     h+=`<tr class="${rowCls}" ${LIVE?'':'draggable="true"'} data-i="${i}">
       <td class="${hardC||softC}">${i+1}</td>
-      <td class="${beginCls}">${min2hm(x.start)}${shiftBadge}</td><td class="${beginCls}">${min2hm(x.end)}</td>
       <td class="${hardC}">${min2hm(x.prepStart)}</td>
+      <td class="${beginCls}">${min2hm(x.start)}${shiftBadge}</td><td class="${beginCls}">${min2hm(x.end)}</td>
       <td class="${hardC||softC}">${x.student}${flagHtml}</td>
       <td>${x.subject}</td>
       <td><span class="pill" style="background:${cmap[x.teacher]}">${x.teacher}</span></td>
@@ -1302,13 +1478,23 @@ function tableHtml(res,M){
 function nowMinutes(){ const n=new Date(); return n.getHours()*60+n.getMinutes()+n.getSeconds()/60; }
 
 /* ---------- Beamer-Ansicht (read-only, live) ---------- */
-let BEAMER_ON=false, BEAMER_TIMER=null;
+let BEAMER_ON=false, BEAMER_TIMER=null, BEAMER_PREP=false;
 function openBeamer(){
   const bv=document.getElementById("beamerView"); if(!bv||!CUR)return;
   BEAMER_ON=true; bv.classList.add("on");
   const lg=document.getElementById("bLogo"); if(lg) lg.src=HTL_LOGO_B64;
   document.getElementById("bDate").textContent=new Date().toLocaleDateString("de-AT",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});
   document.getElementById("bClose").onclick=closeBeamer;
+  const pt=document.getElementById("bPrepToggle");
+  if(pt){ pt.onclick=()=>{ BEAMER_PREP=!BEAMER_PREP;
+      pt.classList.toggle("on",BEAMER_PREP);
+      pt.setAttribute("aria-pressed",BEAMER_PREP?"true":"false");
+      const st=pt.querySelector(".bpt-state"); if(st) st.textContent=BEAMER_PREP?"ein":"aus";
+      renderBeamer(); };
+    pt.classList.toggle("on",BEAMER_PREP);
+    pt.setAttribute("aria-pressed",BEAMER_PREP?"true":"false");
+    const st=pt.querySelector(".bpt-state"); if(st) st.textContent=BEAMER_PREP?"ein":"aus";
+  }
   renderBeamer();
   if(BEAMER_TIMER) clearInterval(BEAMER_TIMER);
   BEAMER_TIMER=setInterval(renderBeamer,1000);
@@ -1345,19 +1531,22 @@ function renderBeamer(){
   const nc=document.getElementById("bNext");
   if(nc){ if(next){ nc.className="bcard";
       const prep=next.prepStart;
+      const prepHtml = BEAMER_PREP ? ` · Vorber. ab <b>${min2hm(prep)}</b>` : "";
       nc.innerHTML=`<div class="blabel">Als Nächstes · ${min2hm(next.start)}</div>
         <div class="bname">${next.student}</div>
-        <div class="bmeta">Fach <b>${next.subject}</b> · Prüfer <span class="bp" style="background:${cmap[next.teacher]}">${next.teacher}</span> · Vorber. ab <b>${min2hm(prep)}</b></div>`; }
+        <div class="bmeta">Fach <b>${next.subject}</b> · Prüfer <span class="bp" style="background:${cmap[next.teacher]}">${next.teacher}</span>${prepHtml}</div>`; }
     else { nc.className="bcard idle"; nc.innerHTML=`<div class="blabel">Als Nächstes</div><div class="bname">— Ende —</div>`; } }
   // Liste
   const lb=document.getElementById("bList");
-  if(lb){ let h=`<table><thead><tr><th class="st"></th><th>Zeit</th><th>Schüler</th><th>Fach</th><th>Prüfer</th></tr></thead><tbody>`;
+  if(lb){
+    let h=`<table class="${BEAMER_PREP?'has-prep':''}"><thead><tr><th class="st"></th><th>Zeit</th><th>Schüler</th><th>Fach</th><th>Prüfer</th></tr></thead><tbody>`;
     rows.forEach(x=>{
       const done=now>=x.end, isc=now>=x.start&&now<x.end;
       const icon = isc?'▶' : (done?'✓':'·');
       const cls = isc?'cur' : (done?'done':'');
+      const prepSt = BEAMER_PREP ? `<span class="bprep-st">ab ${min2hm(x.prepStart)}</span>` : "";
       h+=`<tr class="${cls}">
-        <td class="st">${icon}</td>
+        <td class="st">${icon}${prepSt}</td>
         <td class="bt">${min2hm(x.start)}–${min2hm(x.end)}</td>
         <td class="bnm">${x.student}</td>
         <td class="bf">${x.subject}</td>
@@ -1406,10 +1595,29 @@ function statBlock(res){
 }
 
 function warnHtml(res){
-  if(!res.gapViolations||!res.gapViolations.length)return"";
-  return `<div class="warnbox"><b>⚠ Lücken über Limit:</b> `+
-    res.gapViolations.slice(0,8).join(" · ")+
-    (res.gapViolations.length>8?` …(+${res.gapViolations.length-8})`:"")+`</div>`;
+  const rows=[...res.sched].sort((a,b)=>a.start-b.start);
+  const hardItems=[], softItems=[];
+  rows.forEach((x,i)=>{
+    const ref=`#${i+1} ${x.student} (${min2hm(x.start)})`;
+    (x.hard||[]).forEach(m=>hardItems.push(`${ref}: ${m}`));
+    // "Lücke > …"-Hinweise haben unten einen eigenen Abschnitt → hier nicht doppeln
+    (x.soft||[]).forEach(m=>{ if(!/^Lücke >/.test(m)) softItems.push(`${ref}: ${m}`); });
+  });
+  const gaps=res.gapViolations||[];
+  if(!hardItems.length && !softItems.length && !gaps.length) return "";
+  const list=(arr)=>arr.slice(0,8).join(" · ")+(arr.length>8?` …(+${arr.length-8})`:"");
+  let h="";
+  if(hardItems.length){
+    h+=`<div class="warnbox warn-hard"><b>✕ Harte Konflikte (${hardItems.length}):</b> ${list(hardItems)}</div>`;
+  }
+  if(softItems.length){
+    h+=`<div class="warnbox"><b>⚠ Nicht vollständig auflösbare Regeln (${softItems.length}):</b> ${list(softItems)}`+
+       `<div class="warn-note">Diese Vorgaben (z. B. Lehrer-Min.-Pause) konnten von der Optimierung nicht überall eingehalten werden – meist am Tagesende, wenn keine Fremdprüfungen mehr übrig sind, um die Pause zu füllen. Per Drag &amp; Drop oder mit anderen Parametern lässt sich evtl. nachbessern.</div></div>`;
+  }
+  if(gaps.length){
+    h+=`<div class="warnbox"><b>⚠ Lücken über Limit:</b> ${list(gaps)}</div>`;
+  }
+  return h;
 }
 
 /* ---------- Manuelles Re-Timing (Drag&Drop) ----------
@@ -1430,33 +1638,41 @@ function retime(seq,P){
     let runDelay=0;
     // --- Gruppe 1 (Vormittag) ---
     let cur=dayStart+prep;
+    const lastEndG1={};
     for(const e of g1){
       runDelay += (e.liveShift||0);
-      const s=cur+runDelay;
+      let s=cur+runDelay;
+      // Abstand Ende→Beginn = Vorbereitung + echte Freipause (Min.Pause)
+      if(lastEndG1[e.student]!=null) s=Math.max(s, lastEndG1[e.student]+prep+Math.max(0,P.sgap));
       e.start=s; e.end=s+dur; e.prepStart=Math.max(dayStart,s-prep);
       e.hard=[]; e.soft=[]; e.liveShift=e.liveShift||0; e.runDelay=runDelay;
+      lastEndG1[e.student]=e.end;
       cur=e.end-runDelay;
     }
     const amEnd = g1.length? Math.max(...g1.map(e=>e.end)) : dayStart+prep;
-    // Nachmittags-Start: manuell (PM_START) oder automatisch (amEnd + Mittagspause, auf 5 gerundet)
-    const autoPM = Math.ceil((amEnd + (P.lunch||0) + 5)/5)*5;
-    const pmFirst = (PM_START!=null) ? PM_START : autoPM;
-    const g2First = Math.max(pmFirst, amEnd + 5);
+    // Nachmittags-Start = Beginn der Vorbereitung: manuell (PM_START) oder automatisch (amEnd + Mittagspause)
+    const autoPM = Math.ceil((amEnd + (P.lunch||0))/5)*5;
+    const pmPrep = (PM_START!=null) ? PM_START : autoPM;     // Beginn der Vorbereitung Gruppe 2
+    const g2First = Math.max(pmPrep + prep, amEnd + 5);       // erste Prüfung = Vorber.-Beginn + Vorbereitung
     // --- Gruppe 2 (Nachmittag) ---
     let cur2 = g2First; // erste Prüfung von Gruppe 2 startet hier
     let runDelay2 = 0;
+    const lastEndG2={};
     for(let i=0;i<g2.length;i++){
       const e=g2[i];
       runDelay2 += (e.liveShift||0);
-      const s = (i===0 ? cur2 : cur2) + runDelay2;
+      let s = cur2 + runDelay2;
+      // Abstand Ende→Beginn = Vorbereitung + echte Freipause (Min.Pause)
+      if(lastEndG2[e.student]!=null) s=Math.max(s, lastEndG2[e.student]+prep+Math.max(0,P.sgap));
       e.start=s; e.end=s+dur; e.prepStart=Math.max(dayStart,s-prep);
       e.hard=[]; e.soft=[]; e.liveShift=e.liveShift||0; e.runDelay=runDelay2;
+      lastEndG2[e.student]=e.end;
       cur2=e.end-runDelay2;
     }
     const sched=[...g1,...g2];
     const out=validate(sched,P);
     out.totalDelay=runDelay+runDelay2;
-    out.split=true; out.pmStart=g2First; out.amEnd=amEnd; out.autoPM=autoPM;
+    out.split=true; out.pmStart=g2First - prep; out.amEnd=amEnd; out.autoPM=autoPM;   // angezeigt: Vorbereitungsbeginn
     return out;
   }
 
@@ -1469,6 +1685,8 @@ function retime(seq,P){
     runDelay += (e.liveShift||0);
     let s=cur+runDelay;
     if(!lunchDone && s>=lunchAt && P.lunch>0){ s+=P.lunch; lunchDone=true; }
+    // Abstand Ende→Beginn = Vorbereitung + echte Freipause (Min.Pause)
+    if(lastStudentEnd[e.student]!=null) s=Math.max(s, lastStudentEnd[e.student]+prep+Math.max(0,P.sgap));
     // ! Objekt MUTIEREN statt neues erstellen, damit CUR.order und sched dieselben Referenzen haben
     e.start=s; e.end=s+dur; e.prepStart=Math.max(dayStart,s-prep);
     e.hard=[]; e.soft=[]; e.liveShift=e.liveShift||0; e.runDelay=runDelay;
@@ -1480,14 +1698,14 @@ function retime(seq,P){
   const out=validate(sched,P); out.totalDelay=runDelay; return out;
 }
 function validate(sched,P){
-  const dur=P.dur, prep=P.prep, sgap=Math.max(P.sgap,prep), tgap=P.tgap, maxblock=P.maxblock;
+  const dur=P.dur, prep=P.prep, sgapPause=Math.max(0,P.sgap), tgap=P.tgap, maxblock=P.maxblock;
   const byS={}, byT={};
   sched.forEach(x=>{ x.hard=[]; x.soft=[];
     (byS[x.student]=byS[x.student]||[]).push(x); (byT[x.teacher]=byT[x.teacher]||[]).push(x); });
   // Slot-Indizes vorberechnen (für slot-basierte Checks)
   const sorted=[...sched].sort((a,b)=>a.start-b.start);
   const idxOf=new Map(); sorted.forEach((x,i)=>idxOf.set(x,i));
-  const sgapBlocks=P.sgapBlocks||Math.ceil(sgap/dur);
+  const sgapBlocks=P.sgapBlocks||Math.ceil(sgapPause/dur);
   // Schueler: Vorbereitung darf nicht in vorige eigene Pruefung ragen; sgap slot-basiert
   Object.values(byS).forEach(a=>{ a.sort((x,y)=>x.start-y.start);
     for(let i=1;i<a.length;i++){
@@ -1495,8 +1713,13 @@ function validate(sched,P){
       const crossGroup = a[i].group && a[i-1].group && a[i].group!==a[i-1].group;
       if(crossGroup) continue;
       if(a[i].prepStart < a[i-1].end) a[i].hard.push(`Vorbereitung überlappt vorige Prüfung (${a[i-1].subject})`);
-      const slotsBetween=idxOf.get(a[i])-idxOf.get(a[i-1])-1;
-      if(slotsBetween<sgapBlocks) a[i].hard.push(`Schülerpause ${slotsBetween} < ${sgapBlocks} Blöcke`);
+      // Schülerpause zeitlich prüfen: Abstand zwischen Ende voriger und Beginn nächster eigener
+      // Prüfung muss >= Vorbereitung + echte Freipause (Min.Pause) sein. Die Vorbereitung der
+      // nächsten Prüfung zählt NICHT als Pause – der Schüler braucht zuerst eine echte Pause,
+      // dann erst die Vorbereitung.
+      const gapMin=a[i].start-a[i-1].end;
+      const needMin=prep+sgapPause;
+      if(gapMin < needMin - 0.001) a[i].hard.push(`Schülerpause ${Math.round(gapMin)} < ${needMin} min`);
       if(P.smaxgap!=null && (a[i].start-a[i-1].end)>P.smaxgap) a[i].soft.push(`Lücke > ${P.smaxgap} min`);
     }});
   // Lehrer: Block > maxblock; nach vollem Block min. tgap fremde Prüfungen Pause
@@ -1505,18 +1728,21 @@ function validate(sched,P){
     for(let i=1;i<a.length;i++){
       const slotsBetween=idxOf.get(a[i])-idxOf.get(a[i-1])-1;
       const crossGroup = a[i].group && a[i-1].group && a[i].group!==a[i-1].group;
-      // "am Stück" = unmittelbar zeitlich aneinander (kein Gap/Mittagspause) UND gleiche Gruppe
-      const backToBack = a[i].start === a[i-1].end && !crossGroup;
+      const gapMin = a[i].start - a[i-1].end;            // tatsächliche Zeitlücke
+      const filledByExams = slotsBetween * dur;          // davon durch fremde Prüfungen belegt
+      // Große Unterbrechung (Mittagspause o.ä.): trennt Blöcke auch ohne fremde Prüfung dazwischen.
+      const hasLongBreak = (gapMin - filledByExams) >= (P.lunch||0) && (P.lunch||0)>0;
+      // "Am Stück" = KEINE fremde Prüfung dazwischen (slotsBetween===0) UND gleiche Gruppe UND
+      // keine große Pause. Eine kleine erzwungene Lücke (z.B. weil der nächste eigene Prüfling
+      // erst seine Schülerpause einhalten muss) trennt den Lehrerblock NICHT – sonst käme
+      // fälschlich eine "Lehrerpause 0 < N"-Warnung für zwei direkt aufeinanderfolgende Prüfungen.
+      const backToBack = slotsBetween===0 && !crossGroup && !hasLongBreak;
       run = backToBack ? run+1 : 1;
       if(run>maxblock) a[i].soft.push(`Lehrerblock > ${maxblock} Prüfungen`);
-      if(!backToBack && !crossGroup){
-        // Reicht die Lücke zwischen den beiden Blöcken? Eine echte Mittagspause / großer
-        // Leerlauf (mehr als die dazwischenliegenden fremden Prüfungen ausfüllen) zählt als
-        // ausreichende Unterbrechung. Sonst muss die Pause >= tgap fremde Prüfungen sein.
-        const gapMin = a[i].start - a[i-1].end;          // tatsächliche Zeitlücke
-        const filledByExams = slotsBetween * dur;        // davon durch fremde Prüfungen belegt
-        const hasLongBreak = (gapMin - filledByExams) >= (P.lunch||0) && (P.lunch||0)>0;
-        if(!hasLongBreak && slotsBetween<P.tgap)
+      if(!backToBack && !crossGroup && !hasLongBreak){
+        // Echte Unterbrechung mit fremden Prüfungen, aber zu kurz: Lehrer ist nach < tgap
+        // fremden Prüfungen wieder dran.
+        if(slotsBetween<P.tgap)
           a[i].soft.push(`Lehrerpause ${slotsBetween} < ${P.tgap} Blöcke`);
       }
     }});
@@ -1539,13 +1765,13 @@ function planControls(res,P){
   let h=`<div class="plan-controls">`;
   // Zentraler Raum: Retro-Steckbrett-Anzeige (read-only; Eingabe links im Parameter-Bereich)
   h+=`<div class="pc-block room-central">
-        <span class="pc-title">🚪 Prüfungsraum (zentral)</span>
+        <span class="pc-title">Prüfungsraum (zentral)</span>
         <div class="letterboard"><span class="lb-arrow">→</span><span class="lb-text" id="roomLit">${ROOM}</span></div>
       </div>`;
   // Nachmittags-Start nur beim 2-Gruppen-Plan
   if(res.split && res.pmStart!=null){
     const auto = (PM_START==null);
-    h+=`<div class="pc-block"><span class="pc-title">🕐 Nachmittag startet</span>
+    h+=`<div class="pc-block"><span class="pc-title">🕐 Nachmittag startet (Vorber.)</span>
       <div class="pm-edit">
         <button class="dbtn minus" id="pmMinus">−5</button>
         <span class="pm-time">${min2hm(res.pmStart)}</span>
@@ -1581,9 +1807,9 @@ function repaintPlan(res,P){
   if(!LIVE){
     bindDrag(
       ()=>CUR.order.slice(),
-      (newOrder)=>{ CUR.order=newOrder;
+      (newOrder)=>{ CUR.order=newOrder; CUR.edited=true;
         const r=retime(newOrder,P); CUR.res=r; repaintPlan(r,P); },
-      ()=>{ CUR.order=CUR.optimal.slice();
+      ()=>{ CUR.order=CUR.optimal.slice(); CUR.edited=false;
         const r=retime(CUR.order,P); CUR.res=r; repaintPlan(r,P); }
     );
     // Click-to-Swap im Gantt: 1. Klick markiert, 2. Klick auf anderen Block tauscht.
@@ -1604,7 +1830,7 @@ function repaintPlan(res,P){
           if(gA!==undefined||gB!==undefined){
             CUR.order[selI].group=gA; CUR.order[i].group=gB;
           }
-          const r=retime(CUR.order,P); CUR.res=r; clearSel(); repaintPlan(r,P); return;
+          const r=retime(CUR.order,P); CUR.res=r; CUR.edited=true; clearSel(); repaintPlan(r,P); return;
         }
         clearSel();
       };
@@ -1629,6 +1855,8 @@ function repaintPlan(res,P){
   // Beamer-Ansicht
   const bm=document.getElementById("beamer");
   if(bm) bm.onclick=()=>openBeamer();
+  // Kennzahlen (und im Vergleich die Empfehlung) an den aktuellen Plan anpassen.
+  refreshStats();
 }
 
 function renderResult(P){
@@ -1639,11 +1867,11 @@ function renderResult(P){
     LAST={full,split,mode:"compare",M:MATRIX};
     const reco = recommend(full,split);
     $("out").innerHTML=`<h2>Vergleich & Empfehlung</h2>
-      <div class="warnbox" style="background:#eef3ec;border-color:var(--good);color:#234">
-        <b>Empfehlung:</b> ${reco}</div>
+      <div class="warnbox" id="recoBox" style="background:#eef3ec;border-color:var(--good);color:#234">
+        <b>Empfehlung:</b> <span id="recoText">${reco}</span></div>
       <div class="cmp">
-        <div class="panel"><h2>Volltag</h2>${statBlock(full)}</div>
-        <div class="panel"><h2>2 Gruppen (Vor-/Nachmittag)</h2>${statBlock(split)}</div>
+        <div class="panel"><h2>Volltag</h2><div id="statFull">${statBlock(full)}</div></div>
+        <div class="panel"><h2>2 Gruppen (Vor-/Nachmittag)</h2><div id="statSplit">${statBlock(split)}</div></div>
       </div>
       <div class="tabs" style="margin-top:18px">
         <button class="tab active" data-v="full">Volltag-Plan</button>
@@ -1653,7 +1881,10 @@ function renderResult(P){
     const show=v=>{
       const r=v==="full"?full:split;
       const order=[...r.sched].sort((a,b)=>a.start-b.start);
-      CUR={order, optimal:order.slice(), P, res:r};
+      // CUR trägt beide Original-Berechnungen + aktiven Tab mit, damit der Vergleich
+      // (Statistik beider Pläne + Empfehlung) beim manuellen Verschieben live nachzieht.
+      CUR={order, optimal:order.slice(), P, res:r,
+           compare:true, full, split, activeTab:v, edited:false};
       repaintPlan(r,P);
     };
     document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
@@ -1664,10 +1895,32 @@ function renderResult(P){
   } else {
     const r = P.layout==="split"?solveSplit(MATRIX,P):solve(MATRIX,P);
     LAST={r,mode:"single",M:MATRIX};
-    $("out").innerHTML=`<h2>Prüfungsplan</h2>${statBlock(r)}<div id="planView"></div>`;
+    $("out").innerHTML=`<h2>Prüfungsplan</h2><div id="statSingle">${statBlock(r)}</div><div id="planView"></div>`;
     const order=[...r.sched].sort((a,b)=>a.start-b.start);
-    CUR={order, optimal:order.slice(), P, res:r};
+    CUR={order, optimal:order.slice(), P, res:r, compare:false, edited:false};
     repaintPlan(r,P);
+  }
+}
+
+/* Aktualisiert nach manuellem Verschieben die Kennzahlen-Blöcke (und im Vergleich die
+   Empfehlung). Der gerade bearbeitete Plan (CUR.res) ersetzt den jeweils aktiven; der
+   andere bleibt die ursprüngliche Berechnung. Da retime() bereits analyze() durchläuft,
+   trägt CUR.res aktuelle Kennzahlen (total, maxStudentSpan, …). */
+function refreshStats(){
+  if(!CUR) return;
+  if(CUR.compare){
+    const full  = CUR.activeTab==="full"  ? CUR.res : CUR.full;
+    const split = CUR.activeTab==="split" ? CUR.res : CUR.split;
+    const sf=$("statFull");  if(sf) sf.innerHTML=statBlock(full);
+    const ss=$("statSplit"); if(ss) ss.innerHTML=statBlock(split);
+    const rt=$("recoText");
+    if(rt){
+      let txt=recommend(full,split);
+      if(CUR.edited) txt+=` <span style="color:var(--muted)">(nur Berechnung – basiert auf der manuell angepassten Anordnung)</span>`;
+      rt.innerHTML=txt;
+    }
+  } else {
+    const s=$("statSingle"); if(s) s.innerHTML=statBlock(CUR.res);
   }
 }
 
@@ -1847,9 +2100,15 @@ async function exportExcel(res){
 function getParams(){
   const dur=+$("dur").value||12, prep=+$("prep").value||0;
   const sgapIn=$("sgap").value, tgapIn=$("tgap").value, smaxIn=$("smaxgap").value;
-  // Schüler-Pause in Blöcken → intern min (mindestens prep wegen Vorbereitungsraum)
-  const sgapBlocks = sgapIn===""? 4 : +sgapIn;
-  const sgap = Math.max(sgapBlocks*dur, prep);
+  // Min. Pause Schüler in Prüfungszeit-Blöcken; leer = Standard 1; 0 erlaubt (aber unklug)
+  let sgapBlocks = sgapIn===""? 1 : Math.max(0, +sgapIn);
+  const sgap = sgapBlocks*dur;
+  // Max. Lücke: leer = unbegrenzt; sonst hartes unteres Limit aufrunden(Vorber./Prüfungszeit) und >= Min. Pause
+  // Max. Lücke wird gegen die GESAMTE Lücke Ende→Beginn geprüft (inkl. nächster Vorbereitung).
+  // Unteres Limit daher: Vorbereitung (in Blöcken) + Min.Pause-Blöcke, sonst unerfüllbar.
+  const prepFloor = dur>0 ? Math.ceil(prep/dur) : 0;
+  const smaxFloor = prepFloor + sgapBlocks;
+  let smaxgapBlocks = smaxIn===""? null : Math.max(+smaxIn, smaxFloor);
   return {
     dur, prep, start:$("start").value||"08:00", lunch:+$("lunch").value||0,
     maxblock:+$("maxblock").value||4,
@@ -1857,9 +2116,9 @@ function getParams(){
     sgap,                                                  // intern Minuten
     sgapBlocks,                                            // für Anzeige
     tgap: tgapIn===""? 2 : +tgapIn,                        // slot-basiert (Anzahl Slots)
-    smaxgap: smaxIn===""? null : (+smaxIn)*dur,            // Blöcke → Minuten
-    smaxgapBlocks: smaxIn===""? null : +smaxIn,
-    layout:$("layout").value
+    smaxgap: smaxgapBlocks==null? null : smaxgapBlocks*dur,// Blöcke → Minuten
+    smaxgapBlocks,
+    layout:"compare"
   };
 }
 
@@ -1874,16 +2133,95 @@ $("file").addEventListener("change",e=>{
       MATRIX=parseWorkbook(wb);
       PM_START=null;
       $("fileok").textContent=`✓ ${MATRIX.students.length} Schüler, ${MATRIX.teachers.length} Prüfer, ${MATRIX.subjects.length} Fächer`;
+      renderMatrixEditor();
     }catch(err){$("fileok").style.color="var(--bad)";$("fileok").textContent="Fehler: "+err.message;}
   };
   rd.readAsArrayBuffer(f);
 });
 
-$("loadDemo").onclick=async()=>{
+function loadDemoMatrix(){
   MATRIX=DEMO();
   PM_START=null;
-  $("fileok").textContent=`✓ Demo: ${MATRIX.students.length} Schüler, ${MATRIX.teachers.length} Prüfer`;
+  const ok=$("fileok"); if(ok){ ok.style.color=""; ok.textContent=`✓ Demo: ${MATRIX.students.length} Schüler, ${MATRIX.teachers.length} Prüfer`; }
+  renderMatrixEditor();
+}
+// Automatisch die Demo-Matrix laden, solange keine eigene Excel-Datei gewählt wurde.
+if(!MATRIX) loadDemoMatrix();
+
+/* ---------- Matrix-Editor ---------- */
+function recomputeTeachers(){
+  if(!MATRIX) return;
+  const set=new Set();
+  MATRIX.students.forEach(s=>s.exams.forEach(e=>{ if(e.teacher && e.teacher.trim()) set.add(e.teacher.trim()); }));
+  MATRIX.teachers=[...set].sort();
+}
+function meCellFor(student,subject){
+  const e=student.exams.find(x=>x.subject===subject);
+  return e?e.teacher:"";
+}
+function meSetCell(student,subject,val){
+  val=(val||"").trim();
+  const idx=student.exams.findIndex(x=>x.subject===subject);
+  if(val===""){ if(idx>=0) student.exams.splice(idx,1); }
+  else { if(idx>=0) student.exams[idx].teacher=val; else student.exams.push({subject,teacher:val}); }
+}
+function renderMatrixEditor(){
+  const tbl=$("meTable"), empty=$("meEmpty"), sub=$("meSub");
+  if(!tbl) return;
+  if(!MATRIX){ tbl.innerHTML=""; if(empty) empty.style.display="block"; return; }
+  if(empty) empty.style.display="none";
+  if(sub) sub.textContent=`${MATRIX.students.length} Schüler · ${MATRIX.subjects.length} Fächer · ${MATRIX.teachers.length} Prüfer`;
+  const subs=MATRIX.subjects;
+  let h="<thead><tr><th class=\"me-corner\">Schüler \\ Fach</th>";
+  subs.forEach((su,ci)=>{ h+=`<th class="me-subj"><input value="${(su||"").replace(/"/g,'&quot;')}" data-subj="${ci}" placeholder="Fach"></th>`; });
+  h+="<th></th></tr><tr><th></th>";
+  subs.forEach((su,ci)=>{ h+=`<th class="me-delcol"><button class="me-del" data-delsubj="${ci}" title="Fach entfernen">✕</button></th>`; });
+  h+="<th></th></tr></thead><tbody>";
+  MATRIX.students.forEach((st,ri)=>{
+    h+=`<tr><td class="me-name"><input value="${(st.name||"").replace(/"/g,'&quot;')}" data-name="${ri}" placeholder="Name"></td>`;
+    subs.forEach((su,ci)=>{ h+=`<td class="me-cell"><input value="${(meCellFor(st,su)||"").replace(/"/g,'&quot;')}" data-cell="${ri}_${ci}" placeholder="–"></td>`; });
+    h+=`<td class="me-delcol"><button class="me-del" data-delstu="${ri}" title="Schüler löschen">✕</button></td></tr>`;
+  });
+  h+="</tbody>";
+  tbl.innerHTML=h;
+  // Bindungen
+  tbl.querySelectorAll("input[data-name]").forEach(inp=>inp.onchange=()=>{ MATRIX.students[+inp.dataset.name].name=inp.value.trim(); meSync(); });
+  tbl.querySelectorAll("input[data-subj]").forEach(inp=>inp.onchange=()=>{
+    const ci=+inp.dataset.subj, old=MATRIX.subjects[ci], neu=inp.value.trim()||old;
+    MATRIX.subjects[ci]=neu;
+    MATRIX.students.forEach(s=>s.exams.forEach(e=>{ if(e.subject===old) e.subject=neu; }));
+    meSync();
+  });
+  tbl.querySelectorAll("input[data-cell]").forEach(inp=>inp.onchange=()=>{
+    const [ri,ci]=inp.dataset.cell.split("_").map(Number);
+    meSetCell(MATRIX.students[ri],MATRIX.subjects[ci],inp.value);
+    meSync(true);
+  });
+  tbl.querySelectorAll("button[data-delstu]").forEach(b=>b.onclick=()=>{ MATRIX.students.splice(+b.dataset.delstu,1); meSync(); renderMatrixEditor(); });
+  tbl.querySelectorAll("button[data-delsubj]").forEach(b=>b.onclick=()=>{
+    const ci=+b.dataset.delsubj, su=MATRIX.subjects[ci];
+    MATRIX.subjects.splice(ci,1);
+    MATRIX.students.forEach(s=>{ const i=s.exams.findIndex(e=>e.subject===su); if(i>=0) s.exams.splice(i,1); });
+    meSync(); renderMatrixEditor();
+  });
+}
+function meSync(silent){
+  recomputeTeachers();
+  const sub=$("meSub"); if(sub&&MATRIX) sub.textContent=`${MATRIX.students.length} Schüler · ${MATRIX.subjects.length} Fächer · ${MATRIX.teachers.length} Prüfer`;
+  const ok=$("fileok"); if(ok&&MATRIX){ ok.style.color=""; ok.textContent=`✓ ${MATRIX.students.length} Schüler, ${MATRIX.teachers.length} Prüfer, ${MATRIX.subjects.length} Fächer (bearbeitet)`; }
+}
+$("editMatrixBtn").onclick=()=>{
+  const me=$("matrixEditor"); if(me){ me.open=true; renderMatrixEditor();
+    setTimeout(()=>{ const bar=document.querySelector(".topbar"); const off=(bar?bar.getBoundingClientRect().height:0)+14;
+      const y=me.getBoundingClientRect().top+window.pageYOffset-off; window.scrollTo({top:Math.max(0,y),behavior:"smooth"}); },60);
+  }
 };
+$("meAddStudent").onclick=()=>{ if(!MATRIX) MATRIX={students:[],subjects:[],teachers:[]};
+  MATRIX.students.push({name:"Neuer Schüler",exams:[]}); meSync(); renderMatrixEditor(); };
+$("meAddSubject").onclick=()=>{ if(!MATRIX) MATRIX={students:[],subjects:[],teachers:[]};
+  let n=1, base="Fach"; while(MATRIX.subjects.includes(base+n)) n++; MATRIX.subjects.push(base+n); meSync(); renderMatrixEditor(); };
+$("meNewEmpty").onclick=()=>{ MATRIX={students:[{name:"Schüler 1",exams:[]}],subjects:["Fach1"],teachers:[]};
+  PM_START=null; meSync(); renderMatrixEditor(); };
 
 $("run").onclick=()=>{
   if(!MATRIX){alert("Bitte zuerst eine Matrix laden oder die Demo verwenden.");return;}
@@ -1925,23 +2263,43 @@ function openSettings(){
   ri.addEventListener("change",()=>{ if(CUR){ repaintPlan(CUR.res, CUR.P); }});
 })();
 
-/* ---- Wechselseitige Sperre: Max-Block-Schüler > 1 widerspricht Min-Pause-Schüler > 0 ----
-   Wenn der Schüler 2+ Prüfungen direkt hintereinander hat, kann keine "Min-Pause in Blöcken"
-   gelten — und umgekehrt. Wir deaktivieren immer eines der beiden Felder. */
+/* ---- Schüler-Felder (Block & Min-Pause) – frei kombinierbar ----
+   Max. Block Schüler = (Vorbereitung + Prüfung): wie viele dieser Einheiten unmittelbar
+   zusammenhängen. Min. Pause Schüler = (Prüfungszeit): Pause nach dem abgeschlossenen Block
+   bis zur nächsten eigenen Vorbereitung. Standard 1; 0 ist erlaubt, aber unklug (Warnung). */
 function syncStudentParams(src){
-  const mb=$("maxblockS"), sg=$("sgap");
-  if(!mb||!sg) return;
-  if(src==="maxblockS"){
-    if(+mb.value>1){ sg.value="0"; sg.disabled=true; sg.placeholder="0 (durch Max-Block)"; }
-    else { sg.disabled=false; sg.placeholder="3–4"; if(sg.value==="0") sg.value=""; }
-  } else { // src==="sgap"
-    const v=sg.value;
-    if(v!=="" && +v>0){ mb.value="1"; mb.disabled=true; }
-    else { mb.disabled=false; }
+  const sg=$("sgap"), warn=$("sgapWarn"), smax=$("smaxgap");
+  if(sg){ sg.min="0"; sg.placeholder="Standard 1"; }
+  const eff = (!sg||sg.value==="")?1:+sg.value;
+  if(warn) warn.style.display = (eff===0) ? "block" : "none";
+  // Max. Lücke: gilt für die GESAMTE Lücke Ende→Beginn (inkl. nächster Vorbereitung).
+  // Unteres Limit = aufrunden(Vorber./Prüfungszeit) + Min.Pause-Blöcke.
+  const dur=+$("dur").value||12, prep=+$("prep").value||0;
+  const prepFloor = dur>0 ? Math.ceil(prep/dur) : 0;
+  const smaxFloor = prepFloor + eff;
+  const fh=$("smaxFloorHint"); if(fh) fh.textContent=String(smaxFloor);
+  if(smax){
+    smax.min=String(smaxFloor);
+    if(smax.value!=="" && +smax.value<smaxFloor) smax.value=String(smaxFloor);
   }
 }
 $("maxblockS").addEventListener("change",()=>syncStudentParams("maxblockS"));
 $("sgap").addEventListener("input",()=>syncStudentParams("sgap"));
+$("smaxgap").addEventListener("input",()=>syncStudentParams("smaxgap"));
+$("dur").addEventListener("input",()=>syncStudentParams("recalc"));
+$("prep").addEventListener("input",()=>syncStudentParams("recalc"));
+syncStudentParams("recalc");
+
+/* Keine negativen Zahlen: Minus blockieren + negative Werte auf min (sonst 0) ziehen */
+document.querySelectorAll('input[type="number"]').forEach(inp=>{
+  inp.addEventListener("keydown",e=>{ if(e.key==="-"||e.key==="e"||e.key==="+") e.preventDefault(); });
+  inp.addEventListener("input",()=>{
+    if(inp.value!=="" && +inp.value<0){
+      const floor = inp.min!=="" && inp.min!=null ? +inp.min : 0;
+      inp.value = String(Math.max(floor,0));
+    }
+  });
+});
 
 /* ---- Retro-Digitaluhr (live) + Jetzt-Strich ---- */
 function tickClock(){
