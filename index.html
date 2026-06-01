@@ -2248,6 +2248,118 @@ async function exportExcel(res){
     ri++; // Leerzeile zwischen Lehrern
   });
 
+  /* ===== Sheet 3: Prüfungskommission (1:1-Layout wie Einteilung_…_Vormittag) =====
+     Fächer-Matrix (X je Fach), Zeiteinteilung, Prüfungskommission und Beurteilung als Bänder.
+     Prüfer 1 = Prüfer, Prüfer 2 = Beisitz, Vorsitzender = Vorsitz, Jahrgangsvorstand (JV) = KV.
+     Schriftführer / Themenbereiche / Beurteilung / Noten bleiben leer zum händischen Ausfüllen. */
+  const ws3=wb.addWorksheet("Prüfungskommission",{views:[{showGridLines:false}]});
+  const subjList=(MATRIX.subjects||[]).slice();
+  const nSub=subjList.length;
+  // Haupt-Prüfer je Fach (häufigster Prüfer dieses Fachs)
+  const subjTeacher={};
+  { const cnt={}; rows.forEach(x=>{ (cnt[x.subject]=cnt[x.subject]||{}); cnt[x.subject][x.teacher]=(cnt[x.subject][x.teacher]||0)+1; });
+    Object.keys(cnt).forEach(su=>{ subjTeacher[su]=Object.entries(cnt[su]).sort((a,b)=>b[1]-a[1])[0][0]; }); }
+  // Spalten-Indizes (1-basiert)
+  const cNr=1, cName=2, cSub0=3, cVorb=3+nSub, cPruef=4+nSub, cVors=5+nSub, cJV=6+nSub, cPr1=7+nSub,
+        cPr2=8+nSub, cSchr=9+nSub, cTB1=10+nSub, cTB2=11+nSub, cBeur=12+nSub, cJahr=13+nSub, cGes=14+nSub, lastCol=cGes;
+  const widths=new Array(lastCol).fill(null);
+  widths[cNr-1]={width:6}; widths[cName-1]={width:24};
+  for(let s=0;s<nSub;s++) widths[cSub0-1+s]={width:5};
+  widths[cVorb-1]={width:11}; widths[cPruef-1]={width:11};
+  // ab Vorbereitungszeit schmale Spalten mit hochgedrehten Überschriften
+  widths[cVorb-1]={width:6}; widths[cPruef-1]={width:6};
+  [cVors,cJV,cPr1,cPr2,cSchr].forEach(c=>widths[c-1]={width:5});
+  [cTB1,cTB2].forEach(c=>widths[c-1]={width:5.5});
+  widths[cBeur-1]={width:6}; widths[cJahr-1]={width:5}; widths[cGes-1]={width:6};
+  ws3.columns=widths.map(w=>w||{width:10});
+  const TEAL="#0083aa", LT="#e7f3f5";
+  const band=(c1,c2,txt)=>{ ws3.mergeCells(1,c1,1,c2); const c=ws3.getCell(1,c1); c.value=txt;
+    c.font={name:"Calibri",size:12,bold:true,color:{argb:"FFFFFFFF"}};
+    c.fill={type:"pattern",pattern:"solid",fgColor:{argb:argb(TEAL)}};
+    c.alignment={vertical:"middle",horizontal:"center"}; };
+  // Zeile 1: Titel + Bänder
+  ws3.mergeCells(1,cNr,1,cName); { const c=ws3.getCell(1,cNr);
+    c.value=`${klasse?klasse+" — ":""}Mündliche RDP · Raum ${ROOM}`;
+    c.font={name:"Calibri",size:12,bold:true,color:{argb:argb(TEAL)}}; c.alignment={vertical:"middle",horizontal:"left"}; }
+  if(nSub>0) band(cSub0,cSub0+nSub-1,"Prüfungsgegenstände");
+  band(cVorb,cPruef,"Zeiteinteilung");
+  band(cVors,cTB2,"Prüfungskommission");
+  band(cBeur,cGes,"Beurteilung");
+  ws3.getRow(1).height=20;
+  // Zeilen 2-3: Spaltenköpfe (Textspalten vertikal über beide Zeilen verbunden)
+  // Kopfzellen rows 2-4 (drei Kopfzeilen: Fach-Kürzel / Prüfer / Kandidat-Zeile). Textspalten und
+  // gedrehte Spalten werden über alle drei Zeilen verbunden; Spalte B bleibt dreizeilig.
+  const hdr=(c1,txt,rot)=>{ ws3.mergeCells(2,c1,4,c1); const c=ws3.getCell(2,c1); c.value=txt;
+    c.font={name:"Calibri",size:9,bold:true,color:{argb:argb(TEAL)}};
+    c.fill={type:"pattern",pattern:"solid",fgColor:{argb:argb(LT)}};
+    c.alignment=rot?{vertical:"bottom",horizontal:"center",textRotation:90}
+                   :{vertical:"middle",horizontal:"center",wrapText:true};
+    c.border={bottom:{style:"thin",color:{argb:argb(TEAL)}}}; };
+  hdr(cNr,"Nr.");
+  // ab Vorbereitungszeit alle Überschriften nach oben gedreht (vertikal) – inkl. Spalte K & L
+  hdr(cVorb,"Vorbereitungszeit",true); hdr(cPruef,"Prüfungszeit",true);
+  hdr(cVors,"Vorsitzender",true); hdr(cJV,"Jahrgangsvorstand (JV)",true); hdr(cPr1,"Prüfer 1",true); hdr(cPr2,"Prüfer 2",true);
+  hdr(cSchr,"Schriftführer",true); hdr(cTB1,"Themenbereich 1",true); hdr(cTB2,"Themenbereich 2",true);
+  hdr(cBeur,"Beurteilung Prüfer 1 & 2",true); hdr(cJahr,"Jahresnote",true); hdr(cGes,"Gesamtbeurteilung",true);
+  // Spalte B dreizeilig: B2 Gegenstand · B3 Prüfer · B4 Kandidat/in (eigene Zeile)
+  const bcell=(rr,txt,va)=>{ const c=ws3.getCell(rr,cName); c.value=txt;
+    c.font={name:"Calibri",size:9,bold:true,color:{argb:argb(TEAL)}};
+    c.fill={type:"pattern",pattern:"solid",fgColor:{argb:argb(LT)}};
+    c.alignment={vertical:va||"top",horizontal:"left"};
+    c.border={bottom:{style:"thin",color:{argb:argb(TEAL)}}}; };
+  bcell(2,"Gegenstand"); bcell(3,"Prüfer"); bcell(4,"Kandidat/in","middle");
+  // Fach-Spalten: Zeile 2 = Fach-Kürzel, Zeile 3 = Haupt-Prüfer, Zeile 4 leer (Kandidat-Zeile)
+  subjList.forEach((su,s)=>{ const cc=cSub0+s;
+    const a=ws3.getCell(2,cc); a.value=su; a.font={name:"Calibri",size:9,bold:true,color:{argb:argb(TEAL)}};
+    a.fill={type:"pattern",pattern:"solid",fgColor:{argb:argb(LT)}}; a.alignment={vertical:"top",horizontal:"center"};
+    const b=ws3.getCell(3,cc); b.value=subjTeacher[su]||""; b.font={name:"Calibri",size:8,color:{argb:argb("#555555")}};
+    b.fill={type:"pattern",pattern:"solid",fgColor:{argb:argb(LT)}}; b.alignment={vertical:"top",horizontal:"center"};
+    const d=ws3.getCell(4,cc); d.fill={type:"pattern",pattern:"solid",fgColor:{argb:argb(LT)}};
+    d.border={bottom:{style:"thin",color:{argb:argb(TEAL)}}}; });
+  ws3.getRow(2).height=14; ws3.getRow(3).height=150; ws3.getRow(4).height=16;   // Zeile 3 hoch für die vertikalen Titel
+  // Datenzeilen ab Zeile 5
+  let kr=5;
+  rows.forEach((x,i)=>{
+    if(isSplit && (i===0 || x.group!==rows[i-1].group)){
+      ws3.mergeCells(kr,cNr,kr,lastCol); const sc=ws3.getCell(kr,cNr);
+      sc.value=`Gruppe ${x.group} — ${x.group===1?"Vormittag":"Nachmittag"}`;
+      sc.font={name:"Calibri",size:10,bold:true,color:{argb:argb(TEAL)}};
+      sc.fill={type:"pattern",pattern:"solid",fgColor:{argb:argb("#eef6f8")}};
+      sc.alignment={vertical:"middle",horizontal:"left",indent:1}; ws3.getRow(kr).height=16; kr++;
+    }
+    const r=ws3.getRow(kr);
+    const set=(c,v,opt)=>{ opt=opt||{}; const cell=r.getCell(c); cell.value=v;
+      cell.font=Object.assign({name:"Calibri",size:9},opt.font||{});
+      cell.alignment={vertical:"middle",horizontal:opt.left?"left":"center"};
+      const f=opt.fill || (i%2===1?{type:"pattern",pattern:"solid",fgColor:{argb:argb("#f2f7fa")}}:null);
+      if(f) cell.fill=f;
+      cell.border={bottom:{style:"hair",color:{argb:argb("#d8dee8")}}}; };
+    set(cNr,i+1); set(cName,x.student,{left:true});
+    subjList.forEach((su,s)=>set(cSub0+s, su===x.subject?"X":""));   // Fach-Matrix
+    set(cVorb,min2hm(x.prepStart)); set(cPruef,min2hm(x.start));
+    set(cVors,(x.vorsitz||"")+(x.vorsitzSub?" (V)":"")); set(cJV,(x.kv||"")+(x.kvSub?" (V)":""));
+    set(cPr1,x.teacher,{font:{bold:true,color:{argb:"FFFFFFFF"}},fill:{type:"pattern",pattern:"solid",fgColor:{argb:argb(cmap[x.teacher]||TEAL)}}});
+    set(cPr2,x.beisitz||"");
+    set(cSchr,""); set(cTB1,""); set(cTB2,""); set(cBeur,""); set(cJahr,""); set(cGes,"");
+    r.height=16; kr++;
+  });
+  // Konferenz-Zeilen (Beginn/Ende), Zeiten als Vorschlag rund um den Prüfungstag
+  kr++;
+  { const r=ws3.getRow(kr++); const cb=r.getCell(cVorb), ce=r.getCell(cPruef);
+    cb.value="Beginn"; ce.value="Ende"; [cb,ce].forEach(c=>{c.font={name:"Calibri",size:9,bold:true,color:{argb:argb(TEAL)}};c.alignment={horizontal:"center"};}); }
+  const firstPrep=Math.min(...rows.map(x=>x.prepStart)), lastEnd=Math.max(...rows.map(x=>x.end));
+  const conf=(label,b,e)=>{ const r=ws3.getRow(kr++);
+    const lc=r.getCell(cName); lc.value=label; lc.font={name:"Calibri",size:9,bold:true}; lc.alignment={horizontal:"left"};
+    const cb=r.getCell(cVorb), ce=r.getCell(cPruef); cb.value=min2hm(b); ce.value=min2hm(e);
+    [cb,ce].forEach(c=>{c.font={name:"Calibri",size:9};c.alignment={horizontal:"center"};}); };
+  conf("Eröffnungskonferenz", Math.floor((firstPrep-30)/5)*5, Math.floor((firstPrep-5)/5)*5);
+  conf("Beurteilungskonferenz", Math.ceil((lastEnd+10)/5)*5, Math.ceil((lastEnd+40)/5)*5);
+  // Fußnoten-Platzhalter
+  kr++;
+  [["Klassenfoto:","Ort / Uhrzeit eintragen"],["Zeugnisverleihung:","Datum / Uhrzeit eintragen"]].forEach(([a,b])=>{
+    ws3.mergeCells(kr,cName,kr,Math.min(lastCol,cName+6)); const c=ws3.getCell(kr,cName);
+    c.value=`${a} ${b}`; c.font={name:"Calibri",size:9,italic:true,color:{argb:argb("#888888")}}; c.alignment={horizontal:"left"}; kr++; });
+
   // Download
   const buf=await wb.xlsx.writeBuffer();
   const blob=new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
