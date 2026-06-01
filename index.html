@@ -198,6 +198,9 @@ th,td{border:1px solid var(--line);padding:7px 10px;text-align:left}
 th{background:#f4f7fb;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:500}
 tr:nth-child(even) td{background:#fafbfd}
 .pill{display:inline-block;padding:2px 9px;border-radius:11px;font-size:11px;color:#fff;font-weight:500}
+.role-cell{font-family:ui-monospace,monospace;font-weight:500;text-align:center;color:#3a4660}
+.role-cell .role-sub{display:inline-block;font-family:'Lexend',sans-serif;font-size:9.5px;font-weight:600;
+  color:#8a6314;background:#fdf0d4;border-radius:6px;padding:1px 5px;margin-left:4px;letter-spacing:.3px}
 .room-cell{font-family:ui-monospace,monospace;font-weight:600;text-align:center;letter-spacing:.5px}
 .room-cell::before{content:"";display:inline-block;width:7px;height:7px;margin-right:5px;border-radius:2px;
   background:#0083aa;vertical-align:middle;box-shadow:0 0 0 1px #0083aa55}
@@ -814,7 +817,9 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
         </svg>Beamer-Ansicht öffnen</button>
 
       <div class="hint" style="margin-top:10px">Format: Spalte A = Schüler, weitere Spalten = Fächer.
-        Zelle enthält das <b>Lehrer-Kürzel</b> des Prüfers (leer = keine Prüfung).</div>
+        Zelle enthält das <b>Lehrer-Kürzel</b> des Prüfers (leer = keine Prüfung).
+        Extra-Zeile mit <b>„Beisitz"</b> in Spalte A: je Fach mögliche Beisitzer-Kürzel
+        (mehrere durch Leerzeichen/Komma getrennt).</div>
       </div>
 
       <div class="cb-col">
@@ -836,6 +841,10 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
       <div class="row2" style="margin-top:8px">
         <div><label>Prüfungsraum (zentral)</label><input type="text" id="roomIn" value="H211" placeholder="z. B. H211"></div>
         <div></div>
+      </div>
+      <div class="row2" style="margin-top:8px">
+        <div><label>Vorsitz <small>(Kürzel)</small></label><input type="text" id="vorsitz" value="En" placeholder="z. B. En"></div>
+        <div><label>Klassenvorstand KV <small>(Kürzel)</small></label><input type="text" id="kv" value="Pe" placeholder="z. B. Pe"></div>
       </div>
       </div>
 
@@ -961,10 +970,20 @@ function parseWorkbook(wb){
   if(arr.length<2) throw new Error("Leeres Sheet");
   const head=arr[0].map(x=>(""+x).trim());
   const subjects=head.slice(1).filter(h=>h!=="");
-  const students=[]; const tset=new Set();
+  const students=[]; const tset=new Set(); const beisitzer={};
   for(let r=1;r<arr.length;r++){
     const row=arr[r]; const name=(""+row[0]).trim();
     if(!name) continue;
+    // Beisitzer-Zeile: erste Spalte beginnt mit "Beisitz". Je Fach mehrere mögliche
+    // Beisitzer-Kürzel (durch Leerzeichen/Komma/Schrägstrich getrennt).
+    if(/^beisitz/i.test(name)){
+      for(let c=1;c<head.length;c++){
+        if(!head[c]) continue;
+        const list=(""+(row[c]||"")).split(/[\s,;/]+/).map(s=>s.trim()).filter(Boolean);
+        if(list.length) beisitzer[head[c]]=list;
+      }
+      continue;
+    }
     const exams=[];
     for(let c=1;c<head.length;c++){
       const t=(""+(row[c]||"")).trim();
@@ -972,7 +991,7 @@ function parseWorkbook(wb){
     }
     if(exams.length) students.push({name,exams});
   }
-  return {students,subjects,teachers:[...tset].sort()};
+  return {students,subjects,teachers:[...tset].sort(),beisitzer};
 }
 
 /* ---------- Solver ----------
@@ -996,12 +1015,33 @@ function buildExamList(M){
    einfrieren. Es werden nur Slots DERSELBEN Gruppe getauscht (Vor-/Nachmittag bleiben getrennt).
    `validate` ist die einzige Quelle der Bewertung – so kann diese Funktion keine Verletzung
    übersehen, die der Validator kennt. */
+/* Zerstückelung der Lehrer-Blöcke: Anzahl zusätzlicher (vermeidbarer) Blöcke je Prüfer über das
+   Minimum ceil(Prüfungen/maxblock) hinaus. 0 = optimal zusammenhängend. Bei 2 Gruppen wird das
+   Minimum je Gruppe gezählt (ein Prüfer an beiden Halbtagen braucht dort zwangsläufig eigene Blöcke
+   – das wird hier NICHT als Zerstückelung bestraft, dafür sorgt die Halbtags-Aufteilung). */
+function teacherFragmentation(sched,P){
+  const maxblock=Math.max(1,P.maxblock||4);
+  const sorted=[...sched].sort((a,b)=>a.start-b.start);
+  const blocks={}; let prev=null;
+  for(const x of sorted){ if(x.teacher!==prev) blocks[x.teacher]=(blocks[x.teacher]||0)+1; prev=x.teacher; }
+  const cnt={};
+  sorted.forEach(x=>{ const k=x.teacher+"#"+(x.group||0); cnt[k]=(cnt[k]||0)+1; });
+  const minBlk={};
+  for(const k in cnt){ const t=k.slice(0,k.lastIndexOf("#")); minBlk[t]=(minBlk[t]||0)+Math.ceil(cnt[k]/maxblock); }
+  let extra=0;
+  for(const t in blocks){ extra += Math.max(0, blocks[t]-(minBlk[t]||1)); }
+  return extra;
+}
 function warnScore(sched,P,reTimer){
   reTimer(sched,P);
   validate(sched,P);
   let hard=0,soft=0;
   for(const x of sched){ hard+=(x.hard?x.hard.length:0); soft+=(x.soft?x.soft.length:0); }
-  return hard*1000+soft;   // harte Konflikte wiegen weit schwerer als weiche Hinweise
+  const frag=teacherFragmentation(sched,P);
+  // Übergeordnete Reihenfolge: harte Konflikte (z.B. Schüler-Min.-Pause) ≫ zusammenhängende
+  // Lehrerblöcke ≫ weiche Hinweise. So bleibt die Min.-Pause unangetastet, aber der
+  // Block-Zusammenhang wiegt schwerer als die übrigen weichen Regeln.
+  return hard*1e6 + frag*1e3 + soft;
 }
 function reduceWarnings(sched,P,budgetMs){
   budgetMs = budgetMs||500;
@@ -1230,8 +1270,45 @@ function retimeInPlace(sched,P){
   });
 }
 
+/* Kommission je Prüfung bestimmen: Beisitzer (aus Fach-Pool), Vorsitz und KV.
+   Prüfungen laufen sequenziell im zentralen Raum → zu jeder Zeit ist nur der aktuelle Prüfer
+   "beschäftigt"; jede andere bekannte Person kann Beisitz/Vertretung übernehmen. Pro Prüfung
+   hält jede Person nur EINE Rolle (taken-Set). Last wird über `load` möglichst gleich verteilt.
+   Vorsitz/KV werden in jede Zeile geschrieben; prüft der Vorsitz/KV selbst, springt eine freie
+   Person ein (vorsitzSub/kvSub = true). */
+function assignCommission(sched,M,P){
+  const pools=(M&&M.beisitzer)||{};
+  const allStaff=[...new Set([...((M&&M.teachers)||[]), ...Object.values(pools).flat()])];
+  const vorsitz=((P&&P.vorsitz)||"").trim();
+  const kv=((P&&P.kv)||"").trim();
+  const load={};
+  const pick=(cands,taken)=>{
+    const free=(cands||[]).filter(t=>t&&!taken.has(t));
+    if(!free.length) return "";
+    free.sort((a,b)=>(load[a]||0)-(load[b]||0));
+    const p=free[0]; load[p]=(load[p]||0)+1; taken.add(p); return p;
+  };
+  [...sched].sort((a,b)=>a.start-b.start).forEach(x=>{
+    const taken=new Set([x.teacher]);
+    // Vorsitz/KV, die NICHT selbst prüfen, sind feste Anwesende → vorab reservieren,
+    // damit der Beisitzer nicht mit ihnen kollidiert.
+    const vorsitzSelf = vorsitz && x.teacher===vorsitz;
+    const kvSelf = kv && x.teacher===kv;
+    if(vorsitz && !vorsitzSelf) taken.add(vorsitz);
+    if(kv && !kvSelf) taken.add(kv);
+    // Beisitzer aus dem Fach-Pool (nicht Prüfer, nicht fester Vorsitz/KV dieser Prüfung)
+    x.beisitz=pick(pools[x.subject], taken);
+    // Vorsitz / KV – falls die Person selbst prüft, springt eine freie Person ein
+    if(vorsitzSelf){ x.vorsitz=pick(allStaff,taken); x.vorsitzSub=true; }
+    else { x.vorsitz=vorsitz; x.vorsitzSub=false; }
+    if(kvSelf){ x.kv=pick(allStaff,taken); x.kvSub=true; }
+    else { x.kv=kv; x.kvSub=false; }
+  });
+}
+
 /* Kennzahlen + Warnungen */
 function analyze(sched,M,P){
+  assignCommission(sched, M||MATRIX, P||{});
   const tEnd=Math.max(...sched.map(x=>x.end));
   const tStart=Math.min(...sched.map(x=>x.start));
   // Schueler-Luecken
@@ -1264,13 +1341,56 @@ function analyze(sched,M,P){
    Schüler werden absteigend nach Prüfungsanzahl sortiert und jeweils der Gruppe
    mit aktuell weniger Prüfungen zugeordnet. Damit ist die Summe in beiden Gruppen
    so ausgeglichen wie möglich (nicht die Schüler-Anzahl). */
-function solveSplit(M,P){
-  const sorted=[...M.students].sort((a,b)=>b.exams.length-a.exams.length);
-  const g1Students=[], g2Students=[]; let n1=0,n2=0;
-  for(const s of sorted){
-    if(n1<=n2){ g1Students.push(s); n1+=s.exams.length; }
-    else { g2Students.push(s); n2+=s.exams.length; }
+/* Schüler auf zwei Halbtage aufteilen. Übergeordnetes Ziel: ein Prüfer soll möglichst nur an EINEM
+   Halbtag prüfen – das Aufsplitten eines Prüfers ist umso teurer, je weniger Prüfungen er hat
+   (wenige Prüfungen passen leicht in einen Halbtag). Nebenziel: ausgeglichene Prüfungsanzahl je
+   Halbtag. Lokale Suche (Verschieben/Tauschen) ab einer ausgeglichenen Startaufteilung. */
+function partitionStudents(M,P){
+  const students=M.students||[];
+  const total=students.reduce((n,s)=>n+s.exams.length,0);
+  if(students.length<2 || total===0){ return {g1:students.slice(), g2:[]}; }
+  const tTotal={};
+  students.forEach(s=>s.exams.forEach(e=>tTotal[e.teacher]=(tTotal[e.teacher]||0)+1));
+  const SPLIT_W=60, BAL_W=2, minExams=Math.max(1,Math.floor(total*0.25));
+  // Start: größte Schüler abwechselnd → ausgeglichen
+  const order=students.map((s,i)=>i).sort((a,b)=>students[b].exams.length-students[a].exams.length);
+  const g=new Array(students.length); let a1=0,a2=0;
+  order.forEach(i=>{ if(a1<=a2){g[i]=1;a1+=students[i].exams.length;} else {g[i]=2;a2+=students[i].exams.length;} });
+  const exG=gr=>students.reduce((n,s,i)=>n+(g[i]===gr?s.exams.length:0),0);
+  const cost=()=>{
+    // Pro Prüfer: wie viele Prüfungen auf der "falschen" (Minderheits-)Seite liegen. Das gibt der
+    // lokalen Suche einen Gradienten (statt binär split/nicht). Gewicht ~ 1/Prüfungsanzahl, damit
+    // das Aufsplitten von Prüfern mit WENIGEN Prüfungen am teuersten ist.
+    const c1={},c2={};
+    students.forEach((s,i)=>s.exams.forEach(e=>{ if(g[i]===1)c1[e.teacher]=(c1[e.teacher]||0)+1; else c2[e.teacher]=(c2[e.teacher]||0)+1; }));
+    let pen=0;
+    for(const t in tTotal){ const mn=Math.min(c1[t]||0,c2[t]||0); if(mn) pen += (SPLIT_W/tTotal[t])*mn; }
+    return pen + BAL_W*Math.abs(exG(1)-exG(2));
+  };
+  const ok=()=>exG(1)>=minExams && exG(2)>=minExams;
+  let best=cost();
+  for(let iter=0; iter<300; iter++){
+    let improved=false;
+    for(let i=0;i<students.length && !improved;i++){
+      const from=g[i];
+      g[i]=from===1?2:1;
+      if(ok()){ const c=cost(); if(c<best-1e-9){ best=c; improved=true; continue; } }
+      g[i]=from;
+      for(let j=i+1;j<students.length && !improved;j++){
+        if(g[j]===g[i]) continue;
+        [g[i],g[j]]=[g[j],g[i]];
+        if(ok()){ const c=cost(); if(c<best-1e-9){ best=c; improved=true; continue; } }
+        [g[i],g[j]]=[g[j],g[i]];
+      }
+    }
+    if(!improved) break;
   }
+  const g1=[],g2=[]; students.forEach((s,i)=>{ (g[i]===1?g1:g2).push(s); });
+  if(!g1.length||!g2.length){ const h=Math.ceil(students.length/2); return {g1:students.slice(0,h),g2:students.slice(h)}; }
+  return {g1,g2};
+}
+function solveSplit(M,P){
+  const {g1:g1Students,g2:g2Students}=partitionStudents(M,P);
   const g1={...M,students:g1Students};
   const g2={...M,students:g2Students};
   const r1=solve(g1,{...P,_noReduce:true});
@@ -1400,6 +1520,11 @@ function legendHtml(M){
 let CUR=null; // {order:[exam...], P, M}
 let LIVE=false; // Live-Tag-Modus
 
+// Rollen-Zelle (Vorsitz/KV): zeigt Kürzel; bei Vertretung (Person prüft selbst) ein "(Vert.)"-Tag
+function roleCell(name,sub){
+  if(!name) return "—";
+  return `${name}${sub?' <span class="role-sub" title="Vertretung – die eingestellte Person prüft selbst">(Vert.)</span>':''}`;
+}
 function tableHtml(res,M){
   const rows=[...res.sched].sort((a,b)=>a.start-b.start);
   const cmap=teacherColor(M);
@@ -1437,15 +1562,15 @@ function tableHtml(res,M){
 
   const liveCol = LIVE? `<th>Live-Verzögerung</th>`:``;
   h+=`<div class="tbl-wrap"><table id="planTable"><thead><tr><th>#</th><th>Vorber.</th><th>Beginn</th><th>Ende</th>
-    <th>Schüler</th><th>Fach</th><th>Prüfer</th><th>Raum</th>${liveCol}</tr></thead><tbody>`;
+    <th>Schüler</th><th>Fach</th><th>Prüfer</th><th>Beisitz</th><th>Vorsitz</th><th>KV</th><th>Raum</th>${liveCol}</tr></thead><tbody>`;
   const nowM=nowMinutes();
   const isSplit=rows.some(r=>r.group);
   rows.forEach((x,i)=>{
     // Gruppen-Trenner einfügen, wenn sich die Gruppe ändert (2-Gruppen-Plan)
     if(isSplit && i===0){
-      h+=`<tr class="group-sep"><td colspan="${LIVE?9:8}">Gruppe 1 — Vormittag</td></tr>`;
+      h+=`<tr class="group-sep"><td colspan="${LIVE?12:11}">Gruppe 1 — Vormittag</td></tr>`;
     } else if(isSplit && i>0 && x.group!==rows[i-1].group){
-      h+=`<tr class="group-sep"><td colspan="${LIVE?9:8}">Gruppe 2 — Nachmittag</td></tr>`;
+      h+=`<tr class="group-sep"><td colspan="${LIVE?12:11}">Gruppe 2 — Nachmittag</td></tr>`;
     }
     const hardC=x.hard&&x.hard.length?"hard":"";
     const softC=(!hardC&&x.soft&&x.soft.length)?"soft":"";
@@ -1471,6 +1596,9 @@ function tableHtml(res,M){
       <td class="${hardC||softC}">${x.student}${flagHtml}</td>
       <td>${x.subject}</td>
       <td><span class="pill" style="background:${cmap[x.teacher]}">${x.teacher}</span></td>
+      <td class="role-cell">${x.beisitz||"—"}</td>
+      <td class="role-cell">${roleCell(x.vorsitz,x.vorsitzSub)}</td>
+      <td class="role-cell">${roleCell(x.kv,x.kvSub)}</td>
       <td class="room-cell">${roomOf(x.teacher)}</td>${liveCell}</tr>`;
   });
   return h+`</tbody></table></div>`;
@@ -1963,24 +2091,24 @@ async function exportExcel(res){
 
   /* ===== Sheet 1: Prüfungsplan (Schülersicht) ===== */
   const ws=wb.addWorksheet("Prüfungsplan",{views:[{showGridLines:false}]});
-  ws.columns=[{width:5},{width:10},{width:10},{width:13},{width:26},{width:9},{width:12},{width:9}];
+  ws.columns=[{width:5},{width:10},{width:10},{width:13},{width:24},{width:8},{width:11},{width:11},{width:11},{width:9},{width:9}];
 
   // Logo oben links (Zeile 1-3)
   ws.addImage(logoId,{ tl:{col:0.1,row:0.2}, ext:{width:170,height:80} });
   ws.getRow(1).height=26; ws.getRow(2).height=26; ws.getRow(3).height=22;
 
   // Titelblock rechts neben Logo
-  ws.mergeCells("C1:H1");
+  ws.mergeCells("C1:K1");
   const tCell=ws.getCell("C1");
   tCell.value="Mündliche Reife- & Diplomprüfung";
   tCell.font={name:"Calibri",size:16,bold:true,color:{argb:argb("#0083aa")}};
   tCell.alignment={vertical:"middle",horizontal:"right"};
-  ws.mergeCells("C2:H2");
+  ws.mergeCells("C2:K2");
   const sCell=ws.getCell("C2");
   sCell.value="Höhere Abteilung für Elektrotechnik · HTL 1 Lastenstraße Klagenfurt";
   sCell.font={name:"Calibri",size:10,color:{argb:argb("#555555")}};
   sCell.alignment={vertical:"middle",horizontal:"right"};
-  ws.mergeCells("C3:H3");
+  ws.mergeCells("C3:K3");
   const dCell=ws.getCell("C3");
   const today=new Date().toLocaleDateString("de-AT",{day:"2-digit",month:"long",year:"numeric"});
   dCell.value=`Zeiteinteilung · ${rows.length} Prüfungen · erstellt ${today}`;
@@ -1989,11 +2117,11 @@ async function exportExcel(res){
 
   // Trennlinie (Zeile 4)
   ws.getRow(4).height=6;
-  for(let c=1;c<=8;c++){ ws.getCell(4,c).border={bottom:{style:"medium",color:{argb:argb("#0083aa")}}}; }
+  for(let c=1;c<=11;c++){ ws.getCell(4,c).border={bottom:{style:"medium",color:{argb:argb("#0083aa")}}}; }
 
   // Tabellenkopf (Zeile 5)
   const headRow=ws.getRow(5);
-  ["#","Beginn","Ende","Vorbereitung","Schüler","Fach","Prüfer","Raum"].forEach((h,i)=>{
+  ["#","Beginn","Ende","Vorbereitung","Schüler","Fach","Prüfer","Beisitz","Vorsitz","KV","Raum"].forEach((h,i)=>{
     const c=headRow.getCell(i+1);
     c.value=h;
     c.font={name:"Calibri",size:11,bold:true,color:{argb:"FFFFFFFF"}};
@@ -2010,7 +2138,7 @@ async function exportExcel(res){
     // Gruppen-Trenner einfügen
     if(isSplit && (i===0 || x.group!==rows[i-1].group)){
       const sr=ws.getRow(curRow);
-      ws.mergeCells(`A${curRow}:H${curRow}`);
+      ws.mergeCells(`A${curRow}:K${curRow}`);
       const sc=sr.getCell(1);
       sc.value=`Gruppe ${x.group} — ${x.group===1?"Vormittag":"Nachmittag"}`;
       sc.font={name:"Calibri",size:11,bold:true,color:{argb:argb("#0083aa")}};
@@ -2022,7 +2150,10 @@ async function exportExcel(res){
       curRow++;
     }
     const r=ws.getRow(curRow); curRow++;
-    const vals=[i+1,min2hm(x.start),min2hm(x.end),min2hm(x.prepStart),x.student,x.subject,x.teacher,roomOf(x.teacher)];
+    const beis=x.beisitz||"—";
+    const vors=(x.vorsitz||"—")+(x.vorsitzSub?" (Vert.)":"");
+    const kvc=(x.kv||"—")+(x.kvSub?" (Vert.)":"");
+    const vals=[i+1,min2hm(x.start),min2hm(x.end),min2hm(x.prepStart),x.student,x.subject,x.teacher,beis,vors,kvc,roomOf(x.teacher)];
     vals.forEach((v,ci)=>{
       const c=r.getCell(ci+1); c.value=v;
       c.font={name:"Calibri",size:10};
@@ -2039,17 +2170,17 @@ async function exportExcel(res){
 
   // AV-Block unten
   const avStart=curRow+1;
-  ws.mergeCells(`E${avStart}:H${avStart}`);
+  ws.mergeCells(`E${avStart}:K${avStart}`);
   const av1=ws.getCell(`E${avStart}`);
   av1.value="AV Mag. Dr. Peter Enzinger";
   av1.font={name:"Calibri",size:11,bold:true,color:{argb:argb("#222222")}};
   av1.alignment={horizontal:"right"};
-  ws.mergeCells(`E${avStart+1}:H${avStart+1}`);
+  ws.mergeCells(`E${avStart+1}:K${avStart+1}`);
   const av2=ws.getCell(`E${avStart+1}`);
   av2.value="Abteilungsvorstand Elektrotechnik";
   av2.font={name:"Calibri",size:10,italic:true,color:{argb:argb("#0083aa")}};
   av2.alignment={horizontal:"right"};
-  ws.mergeCells(`E${avStart+2}:H${avStart+2}`);
+  ws.mergeCells(`E${avStart+2}:K${avStart+2}`);
   const av3=ws.getCell(`E${avStart+2}`);
   av3.value="htl1-klagenfurt.at/elektrotechnik";
   av3.font={name:"Calibri",size:9,color:{argb:argb("#888888")}};
@@ -2118,7 +2249,9 @@ function getParams(){
     tgap: tgapIn===""? 2 : +tgapIn,                        // slot-basiert (Anzahl Slots)
     smaxgap: smaxgapBlocks==null? null : smaxgapBlocks*dur,// Blöcke → Minuten
     smaxgapBlocks,
-    layout:"compare"
+    layout:"compare",
+    vorsitz:(($("vorsitz")&&$("vorsitz").value)||"").trim(),
+    kv:(($("kv")&&$("kv").value)||"").trim()
   };
 }
 
@@ -2354,6 +2487,11 @@ function DEMO(){
     cells.forEach((t,i)=>{if(t){exams.push({subject:subjects[i],teacher:t});tset.add(t);}});
     students.push({name,exams});
   });
-  return {students,subjects,teachers:[...tset].sort()};
+  // Mögliche Beisitzer je Fach (entspricht der "Beisitz"-Extrazeile in der Excel-Matrix).
+  const beisitzer={
+    E:["Kr","Pe","La"], ES:["La","En","Ln"], AT:["Ln","Mp"],
+    IE:["Pe","Kr","En"], FI:["En","La"], Wir:["Mp","Ln","Pe"]
+  };
+  return {students,subjects,teachers:[...tset].sort(),beisitzer};
 }
 </script>
