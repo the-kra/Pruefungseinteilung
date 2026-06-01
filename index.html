@@ -2115,6 +2115,9 @@ async function exportExcel(res){
   // Logo einbetten
   const logoId=wb.addImage({ base64:HTL_LOGO_B64, extension:"png" });
 
+  // Prüfungskommission zuerst anlegen → erstes Tabellenblatt (befüllt wird es weiter unten).
+  const ws3=wb.addWorksheet("Prüfungskommission",{views:[{showGridLines:false}]});
+
   /* ===== Sheet 1: Prüfungsplan (Schülersicht) ===== */
   const ws=wb.addWorksheet("Prüfungsplan",{views:[{showGridLines:false}]});
   ws.columns=[{width:5},{width:24},{width:10},{width:10},{width:13},{width:8},{width:11},{width:11},{width:9},{width:9},{width:15},{width:15},{width:10},{width:11},{width:11}];
@@ -2251,8 +2254,9 @@ async function exportExcel(res){
   /* ===== Sheet 3: Prüfungskommission (1:1-Layout wie Einteilung_…_Vormittag) =====
      Fächer-Matrix (X je Fach), Zeiteinteilung, Prüfungskommission und Beurteilung als Bänder.
      Prüfer 1 = Prüfer, Prüfer 2 = Beisitz, Vorsitzender = Vorsitz, Jahrgangsvorstand (JV) = KV.
-     Schriftführer / Themenbereiche / Beurteilung / Noten bleiben leer zum händischen Ausfüllen. */
-  const ws3=wb.addWorksheet("Prüfungskommission",{views:[{showGridLines:false}]});
+     Schriftführer / Themenbereiche / Beurteilung / Noten bleiben leer zum händischen Ausfüllen.
+     (ws3 wurde oben bereits als erstes Tabellenblatt angelegt.) */
+  // Nur die tatsächlich vorhandenen Fächer; Kürzel exakt wie in den anderen Listen (keine Defaults/Umbenennung).
   const subjList=(MATRIX.subjects||[]).slice();
   const nSub=subjList.length;
   // Haupt-Prüfer je Fach (häufigster Prüfer dieses Fachs)
@@ -2281,7 +2285,7 @@ async function exportExcel(res){
   ws3.mergeCells(1,cNr,1,cName); { const c=ws3.getCell(1,cNr);
     c.value=`${klasse?klasse+" — ":""}Mündliche RDP · Raum ${ROOM}`;
     c.font={name:"Calibri",size:12,bold:true,color:{argb:argb(TEAL)}}; c.alignment={vertical:"middle",horizontal:"left"}; }
-  if(nSub>0) band(cSub0,cSub0+nSub-1,"Prüfungsgegenstände");
+  if(nSub>0) band(cSub0, cSub0+nSub-1, "Prüfungsgegenstände");
   band(cVorb,cPruef,"Zeiteinteilung");
   band(cVors,cTB2,"Prüfungskommission");
   band(cBeur,cGes,"Beurteilung");
@@ -2335,7 +2339,8 @@ async function exportExcel(res){
       if(f) cell.fill=f;
       cell.border={bottom:{style:"hair",color:{argb:argb("#d8dee8")}}}; };
     set(cNr,i+1); set(cName,x.student,{left:true});
-    subjList.forEach((su,s)=>set(cSub0+s, su===x.subject?"X":""));   // Fach-Matrix
+    const sIdx=subjList.indexOf(x.subject);                          // Spalte des Fachs
+    subjList.forEach((su,s)=>set(cSub0+s, s===sIdx?"X":""));         // Fach-Matrix
     set(cVorb,min2hm(x.prepStart)); set(cPruef,min2hm(x.start));
     set(cVors,(x.vorsitz||"")+(x.vorsitzSub?" (V)":"")); set(cJV,(x.kv||"")+(x.kvSub?" (V)":""));
     set(cPr1,x.teacher,{font:{bold:true,color:{argb:"FFFFFFFF"}},fill:{type:"pattern",pattern:"solid",fgColor:{argb:argb(cmap[x.teacher]||TEAL)}}});
