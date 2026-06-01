@@ -534,6 +534,11 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
   cursor:pointer;font-size:14px;line-height:1;display:inline-flex;align-items:center;justify-content:center}
 .me-table .me-del:hover{background:#ef5d7028}
 .me-table .me-delcol{padding:0 2px}
+/* Beisitz-Zeile (mögliche Beisitzer je Fach) */
+.me-table .me-beirow input{background:#f3f8ff;border-color:#cfe0f5;text-align:center;font-size:12px;color:#3a4660}
+.me-table .me-beilabel{font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--accent2);
+  font-weight:600;text-align:right;padding:0 8px;white-space:nowrap;vertical-align:middle}
+.me-table .me-beilabel small{display:block;font-size:9px;letter-spacing:0;text-transform:none;color:var(--muted);font-weight:400}
 .me-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 </style>
 
@@ -806,6 +811,10 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
       </label>
       <div id="fileok" class="fileok"></div>
 
+      <button class="btn-sm btn-ghost" id="dlTemplate" style="margin-top:8px;display:inline-flex;align-items:center;gap:7px" title="Leere/Beispiel-Matrix als Excel-Vorlage herunterladen">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path>
+        </svg>Excel-Vorlage herunterladen</button>
       <button class="btn btn-primary" id="run" style="margin-top:12px">Plan berechnen →</button>
       <button class="btn-sm btn-ghost" id="editMatrixBtn" style="margin-top:10px;display:inline-flex;align-items:center;gap:7px">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto">
@@ -816,10 +825,10 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
           <rect x="3" y="4" width="18" height="12" rx="1.5"></rect><path d="M12 16v4"></path><path d="M8 20h8"></path>
         </svg>Beamer-Ansicht öffnen</button>
 
-      <div class="hint" style="margin-top:10px">Format: Spalte A = Schüler, weitere Spalten = Fächer.
-        Zelle enthält das <b>Lehrer-Kürzel</b> des Prüfers (leer = keine Prüfung).
-        Extra-Zeile mit <b>„Beisitz"</b> in Spalte A: je Fach mögliche Beisitzer-Kürzel
-        (mehrere durch Leerzeichen/Komma getrennt).</div>
+      <div class="hint" style="margin-top:10px">Format: <b>1. Zeile „Beisitz"</b> – je Fach mögliche Beisitzer-Kürzel
+        (mit Komma getrennt). <b>2. Zeile</b> = Fächer (Spalte A = Schülername, weitere Spalten = Fächer).
+        Ab Zeile 3 die Schüler; Zelle enthält das <b>Lehrer-Kürzel</b> des Prüfers (leer = keine Prüfung).
+        Die Reihenfolge der beiden ersten Zeilen ist egal.</div>
       </div>
 
       <div class="cb-col">
@@ -840,11 +849,11 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
       </div>
       <div class="row2" style="margin-top:8px">
         <div><label>Prüfungsraum (zentral)</label><input type="text" id="roomIn" value="H211" placeholder="z. B. H211"></div>
-        <div></div>
+        <div><label>Klasse</label><input type="text" id="klasse" value="5AHET" placeholder="z. B. 5AHET"></div>
       </div>
       <div class="row2" style="margin-top:8px">
         <div><label>Vorsitz <small>(Kürzel)</small></label><input type="text" id="vorsitz" value="En" placeholder="z. B. En"></div>
-        <div><label>Klassenvorstand KV <small>(Kürzel)</small></label><input type="text" id="kv" value="Pe" placeholder="z. B. Pe"></div>
+        <div><label>KV <small>(Klassenvorstand)</small></label><input type="text" id="kv" value="Pe" placeholder="z. B. Pe"></div>
       </div>
       </div>
 
@@ -968,22 +977,27 @@ function parseWorkbook(wb){
   const ws=wb.Sheets[wb.SheetNames[0]];
   const arr=XLSX.utils.sheet_to_json(ws,{header:1,defval:""});
   if(arr.length<2) throw new Error("Leeres Sheet");
-  const head=arr[0].map(x=>(""+x).trim());
+  // Reihenfolge egal: Die Beisitz-Zeile (Spalte A beginnt mit „Beisitz") darf über ODER unter der
+  // Fächer-Kopfzeile stehen. Kopfzeile = erste Zeile, die NICHT die Beisitz-Zeile ist.
+  let beiIdx=-1;
+  for(let r=0;r<arr.length;r++){ if(/^beisitz/i.test((""+(arr[r][0]||"")).trim())){ beiIdx=r; break; } }
+  let headIdx=-1;
+  for(let r=0;r<arr.length;r++){ if(r!==beiIdx){ headIdx=r; break; } }
+  if(headIdx<0) throw new Error("Keine Kopfzeile gefunden");
+  const head=arr[headIdx].map(x=>(""+x).trim());
   const subjects=head.slice(1).filter(h=>h!=="");
-  const students=[]; const tset=new Set(); const beisitzer={};
-  for(let r=1;r<arr.length;r++){
+  const beisitzer={};
+  if(beiIdx>=0){ const brow=arr[beiIdx];
+    for(let c=1;c<head.length;c++){ if(!head[c]) continue;
+      const list=(""+(brow[c]||"")).split(/[\s,;/]+/).map(s=>s.trim()).filter(Boolean);
+      if(list.length) beisitzer[head[c]]=list;
+    }
+  }
+  const students=[]; const tset=new Set();
+  for(let r=0;r<arr.length;r++){
+    if(r===beiIdx||r===headIdx) continue;
     const row=arr[r]; const name=(""+row[0]).trim();
     if(!name) continue;
-    // Beisitzer-Zeile: erste Spalte beginnt mit "Beisitz". Je Fach mehrere mögliche
-    // Beisitzer-Kürzel (durch Leerzeichen/Komma/Schrägstrich getrennt).
-    if(/^beisitz/i.test(name)){
-      for(let c=1;c<head.length;c++){
-        if(!head[c]) continue;
-        const list=(""+(row[c]||"")).split(/[\s,;/]+/).map(s=>s.trim()).filter(Boolean);
-        if(list.length) beisitzer[head[c]]=list;
-      }
-      continue;
-    }
     const exams=[];
     for(let c=1;c<head.length;c++){
       const t=(""+(row[c]||"")).trim();
@@ -1282,12 +1296,17 @@ function assignCommission(sched,M,P){
   const vorsitz=((P&&P.vorsitz)||"").trim();
   const kv=((P&&P.kv)||"").trim();
   const load={};
-  const pick=(cands,taken)=>{
+  // Wählt eine Person für eine Rolle: bevorzugt die BISHERIGE (prev), damit möglichst große,
+  // ruhige Blöcke entstehen (wenig Wechsel). Nur wenn die nicht zulässig ist (nicht im Pool oder
+  // gerade belegt), wird eine neue, möglichst wenig belastete Person genommen.
+  const choose=(cands,taken,prev)=>{
     const free=(cands||[]).filter(t=>t&&!taken.has(t));
     if(!free.length) return "";
+    if(prev && free.includes(prev)) return prev;
     free.sort((a,b)=>(load[a]||0)-(load[b]||0));
-    const p=free[0]; load[p]=(load[p]||0)+1; taken.add(p); return p;
+    return free[0];
   };
+  let prevBeis=null, prevVsub=null, prevKsub=null;
   [...sched].sort((a,b)=>a.start-b.start).forEach(x=>{
     const taken=new Set([x.teacher]);
     // Vorsitz/KV, die NICHT selbst prüfen, sind feste Anwesende → vorab reservieren,
@@ -1296,12 +1315,13 @@ function assignCommission(sched,M,P){
     const kvSelf = kv && x.teacher===kv;
     if(vorsitz && !vorsitzSelf) taken.add(vorsitz);
     if(kv && !kvSelf) taken.add(kv);
-    // Beisitzer aus dem Fach-Pool (nicht Prüfer, nicht fester Vorsitz/KV dieser Prüfung)
-    x.beisitz=pick(pools[x.subject], taken);
-    // Vorsitz / KV – falls die Person selbst prüft, springt eine freie Person ein
-    if(vorsitzSelf){ x.vorsitz=pick(allStaff,taken); x.vorsitzSub=true; }
+    // Beisitzer aus dem Fach-Pool (nicht Prüfer, nicht fester Vorsitz/KV dieser Prüfung) – Block-erhaltend
+    const beis=choose(pools[x.subject], taken, prevBeis);
+    x.beisitz=beis; if(beis){ load[beis]=(load[beis]||0)+1; taken.add(beis); prevBeis=beis; }
+    // Vorsitz / KV – prüft die Person selbst, springt eine freie Person ein (ebenfalls Block-erhaltend)
+    if(vorsitzSelf){ const s=choose(allStaff,taken,prevVsub); x.vorsitz=s; x.vorsitzSub=true; if(s){load[s]=(load[s]||0)+1;taken.add(s);prevVsub=s;} }
     else { x.vorsitz=vorsitz; x.vorsitzSub=false; }
-    if(kvSelf){ x.kv=pick(allStaff,taken); x.kvSub=true; }
+    if(kvSelf){ const s=choose(allStaff,taken,prevKsub); x.kv=s; x.kvSub=true; if(s){load[s]=(load[s]||0)+1;taken.add(s);prevKsub=s;} }
     else { x.kv=kv; x.kvSub=false; }
   });
 }
@@ -1351,7 +1371,10 @@ function partitionStudents(M,P){
   if(students.length<2 || total===0){ return {g1:students.slice(), g2:[]}; }
   const tTotal={};
   students.forEach(s=>s.exams.forEach(e=>tTotal[e.teacher]=(tTotal[e.teacher]||0)+1));
-  const SPLIT_W=60, BAL_W=2, minExams=Math.max(1,Math.floor(total*0.25));
+  // Halbtage sollen ziemlich genau gleich groß sein (≈ halbe Prüfungsanzahl, damit der Wechsel
+   // ungefähr zur Mittagszeit fällt). Daher ein ENGES Balance-Fenster als harte Schranke; das
+   // Prüfer-nicht-splitten wird nur INNERHALB dieses Fensters optimiert.
+  const SPLIT_W=60, BAL_W=4, maxDiff=Math.max(2, Math.round(total*0.08));
   // Start: größte Schüler abwechselnd → ausgeglichen
   const order=students.map((s,i)=>i).sort((a,b)=>students[b].exams.length-students[a].exams.length);
   const g=new Array(students.length); let a1=0,a2=0;
@@ -1367,7 +1390,7 @@ function partitionStudents(M,P){
     for(const t in tTotal){ const mn=Math.min(c1[t]||0,c2[t]||0); if(mn) pen += (SPLIT_W/tTotal[t])*mn; }
     return pen + BAL_W*Math.abs(exG(1)-exG(2));
   };
-  const ok=()=>exG(1)>=minExams && exG(2)>=minExams;
+  const ok=()=>{ const e1=exG(1),e2=exG(2); return e1>0 && e2>0 && Math.abs(e1-e2)<=maxDiff; };
   let best=cost();
   for(let iter=0; iter<300; iter++){
     let improved=false;
@@ -1562,15 +1585,15 @@ function tableHtml(res,M){
 
   const liveCol = LIVE? `<th>Live-Verzögerung</th>`:``;
   h+=`<div class="tbl-wrap"><table id="planTable"><thead><tr><th>#</th><th>Vorber.</th><th>Beginn</th><th>Ende</th>
-    <th>Schüler</th><th>Fach</th><th>Prüfer</th><th>Beisitz</th><th>Vorsitz</th><th>KV</th><th>Raum</th>${liveCol}</tr></thead><tbody>`;
+    <th>Schüler</th><th>Fach</th><th>Prüfer</th><th>Beisitz</th><th>Vorsitz</th><th>KV</th>${liveCol}</tr></thead><tbody>`;
   const nowM=nowMinutes();
   const isSplit=rows.some(r=>r.group);
   rows.forEach((x,i)=>{
     // Gruppen-Trenner einfügen, wenn sich die Gruppe ändert (2-Gruppen-Plan)
     if(isSplit && i===0){
-      h+=`<tr class="group-sep"><td colspan="${LIVE?12:11}">Gruppe 1 — Vormittag</td></tr>`;
+      h+=`<tr class="group-sep"><td colspan="${LIVE?11:10}">Gruppe 1 — Vormittag</td></tr>`;
     } else if(isSplit && i>0 && x.group!==rows[i-1].group){
-      h+=`<tr class="group-sep"><td colspan="${LIVE?12:11}">Gruppe 2 — Nachmittag</td></tr>`;
+      h+=`<tr class="group-sep"><td colspan="${LIVE?11:10}">Gruppe 2 — Nachmittag</td></tr>`;
     }
     const hardC=x.hard&&x.hard.length?"hard":"";
     const softC=(!hardC&&x.soft&&x.soft.length)?"soft":"";
@@ -1598,8 +1621,7 @@ function tableHtml(res,M){
       <td><span class="pill" style="background:${cmap[x.teacher]}">${x.teacher}</span></td>
       <td class="role-cell">${x.beisitz||"—"}</td>
       <td class="role-cell">${roleCell(x.vorsitz,x.vorsitzSub)}</td>
-      <td class="role-cell">${roleCell(x.kv,x.kvSub)}</td>
-      <td class="room-cell">${roomOf(x.teacher)}</td>${liveCell}</tr>`;
+      <td class="role-cell">${roleCell(x.kv,x.kvSub)}</td>${liveCell}</tr>`;
   });
   return h+`</tbody></table></div>`;
 }
@@ -1688,15 +1710,18 @@ document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&BEAMER_ON) closeBe
    Tausch statt Verschieben, weil das weniger Folgekonflikte erzeugt. */
 function bindDrag(getExams, onReorder, onReset){
   const tb=document.querySelector("#planTable tbody"); if(!tb)return;
-  let dragEl=null;
+  let dragEl=null, lastOver=null;
+  // Hervorhebung nur EINMAL umschalten, wenn sich die überfahrene Zeile ändert – nicht bei jedem
+  // dragover-Event (das feuert laufend). Sonst wird das ⇄-Label ständig entfernt/neu eingefügt → Flackern.
+  const clearOver=()=>{ if(lastOver){ lastOver.classList.remove("dropswap"); lastOver=null; } };
   tb.querySelectorAll("tr.draggable").forEach(tr=>{
     tr.addEventListener("dragstart",e=>{dragEl=tr;tr.classList.add("dragging");e.dataTransfer.effectAllowed="move";});
-    tr.addEventListener("dragend",()=>{tr.classList.remove("dragging");
-      tb.querySelectorAll("tr").forEach(r=>r.classList.remove("dropswap"));});
+    tr.addEventListener("dragend",()=>{tr.classList.remove("dragging"); clearOver();});
     tr.addEventListener("dragover",e=>{e.preventDefault();
-      tb.querySelectorAll("tr").forEach(r=>r.classList.remove("dropswap"));
-      if(dragEl && dragEl!==tr) tr.classList.add("dropswap");});
+      if(!dragEl||dragEl===tr){ clearOver(); return; }
+      if(lastOver!==tr){ clearOver(); tr.classList.add("dropswap"); lastOver=tr; }});
     tr.addEventListener("drop",e=>{e.preventDefault();
+      clearOver();
       if(!dragEl||dragEl===tr)return;
       const exams=getExams();
       const from=+dragEl.dataset.i, to=+tr.dataset.i;
@@ -1989,12 +2014,13 @@ function repaintPlan(res,P){
 
 function renderResult(P){
   _prep=P.prep;
+  const klTitle=P.klasse?` · Klasse ${P.klasse}`:"";
   if(P.layout==="compare"){
     const full=solve(MATRIX,P);
     const split=solveSplit(MATRIX,P);
     LAST={full,split,mode:"compare",M:MATRIX};
     const reco = recommend(full,split);
-    $("out").innerHTML=`<h2>Vergleich & Empfehlung</h2>
+    $("out").innerHTML=`<h2>Vergleich & Empfehlung${klTitle}</h2>
       <div class="warnbox" id="recoBox" style="background:#eef3ec;border-color:var(--good);color:#234">
         <b>Empfehlung:</b> <span id="recoText">${reco}</span></div>
       <div class="cmp">
@@ -2023,7 +2049,7 @@ function renderResult(P){
   } else {
     const r = P.layout==="split"?solveSplit(MATRIX,P):solve(MATRIX,P);
     LAST={r,mode:"single",M:MATRIX};
-    $("out").innerHTML=`<h2>Prüfungsplan</h2><div id="statSingle">${statBlock(r)}</div><div id="planView"></div>`;
+    $("out").innerHTML=`<h2>Prüfungsplan${klTitle}</h2><div id="statSingle">${statBlock(r)}</div><div id="planView"></div>`;
     const order=[...r.sched].sort((a,b)=>a.start-b.start);
     CUR={order, optimal:order.slice(), P, res:r, compare:false, edited:false};
     repaintPlan(r,P);
@@ -2091,45 +2117,46 @@ async function exportExcel(res){
 
   /* ===== Sheet 1: Prüfungsplan (Schülersicht) ===== */
   const ws=wb.addWorksheet("Prüfungsplan",{views:[{showGridLines:false}]});
-  ws.columns=[{width:5},{width:10},{width:10},{width:13},{width:24},{width:8},{width:11},{width:11},{width:11},{width:9},{width:9}];
+  ws.columns=[{width:5},{width:24},{width:10},{width:10},{width:13},{width:8},{width:11},{width:11},{width:9},{width:9},{width:15},{width:15},{width:10},{width:11},{width:11}];
 
   // Logo oben links (Zeile 1-3)
   ws.addImage(logoId,{ tl:{col:0.1,row:0.2}, ext:{width:170,height:80} });
   ws.getRow(1).height=26; ws.getRow(2).height=26; ws.getRow(3).height=22;
 
   // Titelblock rechts neben Logo
-  ws.mergeCells("C1:K1");
+  ws.mergeCells("C1:O1");
   const tCell=ws.getCell("C1");
   tCell.value="Mündliche Reife- & Diplomprüfung";
   tCell.font={name:"Calibri",size:16,bold:true,color:{argb:argb("#0083aa")}};
   tCell.alignment={vertical:"middle",horizontal:"right"};
-  ws.mergeCells("C2:K2");
+  ws.mergeCells("C2:O2");
   const sCell=ws.getCell("C2");
   sCell.value="Höhere Abteilung für Elektrotechnik · HTL 1 Lastenstraße Klagenfurt";
   sCell.font={name:"Calibri",size:10,color:{argb:argb("#555555")}};
   sCell.alignment={vertical:"middle",horizontal:"right"};
-  ws.mergeCells("C3:K3");
+  ws.mergeCells("C3:O3");
   const dCell=ws.getCell("C3");
+  const klasse=(($("klasse")&&$("klasse").value)||"").trim();
   const today=new Date().toLocaleDateString("de-AT",{day:"2-digit",month:"long",year:"numeric"});
-  dCell.value=`Zeiteinteilung · ${rows.length} Prüfungen · erstellt ${today}`;
+  dCell.value=`${klasse?`Klasse ${klasse} · `:""}Raum ${ROOM} · Zeiteinteilung · ${rows.length} Prüfungen · erstellt ${today}`;
   dCell.font={name:"Calibri",size:9,italic:true,color:{argb:argb("#888888")}};
   dCell.alignment={vertical:"middle",horizontal:"right"};
 
   // Trennlinie (Zeile 4)
   ws.getRow(4).height=6;
-  for(let c=1;c<=11;c++){ ws.getCell(4,c).border={bottom:{style:"medium",color:{argb:argb("#0083aa")}}}; }
+  for(let c=1;c<=15;c++){ ws.getCell(4,c).border={bottom:{style:"medium",color:{argb:argb("#0083aa")}}}; }
 
   // Tabellenkopf (Zeile 5)
   const headRow=ws.getRow(5);
-  ["#","Beginn","Ende","Vorbereitung","Schüler","Fach","Prüfer","Beisitz","Vorsitz","KV","Raum"].forEach((h,i)=>{
+  ["#","Schülername","Beginn","Ende","Vorbereitung","Fach","Prüfer","Beisitzer","KV","Vorsitz","Prüfungsgebiet 1","Prüfungsgebiet 2","Jahresnote","Prüfungsnote","Gesamtnote"].forEach((h,i)=>{
     const c=headRow.getCell(i+1);
     c.value=h;
     c.font={name:"Calibri",size:11,bold:true,color:{argb:"FFFFFFFF"}};
     c.fill={type:"pattern",pattern:"solid",fgColor:{argb:argb("#0083aa")}};
-    c.alignment={vertical:"middle",horizontal:(i===4||i===5)?"left":"center"};
+    c.alignment={vertical:"middle",horizontal:(i===1||i===5)?"left":"center",wrapText:true};
     c.border={bottom:{style:"thin",color:{argb:argb("#0083aa")}}};
   });
-  headRow.height=22;
+  headRow.height=30;
 
   // Datenzeilen (mit Gruppen-Trennern wenn 2-Gruppen-Plan)
   const isSplit=rows.some(r=>r.group);
@@ -2138,7 +2165,7 @@ async function exportExcel(res){
     // Gruppen-Trenner einfügen
     if(isSplit && (i===0 || x.group!==rows[i-1].group)){
       const sr=ws.getRow(curRow);
-      ws.mergeCells(`A${curRow}:K${curRow}`);
+      ws.mergeCells(`A${curRow}:O${curRow}`);
       const sc=sr.getCell(1);
       sc.value=`Gruppe ${x.group} — ${x.group===1?"Vormittag":"Nachmittag"}`;
       sc.font={name:"Calibri",size:11,bold:true,color:{argb:argb("#0083aa")}};
@@ -2153,11 +2180,13 @@ async function exportExcel(res){
     const beis=x.beisitz||"—";
     const vors=(x.vorsitz||"—")+(x.vorsitzSub?" (Vert.)":"");
     const kvc=(x.kv||"—")+(x.kvSub?" (Vert.)":"");
-    const vals=[i+1,min2hm(x.start),min2hm(x.end),min2hm(x.prepStart),x.student,x.subject,x.teacher,beis,vors,kvc,roomOf(x.teacher)];
+    // Reihenfolge: Schülername, Beginn, Ende, Vorbereitung, Fach, Prüfer, Beisitzer, KV, Vorsitz,
+    // dann leere Spalten zum händischen Eintragen (Prüfungsgebiet 1/2, Jahres-, Prüfungs-, Gesamtnote).
+    const vals=[i+1,x.student,min2hm(x.start),min2hm(x.end),min2hm(x.prepStart),x.subject,x.teacher,beis,kvc,vors,"","","","",""];
     vals.forEach((v,ci)=>{
       const c=r.getCell(ci+1); c.value=v;
       c.font={name:"Calibri",size:10};
-      c.alignment={vertical:"middle",horizontal:(ci===4||ci===5)?"left":"center"};
+      c.alignment={vertical:"middle",horizontal:(ci===1||ci===5)?"left":"center"};
       if(i%2===1) c.fill={type:"pattern",pattern:"solid",fgColor:{argb:argb("#f2f7fa")}};
       c.border={bottom:{style:"hair",color:{argb:argb("#d8dee8")}}};
     });
@@ -2170,17 +2199,17 @@ async function exportExcel(res){
 
   // AV-Block unten
   const avStart=curRow+1;
-  ws.mergeCells(`E${avStart}:K${avStart}`);
+  ws.mergeCells(`E${avStart}:O${avStart}`);
   const av1=ws.getCell(`E${avStart}`);
   av1.value="AV Mag. Dr. Peter Enzinger";
   av1.font={name:"Calibri",size:11,bold:true,color:{argb:argb("#222222")}};
   av1.alignment={horizontal:"right"};
-  ws.mergeCells(`E${avStart+1}:K${avStart+1}`);
+  ws.mergeCells(`E${avStart+1}:O${avStart+1}`);
   const av2=ws.getCell(`E${avStart+1}`);
   av2.value="Abteilungsvorstand Elektrotechnik";
   av2.font={name:"Calibri",size:10,italic:true,color:{argb:argb("#0083aa")}};
   av2.alignment={horizontal:"right"};
-  ws.mergeCells(`E${avStart+2}:K${avStart+2}`);
+  ws.mergeCells(`E${avStart+2}:O${avStart+2}`);
   const av3=ws.getCell(`E${avStart+2}`);
   av3.value="htl1-klagenfurt.at/elektrotechnik";
   av3.font={name:"Calibri",size:9,color:{argb:argb("#888888")}};
@@ -2223,7 +2252,8 @@ async function exportExcel(res){
   const buf=await wb.xlsx.writeBuffer();
   const blob=new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement("a"); a.href=url; a.download="Pruefungsplan_5AHET.xlsx";
+  const klassSafe=(klasse||"Klasse").replace(/[^\wäöüÄÖÜß-]+/g,"_");
+  const a=document.createElement("a"); a.href=url; a.download=`Pruefungsplan_${klassSafe}.xlsx`;
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 }
 
@@ -2251,7 +2281,8 @@ function getParams(){
     smaxgapBlocks,
     layout:"compare",
     vorsitz:(($("vorsitz")&&$("vorsitz").value)||"").trim(),
-    kv:(($("kv")&&$("kv").value)||"").trim()
+    kv:(($("kv")&&$("kv").value)||"").trim(),
+    klasse:(($("klasse")&&$("klasse").value)||"").trim()
   };
 }
 
@@ -2305,7 +2336,13 @@ function renderMatrixEditor(){
   if(empty) empty.style.display="none";
   if(sub) sub.textContent=`${MATRIX.students.length} Schüler · ${MATRIX.subjects.length} Fächer · ${MATRIX.teachers.length} Prüfer`;
   const subs=MATRIX.subjects;
-  let h="<thead><tr><th class=\"me-corner\">Schüler \\ Fach</th>";
+  const bei=MATRIX.beisitzer=MATRIX.beisitzer||{};
+  // 1. Zeile: Beisitz (je Fach mögliche Beisitzer, mit Komma getrennt) – steht ÜBER den Fächern.
+  let h=`<thead><tr class="me-beirow"><th class="me-beilabel">Beisitz <small>(mögl., mit , trennen)</small></th>`;
+  subs.forEach((su,ci)=>{ const v=((bei[su]||[]).join(", ")).replace(/"/g,'&quot;'); h+=`<th class="me-beicell"><input value="${v}" data-bei="${ci}" placeholder="z. B. Kr, Pe"></th>`; });
+  h+="<th></th></tr>";
+  // 2. Zeile: Kopf Schülername / Prüfungsfach
+  h+=`<tr><th class="me-corner">Schülername / Fach</th>`;
   subs.forEach((su,ci)=>{ h+=`<th class="me-subj"><input value="${(su||"").replace(/"/g,'&quot;')}" data-subj="${ci}" placeholder="Fach"></th>`; });
   h+="<th></th></tr><tr><th></th>";
   subs.forEach((su,ci)=>{ h+=`<th class="me-delcol"><button class="me-del" data-delsubj="${ci}" title="Fach entfernen">✕</button></th>`; });
@@ -2323,7 +2360,15 @@ function renderMatrixEditor(){
     const ci=+inp.dataset.subj, old=MATRIX.subjects[ci], neu=inp.value.trim()||old;
     MATRIX.subjects[ci]=neu;
     MATRIX.students.forEach(s=>s.exams.forEach(e=>{ if(e.subject===old) e.subject=neu; }));
+    if(MATRIX.beisitzer && old!==neu && MATRIX.beisitzer[old]){ MATRIX.beisitzer[neu]=MATRIX.beisitzer[old]; delete MATRIX.beisitzer[old]; }
     meSync();
+  });
+  tbl.querySelectorAll("input[data-bei]").forEach(inp=>inp.onchange=()=>{
+    const su=MATRIX.subjects[+inp.dataset.bei];
+    const list=inp.value.split(/[,;/]+/).map(s=>s.trim()).filter(Boolean);
+    MATRIX.beisitzer=MATRIX.beisitzer||{};
+    if(list.length) MATRIX.beisitzer[su]=list; else delete MATRIX.beisitzer[su];
+    meSync(true);
   });
   tbl.querySelectorAll("input[data-cell]").forEach(inp=>inp.onchange=()=>{
     const [ri,ci]=inp.dataset.cell.split("_").map(Number);
@@ -2335,6 +2380,7 @@ function renderMatrixEditor(){
     const ci=+b.dataset.delsubj, su=MATRIX.subjects[ci];
     MATRIX.subjects.splice(ci,1);
     MATRIX.students.forEach(s=>{ const i=s.exams.findIndex(e=>e.subject===su); if(i>=0) s.exams.splice(i,1); });
+    if(MATRIX.beisitzer) delete MATRIX.beisitzer[su];
     meSync(); renderMatrixEditor();
   });
 }
@@ -2353,8 +2399,31 @@ $("meAddStudent").onclick=()=>{ if(!MATRIX) MATRIX={students:[],subjects:[],teac
   MATRIX.students.push({name:"Neuer Schüler",exams:[]}); meSync(); renderMatrixEditor(); };
 $("meAddSubject").onclick=()=>{ if(!MATRIX) MATRIX={students:[],subjects:[],teachers:[]};
   let n=1, base="Fach"; while(MATRIX.subjects.includes(base+n)) n++; MATRIX.subjects.push(base+n); meSync(); renderMatrixEditor(); };
-$("meNewEmpty").onclick=()=>{ MATRIX={students:[{name:"Schüler 1",exams:[]}],subjects:["Fach1"],teachers:[]};
+$("meNewEmpty").onclick=()=>{ MATRIX={students:[{name:"Schüler 1",exams:[]}],subjects:["Fach1"],teachers:[],beisitzer:{}};
   PM_START=null; meSync(); renderMatrixEditor(); };
+
+// Excel-Vorlage (Beispiel-Matrix) herunterladen – zeigt das erwartete Format inkl. Beisitz-Zeile.
+function buildMatrixAOA(M){
+  const head=["Schülername / Prüfungsfach", ...M.subjects];
+  const bei=M.beisitzer||{};
+  const beiRow=["Beisitz", ...M.subjects.map(su=>(bei[su]||[]).join(", "))];
+  const rows=M.students.map(s=>{
+    const r=[s.name];
+    M.subjects.forEach(su=>{ const e=s.exams.find(x=>x.subject===su); r.push(e?e.teacher:""); });
+    return r;
+  });
+  // 1. Zeile Beisitz, 2. Zeile Kopf (Schülername/Prüfungsfach), danach die Schüler.
+  return [beiRow, head, ...rows];
+}
+function downloadTemplate(){
+  const M=DEMO();
+  const ws=XLSX.utils.aoa_to_sheet(buildMatrixAOA(M));
+  ws["!cols"]=[{wch:22}, ...M.subjects.map(()=>({wch:14}))];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Matrix");
+  XLSX.writeFile(wb, "Matrix_Vorlage.xlsx");
+}
+$("dlTemplate").onclick=downloadTemplate;
 
 $("run").onclick=()=>{
   if(!MATRIX){alert("Bitte zuerst eine Matrix laden oder die Demo verwenden.");return;}
