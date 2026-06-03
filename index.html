@@ -2038,8 +2038,26 @@ function bindPlanControls(res,P){
 }
 
 // zeichnet Gantt + Tabelle eines (ggf. manuell umsortierten) Ergebnisses
+// Konferenz-Felder mit den (automatisch berechneten) Zeiten vorbelegen – nur LEERE Felder,
+// damit eigene Eingaben erhalten bleiben. So sind die Konferenzzeiten sichtbar UND editierbar.
+function fillConfFields(res){
+  if(!res||!res.sched||!res.sched.length) return;
+  const rows=res.sched;
+  const groups=[...new Set(rows.map(x=>x.group||1))].sort((a,b)=>a-b);
+  const setIfEmpty=(id,m)=>{ const e=$(id); if(e && !e.value && m!=null && isFinite(m)) e.value=min2hm(m); };
+  groups.forEach((g,idx)=>{
+    const gr=rows.filter(x=>(x.group||1)===g);
+    const gp=Math.min(...gr.map(x=>x.prepStart)), ge=Math.max(...gr.map(x=>x.end));
+    setIfEmpty("ek"+g+"s", Math.floor((gp-15)/5)*5);
+    setIfEmpty("ek"+g+"e", Math.floor((gp-5)/5)*5);
+    const last=(idx===groups.length-1);
+    setIfEmpty("bk"+g+"s", Math.ceil((ge+10)/5)*5);
+    setIfEmpty("bk"+g+"e", Math.ceil((ge+(last?40:25))/5)*5);
+  });
+}
 function repaintPlan(res,P){
   $("warn").innerHTML=warnHtml(res);
+  fillConfFields(res);
   $("planView").innerHTML=planControls(res,P)+legendHtml(MATRIX)+renderGantt(res,MATRIX)+
     `<div style="margin-top:18px"></div>`+tableHtml(res,MATRIX)+exportBar();
   bindExport(res);
