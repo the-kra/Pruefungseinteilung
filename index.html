@@ -166,6 +166,11 @@ input:focus,select:focus{outline:none;border-color:var(--accent2);box-shadow:0 0
 .param-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;margin-top:6px}
 /* einheitliche Boxhöhe in 2·Parameter und 3·Regeln, unabhängig vom Feldtyp (number/time/text/select) */
 .row2 input,.row2 select,.param-grid input,.param-grid select{height:40px}
+/* Konferenz-Zeiten: Labels gleich hoch (auch bei Umbruch „(Halbtag)") → Felder bündig ausgerichtet */
+.conf-times .row2{align-items:end}
+.conf-times .row2>div{display:flex;flex-direction:column}
+.conf-times label{min-height:30px;display:flex;align-items:flex-end;margin:8px 0 4px;line-height:1.25}
+.conf-times input{margin-top:auto}
 .param-grid input:disabled,.param-grid select:disabled{background:#eef2f7;color:#9aa4b3;cursor:not-allowed}
 .param-grid .ph{font-size:11px;font-weight:600;color:var(--accent);letter-spacing:1.5px;text-transform:uppercase;
   padding-bottom:2px;border-bottom:1.5px solid var(--accent);margin-bottom:2px;text-align:center}
@@ -815,6 +820,11 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path>
         </svg>Excel-Vorlage herunterladen</button>
+      <button class="btn-sm btn-ghost" id="loadDayBtn" style="margin-top:8px;display:inline-flex;align-items:center;gap:7px" title="Geplanten Prüfungstag aus einem PDF laden und als Gantt/Tabelle/Beamer darstellen">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto">
+          <path d="M4 4h12l4 4v12a0 0 0 0 1 0 0H4a0 0 0 0 1 0 0Z"></path><path d="M8 13h8"></path><path d="M8 17h5"></path><path d="M14 4v4h4"></path>
+        </svg>Prüfungstag laden (PDF)</button>
+      <input type="file" id="loadDayFile" accept=".pdf,application/pdf,.xlsx,.xls" style="display:none">
       <button class="btn btn-primary" id="run" style="margin-top:12px">Plan berechnen →</button>
       <button class="btn-sm btn-ghost" id="editMatrixBtn" style="margin-top:10px;display:inline-flex;align-items:center;gap:7px">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto">
@@ -855,6 +865,25 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
         <div><label>Vorsitz <small>(Kürzel)</small></label><input type="text" id="vorsitz" value="En" placeholder="z. B. En"></div>
         <div><label>KV <small>(Klassenvorstand)</small></label><input type="text" id="kv" value="Pe" placeholder="z. B. Pe"></div>
       </div>
+      <details class="conf-times" style="margin-top:10px" open>
+        <summary style="cursor:pointer;font-size:13px;color:#46505f;font-weight:500">🕐 Konferenz-Zeiten <small style="font-weight:300">(optional – für Export; leer = automatisch)</small></summary>
+        <div class="row2" style="margin-top:8px">
+          <div><label>Eröffnungskonf. 1 Beginn</label><input type="time" id="ek1s"></div>
+          <div><label>Eröffnungskonf. 1 Ende</label><input type="time" id="ek1e"></div>
+        </div>
+        <div class="row2" style="margin-top:8px">
+          <div><label>Beurteilungskonf. 1 Beginn</label><input type="time" id="bk1s"></div>
+          <div><label>Beurteilungskonf. 1 Ende</label><input type="time" id="bk1e"></div>
+        </div>
+        <div class="row2" style="margin-top:8px">
+          <div><label>Eröffnungskonf. 2 Beginn <small>(Halbtag)</small></label><input type="time" id="ek2s"></div>
+          <div><label>Eröffnungskonf. 2 Ende</label><input type="time" id="ek2e"></div>
+        </div>
+        <div class="row2" style="margin-top:8px">
+          <div><label>Beurteilungskonf. 2 Beginn <small>(Halbtag)</small></label><input type="time" id="bk2s"></div>
+          <div><label>Beurteilungskonf. 2 Ende</label><input type="time" id="bk2e"></div>
+        </div>
+      </details>
       </div>
 
       <div class="cb-col">
@@ -1291,6 +1320,7 @@ function retimeInPlace(sched,P){
    Vorsitz/KV werden in jede Zeile geschrieben; prüft der Vorsitz/KV selbst, springt eine freie
    Person ein (vorsitzSub/kvSub = true). */
 function assignCommission(sched,M,P){
+  if(P && P._keepCommission) return;   // geladener Prüfungstag: Kommission unverändert aus PDF lassen
   const pools=(M&&M.beisitzer)||{};
   const allStaff=[...new Set([...((M&&M.teachers)||[]), ...Object.values(pools).flat()])];
   const vorsitz=((P&&P.vorsitz)||"").trim();
@@ -1443,7 +1473,18 @@ function min2hm(m){m=Math.round(m);const h=Math.floor(m/60),mm=m%60;
   return `${String(h).padStart(2,"0")}:${String(mm).padStart(2,"0")}`;}
 
 /* ---------- Rendering ---------- */
-function teacherColor(M){const map={};M.teachers.forEach((t,i)=>map[t]=COLORS[i%COLORS.length]);return map;}
+function teacherColor(M){
+  const map={}, ov=(M&&M.teacherColors)||{};
+  const used=new Set(Object.values(ov).map(c=>(""+c).toLowerCase()));
+  let pi=0;
+  M.teachers.forEach(t=>{
+    if(ov[t]){ map[t]=ov[t]; return; }   // Farbe aus dem PDF
+    let c=COLORS[pi%COLORS.length], guard=0;   // sonst nächste freie Palettenfarbe
+    while(used.has(c.toLowerCase()) && guard++<COLORS.length){ pi++; c=COLORS[pi%COLORS.length]; }
+    pi++; used.add(c.toLowerCase()); map[t]=c;
+  });
+  return map;
+}
 
 function renderGantt(res,M,title){
   const cmap=teacherColor(M);
@@ -1571,9 +1612,15 @@ function tableHtml(res,M){
 
   if(LIVE){
     h+=`<div class="delaybar">
-      <span>Aufgelaufene Verzögerung:</span>
+      <span>Verschiebung gesamt:</span>
       <span class="delay-pill ${totalDelay?'':'zero'}">${totalDelay>0?'+':''}${totalDelay} min</span>
-      <button class="btn btn-ghost btn-sm" id="resetDelay">↺ Verzögerungen zurücksetzen</button>
+      <span class="delay-shift">Plan verschieben:
+        <button class="dbtn minus" data-act="gdly" data-m="-5">−5</button>
+        <button class="dbtn minus" data-act="gdly" data-m="-1">−1</button>
+        <button class="dbtn" data-act="gdly" data-m="1">+1</button>
+        <button class="dbtn" data-act="gdly" data-m="5">+5</button>
+      </span>
+      <button class="btn btn-ghost btn-sm" id="resetDelay">↺ zurücksetzen</button>
     </div>`;
   } else {
     h+=`<div class="editbar">
@@ -1608,6 +1655,8 @@ function tableHtml(res,M){
     if(LIVE){
       liveCell=`<td><span class="delaybtns">
         <button class="dbtn minus" data-act="dly" data-i="${i}" data-m="-5">−5</button>
+        <button class="dbtn minus" data-act="dly" data-i="${i}" data-m="-1">−1</button>
+        <button class="dbtn" data-act="dly" data-i="${i}" data-m="1">+1</button>
         <button class="dbtn" data-act="dly" data-i="${i}" data-m="5">+5</button>
         <button class="dbtn" data-act="dly" data-i="${i}" data-m="10">+10</button>
       </span></td>`;
@@ -1627,11 +1676,15 @@ function tableHtml(res,M){
 }
 function nowMinutes(){ const n=new Date(); return n.getHours()*60+n.getMinutes()+n.getSeconds()/60; }
 
-/* ---------- Beamer-Ansicht (read-only, live) ---------- */
+/* ---------- Beamer-Ansicht (read-only, live, Auto-Scroll) ---------- */
 let BEAMER_ON=false, BEAMER_TIMER=null, BEAMER_PREP=false;
+let BEAMER_SIG="", BEAMER_LASTTARGET=-1, BEAMER_WAKELOCK=null;
+// Bildschirm wach halten (sofern der Browser die Wake-Lock-API unterstützt) – kein Zutun nötig.
+async function beamerWakeLock(){ try{ if("wakeLock" in navigator){ BEAMER_WAKELOCK=await navigator.wakeLock.request("screen"); } }catch(e){} }
 function openBeamer(){
   const bv=document.getElementById("beamerView"); if(!bv||!CUR)return;
   BEAMER_ON=true; bv.classList.add("on");
+  BEAMER_SIG=""; BEAMER_LASTTARGET=-1;
   const lg=document.getElementById("bLogo"); if(lg) lg.src=HTL_LOGO_B64;
   document.getElementById("bDate").textContent=new Date().toLocaleDateString("de-AT",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});
   document.getElementById("bClose").onclick=closeBeamer;
@@ -1647,21 +1700,38 @@ function openBeamer(){
   }
   renderBeamer();
   if(BEAMER_TIMER) clearInterval(BEAMER_TIMER);
-  BEAMER_TIMER=setInterval(renderBeamer,1000);
+  BEAMER_TIMER=setInterval(renderBeamer,1000);   // läuft den ganzen Tag, ohne Zutun
+  beamerWakeLock();
 }
 function closeBeamer(){
   BEAMER_ON=false;
   const bv=document.getElementById("beamerView"); if(bv) bv.classList.remove("on");
   if(BEAMER_TIMER){ clearInterval(BEAMER_TIMER); BEAMER_TIMER=null; }
+  if(BEAMER_WAKELOCK){ try{ BEAMER_WAKELOCK.release(); }catch(e){} BEAMER_WAKELOCK=null; }
+}
+// Wake-Lock nach Tab-Wechsel / Bildschirmsperre erneut anfordern (er wird dabei automatisch freigegeben).
+document.addEventListener("visibilitychange",()=>{ if(BEAMER_ON && document.visibilityState==="visible" && !BEAMER_WAKELOCK) beamerWakeLock(); });
+function beamerRowHtml(x,cmap,now){
+  const done=now>=x.end, isc=now>=x.start&&now<x.end;
+  const icon = isc?'▶' : (done?'✓':'·');
+  const cls = isc?'cur' : (done?'done':'');
+  const prepSt = BEAMER_PREP ? `<span class="bprep-st">ab ${min2hm(x.prepStart)}</span>` : "";
+  return `<tr class="${cls}">
+    <td class="st">${icon}${prepSt}</td>
+    <td class="bt">${min2hm(x.start)}–${min2hm(x.end)}</td>
+    <td class="bnm">${x.student}</td>
+    <td class="bf">${x.subject}</td>
+    <td><span class="bp" style="background:${cmap[x.teacher]}">${x.teacher}</span></td></tr>`;
 }
 function renderBeamer(){
   if(!BEAMER_ON||!CUR)return;
   const res=CUR.res, cmap=teacherColor(MATRIX);
   const rows=[...res.sched].sort((a,b)=>a.start-b.start);
-  const now=nowMinutes();
+  const now=nowMinutes();   // echte Live-Zeit (Verschiebungen laufen über die Live-Verzögerung im Plan)
   // Uhr
   const n=new Date(), p=x=>String(x).padStart(2,"0");
-  const ct=document.getElementById("bClock"); if(ct) ct.textContent=`${p(n.getHours())}:${p(n.getMinutes())}:${p(n.getSeconds())}`;
+  const ct=document.getElementById("bClock");
+  if(ct) ct.textContent=`${p(n.getHours())}:${p(n.getMinutes())}:${p(n.getSeconds())}`;
   // zentraler Raum (Steckbrett oben)
   const br=document.getElementById("bRoom"); if(br) br.textContent=ROOM;
   // Verzögerung
@@ -1669,9 +1739,11 @@ function renderBeamer(){
   const dl=document.getElementById("bDelay");
   if(dl){ if(td>0){ dl.className="bdelay late"; dl.textContent=`+${td} min Verzögerung`; }
     else { dl.className="bdelay zero"; dl.textContent="pünktlich"; } }
-  // aktuelle / nächste Prüfung
-  let cur=null, next=null;
-  for(const x of rows){ if(now>=x.start && now<x.end){ cur=x; } else if(now<x.start && !next){ next=x; } }
+  // aktuelle / nächste Prüfung (mit Index für das Auto-Scrolling)
+  let cur=null, next=null, curIdx=-1, nextIdx=-1;
+  for(let i=0;i<rows.length;i++){ const x=rows[i];
+    if(now>=x.start && now<x.end){ cur=x; curIdx=i; }
+    else if(now<x.start && !next){ next=x; nextIdx=i; } }
   const cc=document.getElementById("bCurrent");
   if(cc){ if(cur){ cc.className="bcard current";
       cc.innerHTML=`<div class="blabel">Jetzt dran · ${min2hm(cur.start)}–${min2hm(cur.end)}</div>
@@ -1686,23 +1758,38 @@ function renderBeamer(){
         <div class="bname">${next.student}</div>
         <div class="bmeta">Fach <b>${next.subject}</b> · Prüfer <span class="bp" style="background:${cmap[next.teacher]}">${next.teacher}</span>${prepHtml}</div>`; }
     else { nc.className="bcard idle"; nc.innerHTML=`<div class="blabel">Als Nächstes</div><div class="bname">— Ende —</div>`; } }
-  // Liste
-  const lb=document.getElementById("bList");
-  if(lb){
+  // Liste: nur neu aufbauen, wenn sich Inhalt/Reihenfolge ändert – sonst bleibt die Scrollposition erhalten
+  const lb=document.getElementById("bList"); if(!lb) return;
+  const sig=BEAMER_PREP+"|"+rows.map(x=>x.student+"@"+x.start+"-"+x.end).join("|");
+  if(sig!==BEAMER_SIG){
     let h=`<table class="${BEAMER_PREP?'has-prep':''}"><thead><tr><th class="st"></th><th>Zeit</th><th>Schüler</th><th>Fach</th><th>Prüfer</th></tr></thead><tbody>`;
-    rows.forEach(x=>{
+    rows.forEach(x=>{ h+=beamerRowHtml(x,cmap,now); });
+    lb.innerHTML=h+`</tbody></table>`;
+    BEAMER_SIG=sig; BEAMER_LASTTARGET=-1;
+  } else {
+    // nur die Zustände (erledigt / läuft) der bestehenden Zeilen aktualisieren
+    const trs=lb.querySelectorAll("tbody tr");
+    rows.forEach((x,i)=>{ const tr=trs[i]; if(!tr) return;
       const done=now>=x.end, isc=now>=x.start&&now<x.end;
-      const icon = isc?'▶' : (done?'✓':'·');
-      const cls = isc?'cur' : (done?'done':'');
-      const prepSt = BEAMER_PREP ? `<span class="bprep-st">ab ${min2hm(x.prepStart)}</span>` : "";
-      h+=`<tr class="${cls}">
-        <td class="st">${icon}${prepSt}</td>
-        <td class="bt">${min2hm(x.start)}–${min2hm(x.end)}</td>
-        <td class="bnm">${x.student}</td>
-        <td class="bf">${x.subject}</td>
-        <td><span class="bp" style="background:${cmap[x.teacher]}">${x.teacher}</span></td></tr>`;
+      const cls=isc?'cur':(done?'done':'');
+      if(tr.className!==cls) tr.className=cls;
+      const stc=tr.querySelector(".st");
+      if(stc){ const icon=isc?'▶':(done?'✓':'·'); const key=icon+(BEAMER_PREP?"p":"");
+        if(stc.dataset.k!==key){ stc.dataset.k=key;
+          stc.innerHTML=icon+(BEAMER_PREP?`<span class="bprep-st">ab ${min2hm(x.prepStart)}</span>`:""); } }
     });
-    lb.innerHTML=h+`</tbody></table>`; }
+  }
+  // Auto-Scroll: laufende (sonst nächste, sonst letzte) Prüfung an den oberen Rand der Liste rücken.
+  // Sobald ein Kandidat fertig ist, rückt der nächste in den Kopf → die Tabelle scrollt von selbst hoch.
+  const target = curIdx>=0 ? curIdx : (nextIdx>=0 ? nextIdx : rows.length-1);
+  if(target>=0 && target!==BEAMER_LASTTARGET){
+    BEAMER_LASTTARGET=target;
+    const tr=lb.querySelectorAll("tbody tr")[target];
+    if(tr){ const thead=lb.querySelector("thead");
+      const theadH=thead?thead.getBoundingClientRect().height:0;
+      const delta=tr.getBoundingClientRect().top - lb.getBoundingClientRect().top - theadH - 8;
+      lb.scrollTo({top:Math.max(0,lb.scrollTop+delta), behavior:"smooth"}); }
+  }
 }
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&BEAMER_ON) closeBeamer(); });
 
@@ -1797,7 +1884,7 @@ function retime(seq,P){
       let s=cur+runDelay;
       // Abstand Ende→Beginn = Vorbereitung + echte Freipause (Min.Pause)
       if(lastEndG1[e.student]!=null) s=Math.max(s, lastEndG1[e.student]+prep+Math.max(0,P.sgap));
-      e.start=s; e.end=s+dur; e.prepStart=Math.max(dayStart,s-prep);
+      e.start=s; e.end=s+dur; e.prepStart=Math.max(0,s-prep);
       e.hard=[]; e.soft=[]; e.liveShift=e.liveShift||0; e.runDelay=runDelay;
       lastEndG1[e.student]=e.end;
       cur=e.end-runDelay;
@@ -1817,7 +1904,7 @@ function retime(seq,P){
       let s = cur2 + runDelay2;
       // Abstand Ende→Beginn = Vorbereitung + echte Freipause (Min.Pause)
       if(lastEndG2[e.student]!=null) s=Math.max(s, lastEndG2[e.student]+prep+Math.max(0,P.sgap));
-      e.start=s; e.end=s+dur; e.prepStart=Math.max(dayStart,s-prep);
+      e.start=s; e.end=s+dur; e.prepStart=Math.max(0,s-prep);
       e.hard=[]; e.soft=[]; e.liveShift=e.liveShift||0; e.runDelay=runDelay2;
       lastEndG2[e.student]=e.end;
       cur2=e.end-runDelay2;
@@ -1841,7 +1928,7 @@ function retime(seq,P){
     // Abstand Ende→Beginn = Vorbereitung + echte Freipause (Min.Pause)
     if(lastStudentEnd[e.student]!=null) s=Math.max(s, lastStudentEnd[e.student]+prep+Math.max(0,P.sgap));
     // ! Objekt MUTIEREN statt neues erstellen, damit CUR.order und sched dieselben Referenzen haben
-    e.start=s; e.end=s+dur; e.prepStart=Math.max(dayStart,s-prep);
+    e.start=s; e.end=s+dur; e.prepStart=Math.max(0,s-prep);
     e.hard=[]; e.soft=[]; e.liveShift=e.liveShift||0; e.runDelay=runDelay;
     sched.push(e);
     cur=e.end-runDelay; lastStudentEnd[e.student]=e.end;
@@ -1996,10 +2083,16 @@ function repaintPlan(res,P){
   const lt=document.getElementById("liveToggle");
   if(lt) lt.onchange=()=>{ LIVE=lt.checked;
     const r=retime(CUR.order,P); CUR.res=r; repaintPlan(r,P); };
-  // Delay-Buttons (+5/+10/−5 je Zeile) — wirkt auf alle folgenden
+  // Delay-Buttons (−5/−1/+1/+5/+10 je Zeile) — wirkt auf alle folgenden; auch negativ (vor Start)
   document.querySelectorAll('.dbtn[data-act="dly"]').forEach(b=>{
     b.onclick=()=>{ const i=+b.dataset.i, m=+b.dataset.m;
-      const slot=CUR.order[i]; slot.liveShift=Math.max(0,(slot.liveShift||0)+m);
+      const slot=CUR.order[i]; slot.liveShift=(slot.liveShift||0)+m;
+      const r=retime(CUR.order,P); CUR.res=r; repaintPlan(r,P); };
+  });
+  // Globale Plan-Verschiebung (−5/−1/+1/+5): verschiebt jede Gruppe ab ihrer ersten Prüfung – auch vor den Start.
+  document.querySelectorAll('.dbtn[data-act="gdly"]').forEach(b=>{
+    b.onclick=()=>{ const m=+b.dataset.m; const seen=new Set();
+      CUR.order.forEach(s=>{ const g=s.group||1; if(!seen.has(g)){ seen.add(g); s.liveShift=(s.liveShift||0)+m; } });
       const r=retime(CUR.order,P); CUR.res=r; repaintPlan(r,P); };
   });
   const rd=document.getElementById("resetDelay");
@@ -2266,78 +2359,100 @@ async function exportExcel(res){
   // Spalten-Indizes (1-basiert)
   const cNr=1, cName=2, cSub0=3, cVorb=3+nSub, cPruef=4+nSub, cVors=5+nSub, cJV=6+nSub, cPr1=7+nSub,
         cPr2=8+nSub, cSchr=9+nSub, cTB1=10+nSub, cTB2=11+nSub, cBeur=12+nSub, cJahr=13+nSub, cGes=14+nSub, lastCol=cGes;
+  const kvField=(($("kv")&&$("kv").value)||"").trim();
   const widths=new Array(lastCol).fill(null);
-  widths[cNr-1]={width:6}; widths[cName-1]={width:24};
-  for(let s=0;s<nSub;s++) widths[cSub0-1+s]={width:5};
-  widths[cVorb-1]={width:11}; widths[cPruef-1]={width:11};
-  // ab Vorbereitungszeit schmale Spalten mit hochgedrehten Überschriften
-  widths[cVorb-1]={width:6}; widths[cPruef-1]={width:6};
-  [cVors,cJV,cPr1,cPr2,cSchr].forEach(c=>widths[c-1]={width:5});
-  [cTB1,cTB2].forEach(c=>widths[c-1]={width:5.5});
-  widths[cBeur-1]={width:6}; widths[cJahr-1]={width:5}; widths[cGes-1]={width:6};
-  ws3.columns=widths.map(w=>w||{width:10});
+  widths[cNr-1]={width:6}; widths[cName-1]={width:30};
+  for(let s=0;s<nSub;s++) widths[cSub0-1+s]={width:7};
+  widths[cVorb-1]={width:9}; widths[cPruef-1]={width:9};
+  [cVors,cJV,cPr1,cPr2,cSchr].forEach(c=>widths[c-1]={width:9});
+  [cTB1,cTB2].forEach(c=>widths[c-1]={width:9});
+  widths[cBeur-1]={width:10}; widths[cJahr-1]={width:8}; widths[cGes-1]={width:10};
+  // Eindeutige Breite je Spalte (winziges Epsilon) – sonst verwirft ExcelJS gruppierte gleich-breite Spalten
+  ws3.columns=widths.map((w,idx)=>({width:((w&&w.width)||11)+idx*0.0009}));
   const TEAL="#0083aa", LT="#e7f3f5";
+  const thin={style:"thin",color:{argb:argb(TEAL)}};
+  const boxAll={top:thin,left:thin,bottom:thin,right:thin};
   const band=(c1,c2,txt)=>{ ws3.mergeCells(1,c1,1,c2); const c=ws3.getCell(1,c1); c.value=txt;
-    c.font={name:"Calibri",size:12,bold:true,color:{argb:"FFFFFFFF"}};
+    c.font={name:"Calibri",size:13,bold:true,color:{argb:"FFFFFFFF"}};
     c.fill={type:"pattern",pattern:"solid",fgColor:{argb:argb(TEAL)}};
-    c.alignment={vertical:"middle",horizontal:"center"}; };
-  // Zeile 1: Titel + Bänder
+    c.alignment={vertical:"middle",horizontal:"center",wrapText:true}; c.border=boxAll; };
+  // Zeile 1: Titel (A1:B1, mit Umbruch) + Bänder
   ws3.mergeCells(1,cNr,1,cName); { const c=ws3.getCell(1,cNr);
-    c.value=`${klasse?klasse+" — ":""}Mündliche RDP · Raum ${ROOM}`;
-    c.font={name:"Calibri",size:12,bold:true,color:{argb:argb(TEAL)}}; c.alignment={vertical:"middle",horizontal:"left"}; }
+    c.value=`${klasse?klasse+" — ":""}Mündliche RDP · Raum ${ROOM}${kvField?"\nKV: "+kvField:""}`;
+    c.font={name:"Calibri",size:13,bold:true,color:{argb:argb(TEAL)}};
+    c.alignment={vertical:"middle",horizontal:"left",wrapText:true}; c.border=boxAll; }
   if(nSub>0) band(cSub0, cSub0+nSub-1, "Prüfungsgegenstände");
   band(cVorb,cPruef,"Zeiteinteilung");
   band(cVors,cTB2,"Prüfungskommission");
   band(cBeur,cGes,"Beurteilung");
-  ws3.getRow(1).height=20;
-  // Zeilen 2-3: Spaltenköpfe (Textspalten vertikal über beide Zeilen verbunden)
-  // Kopfzellen rows 2-4 (drei Kopfzeilen: Fach-Kürzel / Prüfer / Kandidat-Zeile). Textspalten und
-  // gedrehte Spalten werden über alle drei Zeilen verbunden; Spalte B bleibt dreizeilig.
-  const hdr=(c1,txt,rot)=>{ ws3.mergeCells(2,c1,4,c1); const c=ws3.getCell(2,c1); c.value=txt;
-    c.font={name:"Calibri",size:9,bold:true,color:{argb:argb(TEAL)}};
+  ws3.getRow(1).height=44;
+  // Zeilen 2-3: Spaltenköpfe. Senkrechte Titel über Zeile 2-3 verbunden → sitzen (bottom) in Zeile 3.
+  // Zeile 4 bleibt FREI (Eröffnungskonferenz). „Kandidat/in"-Zeile entfällt.
+  const hdr=(c1,txt,rot)=>{ ws3.mergeCells(2,c1,3,c1); const c=ws3.getCell(2,c1); c.value=txt;
+    c.font={name:"Calibri",size:12,bold:true,color:{argb:argb(TEAL)}};
     c.fill={type:"pattern",pattern:"solid",fgColor:{argb:argb(LT)}};
-    c.alignment=rot?{vertical:"bottom",horizontal:"center",textRotation:90}
+    c.alignment=rot?{vertical:"bottom",horizontal:"center",textRotation:90,wrapText:true}
                    :{vertical:"middle",horizontal:"center",wrapText:true};
-    c.border={bottom:{style:"thin",color:{argb:argb(TEAL)}}}; };
+    c.border=boxAll; };
   hdr(cNr,"Nr.");
-  // ab Vorbereitungszeit alle Überschriften nach oben gedreht (vertikal) – inkl. Spalte K & L
-  hdr(cVorb,"Vorbereitungszeit",true); hdr(cPruef,"Prüfungszeit",true);
+  hdr(cVorb,"Begin Konferenz /\nBegin Vorbereitungszeit",true); hdr(cPruef,"Ende Konferenz /\nBegin Prüfungszeit",true);
   hdr(cVors,"Vorsitzender",true); hdr(cJV,"Jahrgangsvorstand (JV)",true); hdr(cPr1,"Prüfer 1",true); hdr(cPr2,"Prüfer 2",true);
   hdr(cSchr,"Schriftführer",true); hdr(cTB1,"Themenbereich 1",true); hdr(cTB2,"Themenbereich 2",true);
   hdr(cBeur,"Beurteilung Prüfer 1 & 2",true); hdr(cJahr,"Jahresnote",true); hdr(cGes,"Gesamtbeurteilung",true);
-  // Spalte B dreizeilig: B2 Gegenstand · B3 Prüfer · B4 Kandidat/in (eigene Zeile)
-  const bcell=(rr,txt,va)=>{ const c=ws3.getCell(rr,cName); c.value=txt;
-    c.font={name:"Calibri",size:9,bold:true,color:{argb:argb(TEAL)}};
+  // Spalte B: B2 „Gegenstand", B3 „Prüfer"
+  const bcell=(rr,txt)=>{ const c=ws3.getCell(rr,cName); c.value=txt;
+    c.font={name:"Calibri",size:12,bold:true,color:{argb:argb(TEAL)}};
     c.fill={type:"pattern",pattern:"solid",fgColor:{argb:argb(LT)}};
-    c.alignment={vertical:va||"top",horizontal:"left"};
-    c.border={bottom:{style:"thin",color:{argb:argb(TEAL)}}}; };
-  bcell(2,"Gegenstand"); bcell(3,"Prüfer"); bcell(4,"Kandidat/in","middle");
-  // Fach-Spalten: Zeile 2 = Fach-Kürzel, Zeile 3 = Haupt-Prüfer, Zeile 4 leer (Kandidat-Zeile)
+    c.alignment={vertical:"middle",horizontal:"left",wrapText:true};
+    c.border=boxAll; };
+  bcell(2,"Gegenstand"); bcell(3,"Prüfer");
+  // Fach-Spalten: Zeile 2 = Fach-Kürzel, Zeile 3 = Haupt-Prüfer
   subjList.forEach((su,s)=>{ const cc=cSub0+s;
-    const a=ws3.getCell(2,cc); a.value=su; a.font={name:"Calibri",size:9,bold:true,color:{argb:argb(TEAL)}};
-    a.fill={type:"pattern",pattern:"solid",fgColor:{argb:argb(LT)}}; a.alignment={vertical:"top",horizontal:"center"};
-    const b=ws3.getCell(3,cc); b.value=subjTeacher[su]||""; b.font={name:"Calibri",size:8,color:{argb:argb("#555555")}};
-    b.fill={type:"pattern",pattern:"solid",fgColor:{argb:argb(LT)}}; b.alignment={vertical:"top",horizontal:"center"};
-    const d=ws3.getCell(4,cc); d.fill={type:"pattern",pattern:"solid",fgColor:{argb:argb(LT)}};
-    d.border={bottom:{style:"thin",color:{argb:argb(TEAL)}}}; });
-  ws3.getRow(2).height=14; ws3.getRow(3).height=150; ws3.getRow(4).height=16;   // Zeile 3 hoch für die vertikalen Titel
-  // Datenzeilen ab Zeile 5
-  let kr=5;
+    const a=ws3.getCell(2,cc); a.value=su; a.font={name:"Calibri",size:12,bold:true,color:{argb:argb(TEAL)}};
+    a.fill={type:"pattern",pattern:"solid",fgColor:{argb:argb(LT)}}; a.alignment={vertical:"middle",horizontal:"center",wrapText:true}; a.border=boxAll;
+    const b=ws3.getCell(3,cc); b.value=subjTeacher[su]||""; b.font={name:"Calibri",size:12,color:{argb:argb("#555555")}};
+    b.fill={type:"pattern",pattern:"solid",fgColor:{argb:argb(LT)}}; b.alignment={vertical:"middle",horizontal:"center",wrapText:true}; b.border=boxAll; });
+  ws3.getRow(2).height=22; ws3.getRow(3).height=190;   // Zeile 3 hoch für die senkrechten Titel
+  // ----- Ab Zeile 4: je Gruppe Eröffnungskonferenz + Gruppen-Band, dann die Prüfungen.
+  // Reihe 4 = Eröffnungskonferenz, Reihe 5 = Gruppenname. „Kandidat/in" entfällt. -----
+  const grpLabel=g=> isSplit ? `Gruppe ${g} — ${g===1?"Vormittag":"Nachmittag"}` : "Kandidatengruppe";
+  let kr=4;
+  // durchgehende (volle) Zeile: links Beschriftung, optional Zeiten (b,e) in der Zeiteinteilung
+  const bandRow=(label, fill, bold, b, e)=>{
+    if(b!=null){
+      ws3.mergeCells(kr,cNr,kr,cVorb-1);
+      const cb=ws3.getCell(kr,cVorb), ce=ws3.getCell(kr,cPruef); cb.value=min2hm(b); ce.value=min2hm(e);
+      [cb,ce].forEach(c=>{c.font={name:"Calibri",size:12};c.alignment={vertical:"middle",horizontal:"center"};});
+      if(cVors<=lastCol) ws3.mergeCells(kr,cVors,kr,lastCol);
+    } else { ws3.mergeCells(kr,cNr,kr,lastCol); }
+    const lc=ws3.getCell(kr,cNr); lc.value=label;
+    lc.font={name:"Calibri",size:12,bold:!!bold,color:{argb:argb(TEAL)}};
+    lc.alignment={vertical:"middle",horizontal:"left",indent:1};
+    for(let c=cNr;c<=lastCol;c++){ const cell=ws3.getCell(kr,c);
+      if(fill) cell.fill={type:"pattern",pattern:"solid",fgColor:{argb:argb(fill)}};
+      cell.border=Object.assign({},cell.border,{top:thin,bottom:thin}); }
+    ws3.getRow(kr).height=20; kr++;
+  };
+  const groupPrep=g=>Math.min(...rows.filter(r=>(r.group||1)===g).map(r=>r.prepStart));
+  const groupEnd =g=>Math.max(...rows.filter(r=>(r.group||1)===g).map(r=>r.end));
+  // Konferenz-Zeit aus dem Eingabefeld (HH:MM) – sonst der automatische Vorschlag
+  const confT=(id,fb)=>{ const e=$(id); const v=e&&e.value?e.value.trim():""; return v?hm2min(v):fb; };
   rows.forEach((x,i)=>{
-    if(isSplit && (i===0 || x.group!==rows[i-1].group)){
-      ws3.mergeCells(kr,cNr,kr,lastCol); const sc=ws3.getCell(kr,cNr);
-      sc.value=`Gruppe ${x.group} — ${x.group===1?"Vormittag":"Nachmittag"}`;
-      sc.font={name:"Calibri",size:10,bold:true,color:{argb:argb(TEAL)}};
-      sc.fill={type:"pattern",pattern:"solid",fgColor:{argb:argb("#eef6f8")}};
-      sc.alignment={vertical:"middle",horizontal:"left",indent:1}; ws3.getRow(kr).height=16; kr++;
+    const g=x.group||1;
+    if(i===0 || x.group!==rows[i-1].group){
+      if(i>0){ const pg=rows[i-1].group||1; const pe=groupEnd(pg);
+        bandRow(`Beurteilungskonferenz${isSplit?" "+pg:""}`, "#eef6f8", false, confT("bk"+pg+"s",Math.ceil((pe+10)/5)*5), confT("bk"+pg+"e",Math.ceil((pe+25)/5)*5)); }
+      const gp=groupPrep(g);
+      bandRow(`Eröffnungskonferenz${isSplit?" "+g:""}`, "#f3f9fb", false, confT("ek"+g+"s",Math.floor((gp-15)/5)*5), confT("ek"+g+"e",Math.floor((gp-5)/5)*5));
+      bandRow(grpLabel(g), "#dceef2", true, null);
     }
     const r=ws3.getRow(kr);
     const set=(c,v,opt)=>{ opt=opt||{}; const cell=r.getCell(c); cell.value=v;
-      cell.font=Object.assign({name:"Calibri",size:9},opt.font||{});
+      cell.font=Object.assign({name:"Calibri",size:12},opt.font||{});
       cell.alignment={vertical:"middle",horizontal:opt.left?"left":"center"};
       const f=opt.fill || (i%2===1?{type:"pattern",pattern:"solid",fgColor:{argb:argb("#f2f7fa")}}:null);
       if(f) cell.fill=f;
-      cell.border={bottom:{style:"hair",color:{argb:argb("#d8dee8")}}}; };
+      cell.border={left:thin,right:thin,bottom:{style:"hair",color:{argb:argb("#d8dee8")}}}; };
     set(cNr,i+1); set(cName,x.student,{left:true});
     const sIdx=subjList.indexOf(x.subject);                          // Spalte des Fachs
     subjList.forEach((su,s)=>set(cSub0+s, s===sIdx?"X":""));         // Fach-Matrix
@@ -2346,24 +2461,20 @@ async function exportExcel(res){
     set(cPr1,x.teacher,{font:{bold:true,color:{argb:"FFFFFFFF"}},fill:{type:"pattern",pattern:"solid",fgColor:{argb:argb(cmap[x.teacher]||TEAL)}}});
     set(cPr2,x.beisitz||"");
     set(cSchr,""); set(cTB1,""); set(cTB2,""); set(cBeur,""); set(cJahr,""); set(cGes,"");
-    r.height=16; kr++;
+    r.height=20; kr++;
   });
-  // Konferenz-Zeilen (Beginn/Ende), Zeiten als Vorschlag rund um den Prüfungstag
-  kr++;
-  { const r=ws3.getRow(kr++); const cb=r.getCell(cVorb), ce=r.getCell(cPruef);
-    cb.value="Beginn"; ce.value="Ende"; [cb,ce].forEach(c=>{c.font={name:"Calibri",size:9,bold:true,color:{argb:argb(TEAL)}};c.alignment={horizontal:"center"};}); }
-  const firstPrep=Math.min(...rows.map(x=>x.prepStart)), lastEnd=Math.max(...rows.map(x=>x.end));
-  const conf=(label,b,e)=>{ const r=ws3.getRow(kr++);
-    const lc=r.getCell(cName); lc.value=label; lc.font={name:"Calibri",size:9,bold:true}; lc.alignment={horizontal:"left"};
-    const cb=r.getCell(cVorb), ce=r.getCell(cPruef); cb.value=min2hm(b); ce.value=min2hm(e);
-    [cb,ce].forEach(c=>{c.font={name:"Calibri",size:9};c.alignment={horizontal:"center"};}); };
-  conf("Eröffnungskonferenz", Math.floor((firstPrep-30)/5)*5, Math.floor((firstPrep-5)/5)*5);
-  conf("Beurteilungskonferenz", Math.ceil((lastEnd+10)/5)*5, Math.ceil((lastEnd+40)/5)*5);
+  // Abschluss-Beurteilungskonferenz der letzten Gruppe
+  { const lg=rows[rows.length-1].group||1; const le=groupEnd(lg);
+    bandRow(`Beurteilungskonferenz${isSplit?" "+lg:""}`, "#eef6f8", false, confT("bk"+lg+"s",Math.ceil((le+10)/5)*5), confT("bk"+lg+"e",Math.ceil((le+40)/5)*5)); }
   // Fußnoten-Platzhalter
   kr++;
   [["Klassenfoto:","Ort / Uhrzeit eintragen"],["Zeugnisverleihung:","Datum / Uhrzeit eintragen"]].forEach(([a,b])=>{
     ws3.mergeCells(kr,cName,kr,Math.min(lastCol,cName+6)); const c=ws3.getCell(kr,cName);
-    c.value=`${a} ${b}`; c.font={name:"Calibri",size:9,italic:true,color:{argb:argb("#888888")}}; c.alignment={horizontal:"left"}; kr++; });
+    c.value=`${a} ${b}`; c.font={name:"Calibri",size:11,italic:true,color:{argb:argb("#888888")}}; c.alignment={horizontal:"left"}; kr++; });
+  // Kopf (Zeilen 1-5) auf jeder Druckseite wiederholen · Querformat · auf Seitenbreite skalieren
+  ws3.pageSetup={orientation:"landscape", fitToPage:true, fitToWidth:1, fitToHeight:0, printTitlesRow:"1:5",
+    margins:{left:0.3,right:0.3,top:0.4,bottom:0.4,header:0.2,footer:0.2}};
+  ws3.views=[{state:"frozen", ySplit:5, showGridLines:false}];
 
   // Download
   const buf=await wb.xlsx.writeBuffer();
@@ -2428,6 +2539,370 @@ function loadDemoMatrix(){
 }
 // Automatisch die Demo-Matrix laden, solange keine eigene Excel-Datei gewählt wurde.
 if(!MATRIX) loadDemoMatrix();
+
+/* ---------- Prüfungstag aus PDF laden ---------- */
+// Inhaltsstrom eines PDFs entpacken (FlateDecode = zlib „deflate"); Fallback raw-deflate.
+async function inflateChunk(bytes){
+  for(const fmt of ["deflate","deflate-raw"]){
+    try{ const ds=new DecompressionStream(fmt);
+      const ab=await new Response(new Blob([bytes]).stream().pipeThrough(ds)).arrayBuffer();
+      return new Uint8Array(ab);
+    }catch(e){}
+  }
+  return null;
+}
+// PDF → Text in Lesereihenfolge: alle Streams entpacken und die (…)-Textoperanden aneinanderhängen.
+// Hex-String (4-stellige Codes) → Unicode-Text.
+function pdfHexToStr(h){ let o=""; for(let i=0;i+4<=h.length;i+=4) o+=String.fromCharCode(parseInt(h.substr(i,4),16)); return o; }
+// ToUnicode-CMap parsen: bildet Glyph-Codes (CID-Fonts) auf Unicode ab. Nötig für Namen
+// mit Sonderzeichen (ć, đ, …), die als Hex-Codes <00040176…> statt als Klartext vorliegen.
+function parseCMap(s, m){
+  let mm;
+  const bf=/beginbfchar([\s\S]*?)endbfchar/g;
+  while((mm=bf.exec(s))){ const re=/<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>/g; let p;
+    while((p=re.exec(mm[1]))) m[parseInt(p[1],16)]=pdfHexToStr(p[2]); }
+  const br=/beginbfrange([\s\S]*?)endbfrange/g;
+  while((mm=br.exec(s))){ const seg=mm[1]; let p;
+    const ra=/<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>/g;
+    while((p=ra.exec(seg))){ const lo=parseInt(p[1],16),hi=parseInt(p[2],16),d0=parseInt(p[3],16);
+      for(let k=lo;k<=hi;k++) m[k]=String.fromCharCode(d0+(k-lo)); }
+    const rb=/<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>\s*\[([\s\S]*?)\]/g;
+    while((p=rb.exec(seg))){ const lo=parseInt(p[1],16); const vals=p[3].match(/<[0-9A-Fa-f]+>/g)||[];
+      vals.forEach((v,i)=>{ m[lo+i]=pdfHexToStr(v.replace(/[<>]/g,"")); }); }
+  }
+}
+function cmapDecode(h,cmap){ h=h.replace(/\s/g,""); let o=""; for(let i=0;i+4<=h.length;i+=4){ const code=parseInt(h.substr(i,4),16); if(cmap[code]!==undefined)o+=cmap[code]; } return o; }
+// Text eines Tj/TJ-Operanden zusammensetzen: () = direkter Text, <…> = Hex über die CMap.
+function pdfTextFromOperands(ops, cmap){
+  let s="";
+  for(const o of ops){
+    if(o[0]==='('){ s+=o.slice(1,-1); }
+    else if(o[0]==='<'){ s+=cmapDecode(o.slice(1,-1), cmap); }
+    else if(o[0]==='['){ const re=/\((?:[^()\\]|\\.)*\)|<[0-9A-Fa-f\s]*>/g; let mm;
+      while((mm=re.exec(o))){ const g=mm[0]; if(g[0]==='(') s+=g.slice(1,-1); else s+=cmapDecode(g.slice(1,-1),cmap); } }
+  }
+  return s.replace(/\\([()\\])/g,"$1");
+}
+function rgb2hex(r,g,b){ const h=v=>("0"+Math.round(v*255).toString(16)).slice(-2); return "#"+h(r)+h(g)+h(b); }
+// Mini-Interpreter für einen Content-Stream: liefert Textfragmente MIT Position {x,y,s}
+// UND gefüllte Rechtecke {x,y,w,h,hex} (für die Farbcodes der Prüfer).
+// Verfolgt Textmatrix (BT/Tm/Td/TD/T*) und Füllfarbe (rg/g) + Rechtecke (re … f).
+function pdfContentItems(ds, cmap){
+  const items=[], cells=[]; let tm=[1,0,0,1,0,0], tlm=tm.slice();
+  let fill=[0,0,0], rect=null;
+  const tok=/\((?:[^()\\]|\\.)*\)|\[(?:[^\[\]\\]|\\.)*\]|<[0-9A-Fa-f\s]*>|\/[^\s\/\[\]<>()]+|[-+]?[0-9]*\.?[0-9]+|[A-Za-z*'"]+/g;
+  let m, operands=[];
+  while((m=tok.exec(ds))){
+    const t=m[0], c=t[0];
+    if(c==='('||c==='['||c==='<'||c==='/'||c==='+'||c==='-'||c==='.'||(c>='0'&&c<='9')){ operands.push(t); continue; }
+    if(t==='BT'){ tm=[1,0,0,1,0,0]; tlm=tm.slice(); }
+    else if(t==='Tm'&&operands.length>=6){ const a=operands.slice(-6).map(Number); tm=a.slice(); tlm=a.slice(); }
+    else if((t==='Td'||t==='TD')&&operands.length>=2){ const dx=+operands[operands.length-2], dy=+operands[operands.length-1];
+      tlm=[tlm[0],tlm[1],tlm[2],tlm[3], tlm[0]*dx+tlm[2]*dy+tlm[4], tlm[1]*dx+tlm[3]*dy+tlm[5]]; tm=tlm.slice(); }
+    else if(t==='T*'){ tlm=[tlm[0],tlm[1],tlm[2],tlm[3],tlm[4],tlm[5]-12]; tm=tlm.slice(); }
+    else if(t==='Tj'||t==='TJ'||t==="'"||t==='"'){
+      const str=pdfTextFromOperands(operands, cmap);
+      if(str.trim()) items.push({x:Math.round(tm[4]*10)/10, y:Math.round(tm[5]*10)/10, s:str});
+    }
+    else if(t==='rg'&&operands.length>=3){ fill=operands.slice(-3).map(Number); }
+    else if(t==='g'&&operands.length>=1){ const v=+operands[operands.length-1]; fill=[v,v,v]; }
+    else if(t==='re'&&operands.length>=4){ rect=operands.slice(-4).map(Number); }
+    else if((t==='f'||t==='f*'||t==='F'||t==='b'||t==='b*'||t==='B'||t==='B*')&&rect){
+      cells.push({x:rect[0], y:rect[1], w:rect[2], h:rect[3], hex:rgb2hex(fill[0],fill[1],fill[2]), rgb:fill.slice()}); rect=null;
+    }
+    operands=[];
+  }
+  return {items, cells};
+}
+// Alle Content-Streams entpacken → je „Seite" eine Liste positionierter Textfragmente.
+// Erst werden die ToUnicode-CMaps gesammelt, dann der Text damit dekodiert.
+async function pdfReadingItems(u){
+  const s=new TextDecoder("latin1").decode(u);
+  const decoded=[]; let idx=0;
+  while(true){
+    let si=s.indexOf("stream", idx); if(si<0) break;
+    if(s.substring(si-3,si)==="end"){ idx=si+6; continue; }   // „endstream" überspringen
+    let cs=si+6; if(s[cs]==="\r")cs++; if(s[cs]==="\n")cs++;
+    let ei=s.indexOf("endstream", cs); if(ei<0) break;
+    let ce=ei; if(s[ce-1]==="\n")ce--; if(s[ce-1]==="\r")ce--;
+    const dec=await inflateChunk(u.slice(cs,ce));
+    idx=ei+9;
+    if(dec) decoded.push(new TextDecoder("latin1").decode(dec));
+  }
+  const cmap={};
+  decoded.forEach(ds=>{ if(ds.indexOf("beginbfchar")>=0||ds.indexOf("beginbfrange")>=0) parseCMap(ds,cmap); });
+  const pages=[];
+  decoded.forEach(ds=>{ if(ds.indexOf("Tj")<0 && ds.indexOf("TJ")<0) return;
+    const page=pdfContentItems(ds,cmap); if(page.items.length) pages.push(page); });
+  return pages;
+}
+// Positions-Tabelle des Prüfungsplan-PDFs → Prüfungen.
+// Fächer werden über die X-Matrix gelesen: die x-Position des „X" zeigt auf die Spalte
+// aus der „Gegenstand"-Zeile; die „Prüfer"-Zeile darunter liefert das passende Prüferkürzel.
+function parsePruefungstag(pages){
+  const subjMap={};                 // Fach → Prüferkürzel (aus Legende „Gegenstand"/„Prüfer")
+  let legendSubjects=null;          // Fächer in Legenden-Reihenfolge (eindeutige Namen)
+  let raum="", klasseHdr="";        // aus Kopfzeile, z. B. „5BHET — Mündliche RDP · Raum H212"
+  let anchors=null;                 // x-Positionen der Kommissions-Spalten (aus Kopfzeile)
+  const allExams=[]; let pgCount=0;
+  const teacherColors={};           // Prüferkürzel → Farbe (aus den Farbflächen im PDF)
+  const conf={ek:{},bk:{}};         // Konferenz-Zeiten (Eröffnungs-/Beurteilungskonferenz) je Gruppe
+  pages.forEach(page=>{
+    const items=page.items, cells=page.cells||[];
+    if(!raum){ const h=items.find(it=>/Raum/i.test(it.s));
+      if(h){ const mR=h.s.match(/Raum\s*:?\s*([^\s·,;]+)/i); if(mR) raum=mR[1];
+        const mK=h.s.match(/\b(\d[A-Za-zÄÖÜ]{2,})\b/); if(mK) klasseHdr=mK[1]; } }
+    // Kommissions-Spaltenanker aus den Kopf-Beschriftungen (für exakte Zuordnung pro Zeile)
+    if(!anchors){
+      const f=n=>items.find(it=>it.s.trim()===n);
+      const v=f("Vorsitzender"), k=f("KV"), p1=f("Prüfer 1"), p2=f("Prüfer 2"), sf=f("Schriftführer");
+      if(v&&k&&p1&&p2) anchors={vorsitz:v.x, kv:k.x, p1:p1.x, p2:p2.x, schr:sf?sf.x:(p2.x+30)};
+    }
+    const geg=items.find(it=>it.s.trim()==="Gegenstand");
+    let subjCols=[];
+    if(geg){
+      subjCols=items.filter(it=>Math.abs(it.y-geg.y)<=4 && it.x>geg.x+50 && it.x<620 && it.s.trim())
+        .sort((a,b)=>a.x-b.x).map(it=>({name:it.s.trim(), x:it.x}));
+      // Mehrfach identische Fachnamen eindeutig machen: 2. „ES1" → „ES1/2", 3. → „ES1/3" …
+      const seen={};
+      subjCols.forEach(sc=>{ seen[sc.name]=(seen[sc.name]||0)+1; if(seen[sc.name]>1) sc.name=sc.name+"/"+seen[sc.name]; });
+      if(!legendSubjects && subjCols.length) legendSubjects=subjCols.map(s=>s.name);
+      const prf=items.find(it=>it.s.trim()==="Prüfer" && it.y<geg.y);
+      if(prf){
+        const prs=items.filter(it=>Math.abs(it.y-prf.y)<=4 && it.x>prf.x+50 && it.x<620 && it.s.trim())
+          .sort((a,b)=>a.x-b.x);
+        subjCols.forEach((sc,i)=>{ if(prs[i]) subjMap[sc.name]=prs[i].s.trim(); });
+      }
+    }
+    // Dynamische x-Bereiche aus den Fächer-Spalten → funktioniert mit beliebig vielen Gegenständen
+    const sxs=subjCols.map(c=>c.x);
+    const subjLo=sxs.length?Math.min(...sxs)-20:250, subjHi=sxs.length?Math.max(...sxs)+25:560;
+    const nameHi=sxs.length?Math.min(...sxs)-10:262;
+    // Kommissions-Zellen einer Zeile den Spalten zuordnen. Spalten stehen fest in der Reihenfolge
+    // Vorsitz · KV · Prüfer1 · Prüfer2 · Schriftführer → bei voller Belegung der Reihenfolge nach,
+    // sonst je Zelle nächster Spaltenanker. (V) hinter einem Kürzel = Vertretung.
+    const ORDER=["vorsitz","kv","p1","p2","schr"];
+    const setRole=(out,role,cell)=>{
+      if(role==="vorsitz"){ out.vorsitz=cell.code; out.vorsitzSub=cell.v; }
+      else if(role==="kv"){ out.kv=cell.code; out.kvSub=cell.v; }
+      else if(role==="p1"){ out.p1=cell.code; }
+      else if(role==="p2"){ out.p2=cell.code; }
+    };
+    const mapComm=(cm)=>{
+      const out={vorsitz:"",vorsitzSub:false,kv:"",kvSub:false,p1:"",p2:""};
+      if(!anchors || cm.length===ORDER.length){
+        ORDER.forEach((role,i)=>{ if(cm[i]) setRole(out,role,cm[i]); });
+      } else {   // unregelmäßige Zellenzahl: je Zelle nächster Spaltenanker
+        const ax={vorsitz:anchors.vorsitz,kv:anchors.kv,p1:anchors.p1,p2:anchors.p2,schr:anchors.schr};
+        cm.forEach(cell=>{ let role="vorsitz",bd=1e9; for(const r in ax){const d=Math.abs(cell.x-ax[r]); if(d<bd){bd=d;role=r;}}
+          const filled=(role==="vorsitz"&&out.vorsitz)||(role==="kv"&&out.kv)||(role==="p1"&&out.p1)||(role==="p2"&&out.p2);
+          if(!filled) setRole(out,role,cell); });
+      }
+      return out;
+    };
+    // Fragmente zu Tabellenzeilen gruppieren (gleiche y-Höhe = eine Zeile)
+    const rows={};
+    items.forEach(it=>{ const k=Math.round(it.y); (rows[k]=rows[k]||[]).push(it); });
+    const examRows=[];
+    Object.keys(rows).map(Number).sort((a,b)=>b-a).forEach(y=>{
+      const cs=rows[y].slice().sort((a,b)=>a.x-b.x);
+      const nrCell=cs.find(c=>c.x<82 && /^\d{1,2}$/.test(c.s.trim()));
+      const xMark=cs.find(c=>c.s.trim()==='X' && c.x>=subjLo && c.x<=subjHi);   // Markierung in der Fächer-Matrix
+      const times=cs.filter(c=>/^\d\d?:\d\d$/.test(c.s.trim()) && c.x>subjHi).map(c=>c.s.trim());
+      if(!nrCell||!xMark||times.length<2) return;   // nur echte Prüfungszeilen
+      const name=cs.filter(c=>c.x>=85&&c.x<nameHi&&c.s.trim()).map(c=>c.s.trim()).join(" ").trim();
+      const commMax=anchors?anchors.schr+20:9999;   // Spalten rechts der Kommission (Themenbereich …) ausblenden
+      const comm=cs.filter(c=>c.x>=610 && c.x<=commMax).sort((a,b)=>a.x-b.x)
+        .map(c=>({code:c.s.replace(/\s*\(V\)\s*/,"").trim(), v:/\(V\)/.test(c.s), x:c.x}));
+      let subj=""; if(subjCols.length) subj=subjCols.reduce((b,c)=>Math.abs(c.x-xMark.x)<Math.abs(b.x-xMark.x)?c:b).name;
+      const role=mapComm(comm);
+      const teacher=role.p1 || subjMap[subj] || "";
+      examRows.push({nr:+nrCell.s.trim(), name, vorb:times[0], pruef:times[1], subject:subj, y,
+        teacher, beisitz:role.p2, vorsitz:role.vorsitz, vorsitzSub:role.vorsitzSub, kv:role.kv, kvSub:role.kvSub, group:pgCount+1});
+    });
+    // Konferenz-Zeilen (Eröffnungs-/Beurteilungskonferenz) → Zeiten je Gruppe (für die Felder/Export)
+    Object.keys(rows).forEach(y=>{
+      const cs=rows[y]; const lab=cs.map(c=>c.s).join(" ");
+      const mk=lab.match(/(Eröffnungs|Beurteilungs)konferenz\s*(\d)?/i); if(!mk) return;
+      const ts=cs.filter(c=>/^\d\d?:\d\d$/.test(c.s.trim()) && c.x>subjHi).sort((a,b)=>a.x-b.x).map(c=>hm2min(c.s.trim()));
+      if(ts.length<2) return;
+      const g=mk[2]||String(pgCount+1);
+      (mk[1].toLowerCase().charAt(0)==="e"?conf.ek:conf.bk)[g]={s:ts[0],e:ts[1]};
+    });
+    // Farbflächen (Prüfer-Spalte) → Farbe je Prüfer. Zelle liegt etwas tiefer als die Textbasis.
+    cells.forEach(cell=>{
+      const g=cell.rgb||[0,0,0];
+      const gray=Math.abs(g[0]-g[1])<0.04 && Math.abs(g[1]-g[2])<0.04;
+      if(gray || cell.w>60 || cell.y>=615) return;
+      let best=null, bd=14;
+      examRows.forEach(er=>{ const d=Math.abs(er.y-(cell.y+8)); if(d<bd){bd=d; best=er;} });
+      if(best && best.teacher && !teacherColors[best.teacher]) teacherColors[best.teacher]=cell.hex;
+    });
+    if(examRows.length){ pgCount++; allExams.push(...examRows); }
+  });
+  if(!allExams.length) return {sched:[]};
+  const vorsitzCode=allExams[0].vorsitz||"";
+  // KV-Kürzel = häufigstes KV der Zeilen (für globale Felder); pro Prüfung bleibt der echte Wert erhalten
+  const kvFreq={}; allExams.forEach(r=>{ if(r.kv&&!r.kvSub) kvFreq[r.kv]=(kvFreq[r.kv]||0)+1; });
+  const kvCode=Object.entries(kvFreq).sort((a,b)=>b[1]-a[1]).map(e=>e[0])[0]||"";
+  const starts=allExams.map(r=>hm2min(r.pruef)).sort((a,b)=>a-b);
+  const diffs={}; for(let i=1;i<starts.length;i++){const d=starts[i]-starts[i-1]; if(d>0&&d<=40)diffs[d]=(diffs[d]||0)+1;}
+  const dur=+((Object.entries(diffs).sort((a,b)=>b[1]-a[1])[0]||[12])[0])||12;
+  const prep=Math.max(0, hm2min(allExams[0].pruef)-hm2min(allExams[0].vorb));
+  const beisitzerSets={};
+  const sched=allExams.map(r=>{
+    const start=hm2min(r.pruef), prepStart=hm2min(r.vorb);
+    if(r.subject&&r.beisitz){ (beisitzerSets[r.subject]=beisitzerSets[r.subject]||new Set()).add(r.beisitz); }
+    return { student:r.name||("Kandidat "+r.nr), nr:r.nr, subject:r.subject, teacher:r.teacher, beisitz:r.beisitz,
+      vorsitz:r.vorsitz||vorsitzCode, vorsitzSub:r.vorsitzSub, kv:r.kv, kvSub:r.kvSub,
+      start, end:start+dur, prepStart, group:r.group, hard:[], soft:[] };
+  });
+  // 2 Halbtage nur, wenn auf der zweiten Seite eine echte (Mittags-)Lücke beginnt –
+  // nicht bei reinem Seitenumbruch einer durchgehenden Gruppe.
+  let pmStart=null, amEnd=null, split=false;
+  if(pgCount>1){
+    const g1=sched.filter(x=>x.group===1), g2=sched.filter(x=>x.group===2);
+    if(g1.length&&g2.length){
+      const e1=Math.max(...g1.map(x=>x.end));
+      const first2=g2.reduce((a,b)=>a.start<=b.start?a:b);   // erster Prüfling am Nachmittag
+      if(first2.prepStart-e1>25){ split=true; amEnd=e1; pmStart=first2.prepStart; }   // Vorber.-Zeit beim 1. Prüfling
+    }
+  }
+  if(!split) sched.forEach(x=>delete x.group);
+  const beisitzer={}; Object.keys(beisitzerSets).forEach(k=>beisitzer[k]=[...beisitzerSets[k]]);
+  const used=new Set(allExams.map(r=>r.subject).filter(Boolean));
+  const subjects=(legendSubjects||[]).filter(s=>used.has(s));
+  used.forEach(s=>{ if(!subjects.includes(s)) subjects.push(s); });
+  return { sched, dur, prep, start:Math.min(...sched.map(s=>s.prepStart)),
+    subjects, subjMap, vorsitz:vorsitzCode, kv:kvCode, beisitzer, split, pmStart, amEnd:amEnd,
+    raum, klasse:klasseHdr, teacherColors, conf };
+}
+async function loadPruefungstag(file){
+  try{
+    const name=(file.name||"").toLowerCase();
+    let P0, src;
+    if(name.endsWith(".pdf")){
+      if(typeof DecompressionStream==="undefined") throw new Error("Dieser Browser kann keine PDFs entpacken (DecompressionStream fehlt).");
+      const buf=await file.arrayBuffer();
+      P0=parsePruefungstag(await pdfReadingItems(new Uint8Array(buf))); src="PDF";
+    } else if(name.endsWith(".xlsx")||name.endsWith(".xls")){
+      P0=await parsePruefungsExcel(await file.arrayBuffer()); src="Excel";
+    } else { throw new Error("BADFILE"); }
+    if(!P0 || !P0.sched || !P0.sched.length) throw new Error("BADFILE");
+    applyLoadedPlan(P0, file.name);
+  }catch(err){
+    if(err && err.message==="BADFILE")
+      alert("Dateiaufbau nicht geeignet.\n\nBitte einen Prüfungsplan im passenden Format laden: das PDF der Prüfungsplan-Vorlage oder eine zuvor exportierte Prüfungsplan-Excel (Reiter Prüfungskommission).");
+    else alert("Konnte den Prüfungstag nicht laden: "+(err&&err.message||err));
+  }
+}
+// Geladenen Prüfungstag (aus PDF ODER Excel) in MATRIX/Plan/Felder übernehmen und anzeigen.
+function applyLoadedPlan(P0, fileName){
+  const studMap={}, tset=new Set();
+  P0.sched.forEach(x=>{ (studMap[x.student]=studMap[x.student]||[]).push({subject:x.subject,teacher:x.teacher}); if(x.teacher)tset.add(x.teacher); if(x.beisitz)tset.add(x.beisitz); });
+  Object.values(P0.beisitzer||{}).forEach(arr=>arr.forEach(t=>tset.add(t)));
+  MATRIX={ students:Object.keys(studMap).map(n=>({name:n,exams:studMap[n]})), subjects:(P0.subjects||[]).slice(), teachers:[...tset].sort(), beisitzer:P0.beisitzer||{}, teacherColors:P0.teacherColors||{} };
+  const kl=P0.klasse||((fileName||"").match(/([0-9][A-Za-zÄÖÜ]{2,})/)||[])[1]||"";
+  if(P0.raum){ ROOM=P0.raum; }
+  const P={ dur:P0.dur, prep:P0.prep, start:min2hm(P0.start), lunch:0, maxblock:4, maxblockS:1,
+    sgap:0, sgapBlocks:1, tgap:2, smaxgap:null, smaxgapBlocks:null, layout:"single",
+    vorsitz:P0.vorsitz, kv:P0.kv, klasse:kl, _keepCommission:true };
+  [["dur",P0.dur],["prep",P0.prep],["start",min2hm(P0.start)],["vorsitz",P0.vorsitz],["kv",P0.kv],["klasse",kl],["roomIn",P0.raum]].forEach(([id,v])=>{ const e=$(id); if(e&&v!=="" && v!=null) e.value=v; });
+  // Konferenz-Zeiten aus der Datei in die Felder spiegeln (für Re-Export / immer vorhanden)
+  if(P0.conf){ const setT=(id,m)=>{ const e=$(id); if(e&&m!=null) e.value=min2hm(m); };
+    ["1","2"].forEach(g=>{ const ek=P0.conf.ek&&P0.conf.ek[g], bk=P0.conf.bk&&P0.conf.bk[g];
+      if(ek){ setT("ek"+g+"s",ek.s); setT("ek"+g+"e",ek.e); }
+      if(bk){ setT("bk"+g+"s",bk.s); setT("bk"+g+"e",bk.e); } }); }
+  PM_START=null;
+  const sched=P0.sched;
+  const res=validate(sched,P);
+  res.totalDelay=0;
+  if(P0.split){ res.split=true; res.pmStart=P0.pmStart; res.amEnd=P0.amEnd; res.autoPM=P0.pmStart; }
+  LAST={r:res,mode:"single",M:MATRIX};
+  const klT=kl?` · Klasse ${kl}`:"";
+  const unnamed=new Set(sched.filter(x=>/^Kandidat /.test(x.student)).map(x=>x.student)).size;
+  const subjT=(P0.subjects||[]).length?`${P0.subjects.length} Fächer erkannt (${P0.subjects.join(", ")})`:"keine Fächer erkannt";
+  const splitT=P0.split&&P0.pmStart!=null?` · 2 Halbtage – Nachmittag startet ${min2hm(P0.pmStart)} (Vorber.)`:"";
+  const unnamedT=unnamed?`<br><b>Hinweis:</b> ${unnamed} Kandidat/in(nen) mit Sonderzeichen im Namen konnten nicht gelesen werden (als „Kandidat N") – bitte im Matrix-Editor ergänzen.`:"";
+  $("out").innerHTML=`<h2>Geladener Prüfungstag${klT}</h2>
+    <div class="warnbox" style="background:#eef3ec;border-color:var(--good);color:#234"><b>✓ Geladen:</b> ${sched.length} Prüfungen aus „${fileName}" – exakte Zeiten übernommen · ${subjT}${splitT}.${unnamedT}</div>
+    <div id="statSingle">${statBlock(res)}</div><div id="planView"></div>`;
+  const order=[...sched].sort((a,b)=>a.start-b.start);
+  CUR={order, optimal:order.slice(), P, res, compare:false, edited:false};
+  const ok=$("fileok"); if(ok){ ok.style.color=""; ok.textContent=`✓ Prüfungstag geladen: ${MATRIX.students.length} Kandidat/innen, ${sched.length} Prüfungen`; }
+  repaintPlan(res,P);
+  renderMatrixEditor();
+  scrollToPlan();
+}
+// Excel-Export (Reiter „Prüfungskommission") wieder als Prüfungstag einlesen.
+async function parsePruefungsExcel(buf){
+  let wb;
+  try{ wb=new ExcelJS.Workbook(); await wb.xlsx.load(buf); }catch(e){ throw new Error("BADFILE"); }
+  const ws=wb.getWorksheet("Prüfungskommission") || wb.worksheets[0];
+  if(!ws) throw new Error("BADFILE");
+  const txt=c=>{ let v=c&&c.value; if(v==null) return ""; if(typeof v==="object"){ if(v.richText) v=v.richText.map(t=>t.text).join(""); else if(v.text!=null) v=v.text; else if(v.result!=null) v=v.result; else v=""; } return (""+v).trim(); };
+  // AOA + Zugriff auf Füllfarbe der Prüfer-1-Zelle
+  const A=[]; const cellAt=(r,c)=>ws.getRow(r).getCell(c);
+  const maxR=ws.rowCount, maxC=ws.columnCount;
+  for(let r=1;r<=maxR;r++){ const arr=[]; for(let c=1;c<=maxC;c++) arr[c-1]=txt(cellAt(r,c)); A[r-1]=arr; }
+  // Kopf finden
+  const gegRow=A.findIndex(row=>row && (row[1]||"").trim()==="Gegenstand");
+  if(gegRow<0) throw new Error("BADFILE");
+  const hdr=A[gegRow];
+  const findCol=re=>hdr.findIndex(v=>re.test(v||""));
+  const cVorb=findCol(/Vorbereitung/i), cPruef=findCol(/Prüfung/i),
+        cVors=findCol(/Vorsitz/i), cJV=findCol(/Jahrgangsvorstand|^KV$/i),
+        cPr1=findCol(/Prüfer\s*1/i), cPr2=findCol(/Prüfer\s*2/i);
+  if(cVorb<0||cPruef<0||cPr1<0) throw new Error("BADFILE");
+  // Fächer = Spalten zwischen Name (Index 1) und der ersten Zeit-Spalte
+  const subjCols=[]; for(let c=2;c<cVorb;c++){ const nm=(hdr[c]||"").trim(); if(nm) subjCols.push({name:nm,col:c}); }
+  const prf=A[gegRow+1]||[]; const subjMap={};
+  subjCols.forEach(sc=>{ if((prf[sc.col]||"").trim()) subjMap[sc.name]=(prf[sc.col]||"").trim(); });
+  const hm=s=>{ const m=(""+s).match(/(\d{1,2}):(\d{2})/); return m?(+m[1]*60+ +m[2]):null; };
+  const parts=s=>{ s=(""+s).trim(); const sub=/\(V(ert\.?)?\)/i.test(s); return {code:s.replace(/\s*\(V(ert\.?)?\)\s*/i,"").trim(), sub}; };
+  const exams=[]; const conf={ek:{},bk:{}}; let curGroup=1, split=false;
+  for(let r=gegRow+2;r<A.length;r++){ const row=A[r]; if(!row) continue;
+    const a0=(row[0]||"").trim(), a1=(row[1]||"").trim(), joined=(a0+" "+a1);
+    const mg=joined.match(/Gruppe\s*(\d)/i); if(mg){ curGroup=+mg[1]; split=true; continue; }
+    if(/Kandidatengruppe/i.test(joined)){ curGroup=1; continue; }
+    const mk=joined.match(/(Eröffnungs|Beurteilungs)konferenz\s*(\d)?/i);
+    if(mk){ const g=mk[2]||String(curGroup); const s=hm(row[cVorb]), e=hm(row[cPruef]);
+      (mk[1].toLowerCase().charAt(0)==="e"?conf.ek:conf.bk)[g]={s,e}; continue; }
+    if(!/^\d{1,3}$/.test(a0)) continue;   // nur Prüfungszeilen (Nr.)
+    const subj=(subjCols.find(sc=>/^x$/i.test((row[sc.col]||"").trim()))||{}).name||"";
+    const start=hm(row[cPruef]); if(start==null) continue;
+    const prepStart=hm(row[cVorb]); const teacher=(row[cPr1]||"").trim()||subjMap[subj]||"";
+    const vo=parts(row[cVors]||""), kvp=parts(row[cJV]||"");
+    let color=""; try{ const f=cellAt(r+1,cPr1+1).fill; if(f&&f.fgColor&&f.fgColor.argb){ const a=f.fgColor.argb; color="#"+a.slice(-6).toLowerCase(); } }catch(e){}
+    exams.push({nr:+a0, student:a1||("Kandidat "+a0), subject:subj, teacher, beisitz:(row[cPr2]||"").trim(),
+      vorsitz:vo.code, vorsitzSub:vo.sub, kv:kvp.code, kvSub:kvp.sub, start, prepStart:prepStart==null?start:prepStart, group:curGroup, color});
+  }
+  if(!exams.length) throw new Error("BADFILE");
+  // Dauer aus den Abständen, Ende = Start + Dauer
+  const starts=exams.map(e=>e.start).sort((a,b)=>a-b);
+  const diffs={}; for(let i=1;i<starts.length;i++){const d=starts[i]-starts[i-1]; if(d>0&&d<=40)diffs[d]=(diffs[d]||0)+1;}
+  const dur=+((Object.entries(diffs).sort((a,b)=>b[1]-a[1])[0]||[12])[0])||12;
+  const prep=Math.max(0, exams[0].start-exams[0].prepStart);
+  const teacherColors={}, beisitzerSets={};
+  const sched=exams.map(e=>{ if(e.teacher&&e.color&&!teacherColors[e.teacher]) teacherColors[e.teacher]=e.color;
+    if(e.subject&&e.beisitz){ (beisitzerSets[e.subject]=beisitzerSets[e.subject]||new Set()).add(e.beisitz); }
+    return { student:e.student, nr:e.nr, subject:e.subject, teacher:e.teacher, beisitz:e.beisitz,
+      vorsitz:e.vorsitz, vorsitzSub:e.vorsitzSub, kv:e.kv, kvSub:e.kvSub,
+      start:e.start, end:e.start+dur, prepStart:e.prepStart, group:e.group, hard:[], soft:[] }; });
+  const groups=[...new Set(sched.map(x=>x.group))];
+  split = split && groups.length>1;
+  let pmStart=null, amEnd=null;
+  if(split){ const g2=sched.filter(x=>x.group===2), g1=sched.filter(x=>x.group===1);
+    if(g1.length&&g2.length){ const first2=g2.reduce((a,b)=>a.start<=b.start?a:b); pmStart=first2.prepStart; amEnd=Math.max(...g1.map(x=>x.end)); } }
+  if(!split) sched.forEach(x=>delete x.group);
+  const beisitzer={}; Object.keys(beisitzerSets).forEach(k=>beisitzer[k]=[...beisitzerSets[k]]);
+  const subjects=subjCols.map(s=>s.name).filter(n=>sched.some(x=>x.subject===n));
+  // Raum + Klasse aus der Titelzeile (A1)
+  const title=(A[0]&&A[0][0])||""; const mR=title.match(/Raum\s*:?\s*([^\s·,;\n]+)/i); const mK=title.match(/\b(\d[A-Za-zÄÖÜ]{2,})\b/);
+  return { sched, dur, prep, start:Math.min(...sched.map(s=>s.prepStart)),
+    subjects, subjMap, vorsitz:(exams[0]&&exams[0].vorsitz)||"", kv:(sched.find(x=>x.kv&&!x.kvSub)||{}).kv||"",
+    beisitzer, split, pmStart, amEnd, raum:mR?mR[1]:"", klasse:mK?mK[1]:"", teacherColors, conf };
+}
 
 /* ---------- Matrix-Editor ---------- */
 function recomputeTeachers(){
@@ -2541,6 +3016,8 @@ function downloadTemplate(){
   XLSX.writeFile(wb, "Matrix_Vorlage.xlsx");
 }
 $("dlTemplate").onclick=downloadTemplate;
+$("loadDayBtn").onclick=()=>$("loadDayFile").click();
+$("loadDayFile").addEventListener("change",e=>{ const f=e.target.files[0]; if(f) loadPruefungstag(f); e.target.value=""; });
 
 $("run").onclick=()=>{
   if(!MATRIX){alert("Bitte zuerst eine Matrix laden oder die Demo verwenden.");return;}
