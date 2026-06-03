@@ -3217,7 +3217,10 @@ function DEMO(){
    #lockBanner{position:fixed;top:0;left:0;right:0;z-index:10002;background:#3a1416;color:#ff9b9b;text-align:center;
      font-family:'Lexend',sans-serif;font-weight:600;padding:10px 14px}
    #livePanel{position:fixed;right:16px;bottom:16px;z-index:9000;width:300px;background:#0e1622;border:1px solid #24344a;
-     border-radius:14px;padding:14px 16px;font-family:'Lexend',sans-serif;color:#dce6f2;box-shadow:0 12px 40px -16px #000;display:none}
+     border-radius:14px;padding:14px 16px;font-family:'Lexend',sans-serif;color:#dce6f2;box-shadow:0 12px 40px -16px #000;display:none;cursor:move;touch-action:none}
+   #livePanel.dragging{opacity:.92}
+   #livePanel button,#livePanel input,#livePanel #lpQR{cursor:auto}
+   #livePanel button{cursor:pointer}
    #livePanel.show{display:block}
    #livePanel h4{margin:0 0 10px;font-size:14px;color:#9fb3cc;font-weight:600;display:flex;align-items:center;gap:8px;cursor:move;user-select:none;touch-action:none}
    #livePanel h4 .lp-grip{color:#46566b;font-size:13px;letter-spacing:1px}
@@ -3315,19 +3318,20 @@ function DEMO(){
     pushNow(); }
   $id("lpToggle").onclick=()=>setActive(!sessionActive);
 
-  // Panel per Kopfzeile frei verschiebbar (Maus + Touch); Position wird gemerkt.
+  // Ganzes Panel frei verschiebbar (Maus + Touch) – außer auf Buttons/Link-Feld. Position wird gemerkt.
   (function dragPanel(){
-    const handle=panel.querySelector("h4"); let drag=false,sx=0,sy=0,sl=0,st=0;
+    let drag=false,sx=0,sy=0,sl=0,st=0;
     const pin=()=>{ const r=panel.getBoundingClientRect(); panel.style.left=r.left+"px"; panel.style.top=r.top+"px"; panel.style.right="auto"; panel.style.bottom="auto"; };
     const down=e=>{ if(e.target.closest("button,input")) return; drag=true; const p=e.touches?e.touches[0]:e;
-      pin(); const r=panel.getBoundingClientRect(); sl=r.left; st=r.top; sx=p.clientX; sy=p.clientY; e.preventDefault(); };
+      pin(); const r=panel.getBoundingClientRect(); sl=r.left; st=r.top; sx=p.clientX; sy=p.clientY; panel.classList.add("dragging"); e.preventDefault(); };
     const move=e=>{ if(!drag) return; const p=e.touches?e.touches[0]:e;
       let nl=sl+(p.clientX-sx), nt=st+(p.clientY-sy);
       nl=Math.max(0,Math.min(window.innerWidth-panel.offsetWidth,nl));
       nt=Math.max(0,Math.min(window.innerHeight-panel.offsetHeight,nt));
       panel.style.left=nl+"px"; panel.style.top=nt+"px"; e.preventDefault(); };
-    const up=()=>{ if(!drag) return; drag=false; try{ localStorage.setItem("livePanelPos",JSON.stringify({l:panel.style.left,t:panel.style.top})); }catch(e){} };
-    handle.addEventListener("mousedown",down); handle.addEventListener("touchstart",down,{passive:false});
+    const up=()=>{ if(!drag) return; drag=false; panel.classList.remove("dragging");
+      try{ localStorage.setItem("livePanelPos",JSON.stringify({l:panel.style.left,t:panel.style.top})); }catch(e){} };
+    panel.addEventListener("mousedown",down); panel.addEventListener("touchstart",down,{passive:false});
     window.addEventListener("mousemove",move); window.addEventListener("touchmove",move,{passive:false});
     window.addEventListener("mouseup",up); window.addEventListener("touchend",up);
     try{ const pos=JSON.parse(localStorage.getItem("livePanelPos")||"null");
