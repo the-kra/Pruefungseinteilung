@@ -3,6 +3,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Live-Spiegelung (optional/additiv): supabase-js v2 + QR-Code. Ohne Konfiguration bleibt alles rein lokal. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>/* ExcelJS 4.4.0 inline (offline) */
 /*! ExcelJS 19-10-2023 */
 
@@ -1677,7 +1680,7 @@ function tableHtml(res,M){
 function nowMinutes(){ const n=new Date(); return n.getHours()*60+n.getMinutes()+n.getSeconds()/60; }
 
 /* ---------- Beamer-Ansicht (read-only, live, Auto-Scroll) ---------- */
-let BEAMER_ON=false, BEAMER_TIMER=null, BEAMER_PREP=false;
+let BEAMER_ON=false, BEAMER_TIMER=null, BEAMER_PREP=true;   // Vorbereitungszeit standardmäßig sichtbar
 let BEAMER_SIG="", BEAMER_LASTTARGET=-1, BEAMER_WAKELOCK=null;
 // Bildschirm wach halten (sofern der Browser die Wake-Lock-API unterstützt) – kein Zutun nötig.
 async function beamerWakeLock(){ try{ if("wakeLock" in navigator){ BEAMER_WAKELOCK=await navigator.wakeLock.request("screen"); } }catch(e){} }
@@ -3175,4 +3178,159 @@ function DEMO(){
   };
   return {students,subjects,teachers:[...tset].sort(),beisitzer};
 }
+
+/* ============================================================================
+   LIVE-SPIEGELUNG (Supabase Realtime) – rein additiv.
+   Rollen über URL:  ?mode=master&key=…  (Steuerung)  ·  ?mode=anzeige / ohne Parameter (nur sehen)
+   Ohne Supabase-Konfiguration (URL/Key leer) ist dieses Modul ein No-Op → App bleibt exakt lokal.
+   ============================================================================ */
+(function(){
+  // ---------- Konfiguration (echte Werte eintragen) ----------
+  const SUPABASE_URL      = "https://excopftemuwsxmqwyxrn.supabase.co"; // dein Projekt
+  const SUPABASE_ANON_KEY = "sb_publishable_sVjO2A8cq8Rr6SgpHl9_7A_sqtQFBZB";   // publishable key (= anon)
+  const LIVE_KEY          = "HTL1-Lastenstrasse-ET2026";  // <-- Steuer-Schlüssel (muss zu set_live_state in der DB passen)
+  const ROW_ID            = "matura";
+  const TZ                = "Europe/Vienna";
+
+  // Nicht konfiguriert ODER Bibliothek fehlt → rein lokale App (keine Spiegelung, keine Fehler).
+  if(!window.supabase || !SUPABASE_URL || !SUPABASE_ANON_KEY) return;
+
+  const SB = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const q  = new URLSearchParams(location.search);
+  const mode=(q.get("mode")||"").toLowerCase();
+  const role = mode==="master" ? (q.get("key")===LIVE_KEY ? "master" : "locked") : "anzeige";
+  const $id = id=>document.getElementById(id);
+  const viennaDate = ()=> new Date().toLocaleDateString("en-CA",{timeZone:TZ}); // YYYY-MM-DD (heute, Wien)
+
+  // ---------- Styles + Overlays ----------
+  const css=`
+   #ruheView{position:fixed;inset:0;z-index:10000;display:none;flex-direction:column;align-items:center;justify-content:center;
+     background:radial-gradient(circle at 50% 38%,#0c1018,#05070b);color:#7c93b0;gap:28px;text-align:center;padding:24px}
+   #ruheView.on{display:flex}
+   #ruheView img{height:min(26vh,180px);width:auto;background:rgba(255,255,255,.94);padding:16px 26px;border-radius:18px}
+   #ruheView .rt{font-family:'Lexend',sans-serif;font-size:clamp(18px,3.2vw,28px);font-weight:300;letter-spacing:.5px}
+   #liveStatus{position:fixed;top:14px;left:16px;z-index:10001;font-family:'Lexend',sans-serif;font-size:13px;font-weight:600;
+     color:#9fb3cc;background:#111927cc;border:1px solid #1e2a3a;border-radius:12px;padding:6px 12px;display:none}
+   #liveStatus.show{display:inline-flex;align-items:center;gap:7px}
+   #liveStatus .dot{width:9px;height:9px;border-radius:50%;background:#ff5a5a}
+   #liveStatus.live .dot{background:#4fd6bf}
+   #lockBanner{position:fixed;top:0;left:0;right:0;z-index:10002;background:#3a1416;color:#ff9b9b;text-align:center;
+     font-family:'Lexend',sans-serif;font-weight:600;padding:10px 14px}
+   #livePanel{position:fixed;right:16px;bottom:16px;z-index:9000;width:300px;background:#0e1622;border:1px solid #24344a;
+     border-radius:14px;padding:14px 16px;font-family:'Lexend',sans-serif;color:#dce6f2;box-shadow:0 12px 40px -16px #000;display:none}
+   #livePanel.show{display:block}
+   #livePanel h4{margin:0 0 10px;font-size:14px;color:#9fb3cc;font-weight:600;display:flex;align-items:center;gap:8px}
+   #livePanel .lp-dot{width:9px;height:9px;border-radius:50%;background:#ff5a5a;margin-left:auto}
+   #livePanel.live .lp-dot{background:#4fd6bf}
+   #livePanel button.lp-main{width:100%;padding:11px;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-size:14px;color:#fff;background:#2bb673}
+   #livePanel.active button.lp-main{background:#cc4444}
+   #livePanel .lp-sub{font-size:11px;color:#6a83a3;margin:9px 0 3px}
+   #livePanel .lp-link{display:flex;gap:6px}
+   #livePanel .lp-link input{flex:1;font-size:11px;background:#0a121d;border:1px solid #24344a;color:#aebfd4;border-radius:8px;padding:6px 8px;min-width:0}
+   #livePanel .lp-link button{border:none;background:#1e2a3a;color:#cfe3f2;border-radius:8px;padding:0 10px;cursor:pointer;font-size:12px}
+   #livePanel #lpQR{margin-top:10px;display:flex;justify-content:center;background:#fff;padding:8px;border-radius:8px}
+   #livePanel #lpQR img,#livePanel #lpQR canvas{display:block}
+   body.anzeige .wrap{display:none!important}
+  `;
+  const styleEl=document.createElement("style"); styleEl.textContent=css; document.head.appendChild(styleEl);
+
+  const ruhe=document.createElement("div"); ruhe.id="ruheView";
+  ruhe.innerHTML='<img alt="HTL1 Klagenfurt"><div class="rt">Keine laufende Prüfung</div>';
+  document.body.appendChild(ruhe);
+  try{ ruhe.querySelector("img").src=HTL_LOGO_B64; }catch(e){}
+
+  const status=document.createElement("div"); status.id="liveStatus";
+  status.innerHTML='<span class="dot"></span><span class="txt">verbinde…</span>';
+  document.body.appendChild(status);
+
+  let panel=null;
+  function setStatus(live){
+    if(role!=="master"){ status.classList.add("show"); status.classList.toggle("live",!!live);
+      status.querySelector(".txt").textContent= live?"live":"getrennt"; }
+    if(panel) panel.classList.toggle("live",!!live);
+  }
+
+  // ============================ ANZEIGE / LOCKED ============================
+  if(role!=="master"){
+    document.body.classList.add("anzeige");
+    ["bClose","bPrepToggle"].forEach(id=>{ const e=$id(id); if(e) e.style.display="none"; });
+    if(role==="locked"){
+      const lb=document.createElement("div"); lb.id="lockBanner";
+      lb.textContent="⚠ Kein Steuerzugriff – ungültiger oder fehlender Schlüssel. Nur-Anzeige.";
+      document.body.appendChild(lb);
+    }
+    let last=null;
+    function applyPayload(pl){
+      last=pl||null;
+      const active = pl && pl.sessionActive && pl.sessionDate===viennaDate() && pl.sched && pl.sched.length;
+      if(active){
+        ruhe.classList.remove("on");
+        CUR={ res:{ sched: pl.sched.map(r=>({student:r.student,subject:r.subject,teacher:r.teacher,start:r.start,end:r.end,prepStart:r.prepStart,group:r.group})), totalDelay:pl.totalDelay||0 } };
+        MATRIX={ teachers:pl.teachers||[], teacherColors:pl.teacherColors||{}, students:[], subjects:[] };
+        ROOM=pl.room||""; BEAMER_PREP=(pl.prep!==false);
+        BEAMER_ON=true; BEAMER_SIG="";
+        const bv=$id("beamerView"); if(bv) bv.classList.add("on");
+        const bd=$id("bDate"); if(bd) bd.textContent=new Date().toLocaleDateString("de-AT",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});
+        const lg=$id("bLogo"); if(lg) lg.src=HTL_LOGO_B64;
+        renderBeamer();
+      } else {
+        BEAMER_ON=false; const bv=$id("beamerView"); if(bv) bv.classList.remove("on");
+        ruhe.classList.add("on");
+      }
+    }
+    (async function initAnzeige(){
+      try{ const {data}=await SB.from("live_state").select("payload").eq("id",ROW_ID).maybeSingle();
+        applyPayload(data && data.payload && Object.keys(data.payload).length ? data.payload : null);
+      }catch(e){ applyPayload(null); }
+      SB.channel("live_"+ROW_ID)
+        .on("postgres_changes",{event:"*",schema:"public",table:"live_state",filter:"id=eq."+ROW_ID},
+            p=>{ setStatus(true); applyPayload(p.new && p.new.payload); })
+        .subscribe(s=>setStatus(s==="SUBSCRIBED"));
+      setInterval(()=>{ if(BEAMER_ON) renderBeamer(); }, 1000);    // lokale Uhr: laufende Prüfung mitführen
+      setInterval(()=>{ if(last) applyPayload(last); }, 30000);    // Datum/Aktiv neu prüfen → Mitternacht-Abschaltung
+    })();
+    return;
+  }
+
+  // ============================ MASTER ============================
+  let sessionActive=false, sessionDate=null, lastSent="";
+  const anzeigeUrl = location.origin+location.pathname+"?mode=anzeige";
+  panel=document.createElement("div"); panel.id="livePanel"; panel.classList.add("show");
+  panel.innerHTML='<h4>🔴 Live-Spiegelung <span class="lp-dot"></span></h4>'
+    +'<button class="lp-main" id="lpToggle">▶ Prüfungstag starten</button>'
+    +'<div class="lp-sub">Anzeige-Link (Beamer / Schülerhandys):</div>'
+    +'<div class="lp-link"><input id="lpUrl" readonly><button id="lpCopy">Kopieren</button></div>'
+    +'<div id="lpQR"></div>';
+  document.body.appendChild(panel);
+  $id("lpUrl").value=anzeigeUrl;
+  setStatus(false);
+  try{ if(window.QRCode) new QRCode($id("lpQR"),{text:anzeigeUrl,width:150,height:150,correctLevel:QRCode.CorrectLevel.M}); }catch(e){}
+  $id("lpCopy").onclick=()=>{ const i=$id("lpUrl"); i.select();
+    if(navigator.clipboard) navigator.clipboard.writeText(i.value); else { try{document.execCommand("copy");}catch(e){} }
+    $id("lpCopy").textContent="✓"; setTimeout(()=>$id("lpCopy").textContent="Kopieren",1200); };
+  function setActive(a){ sessionActive=a; if(a) sessionDate=viennaDate();
+    panel.classList.toggle("active",a);
+    $id("lpToggle").textContent = a ? "■ Prüfungstag beenden" : "▶ Prüfungstag starten";
+    pushNow(); }
+  $id("lpToggle").onclick=()=>setActive(!sessionActive);
+
+  function buildPayload(){
+    const haveCur = (typeof CUR!=="undefined") && CUR && CUR.res && CUR.res.sched;
+    const rows = (sessionActive && haveCur) ? [...CUR.res.sched].sort((a,b)=>a.start-b.start) : [];
+    const cmap = (typeof MATRIX!=="undefined" && MATRIX) ? (typeof teacherColor==="function"?teacherColor(MATRIX):(MATRIX.teacherColors||{})) : {};
+    return { v:1, sessionActive, sessionDate,
+      room:(typeof ROOM!=="undefined"?ROOM:""), prep:!!BEAMER_PREP,
+      totalDelay:(haveCur && CUR.res.totalDelay)||0,
+      teachers:(typeof MATRIX!=="undefined" && MATRIX && MATRIX.teachers)||[], teacherColors:cmap,
+      sched: rows.map(x=>({student:x.student,subject:x.subject,teacher:x.teacher,start:x.start,end:x.end,prepStart:x.prepStart,group:x.group||null})) };
+  }
+  async function pushNow(){
+    const pl=buildPayload(); const cmp=JSON.stringify(pl);
+    if(cmp===lastSent) return; lastSent=cmp;
+    try{ await SB.rpc("set_live_state",{p_payload:pl,p_key:LIVE_KEY}); setStatus(true); }
+    catch(e){ setStatus(false); }
+  }
+  // Poll-Diff (~600 ms): sendet nur bei echter Änderung (Verzögerung, Umsortierung, Raum, Prep, Start/Ende).
+  setInterval(pushNow, 600);
+})();
 </script>
