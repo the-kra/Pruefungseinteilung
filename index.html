@@ -1760,11 +1760,22 @@ function lcSetState(i,to){
   if(!CUR||!CUR.order) return;
   const x=CUR.order[i]; if(!x) return;
   const now=nowMinutes(), prep=(CUR.P&&CUR.P.prep)||0;
-  if(to==="prep"){ x.liveState="prep"; x.prepAt=now; lcAnchor(i, now+prep); }
+  const from=lcState(x);
+  if(to==="prep"){
+    if(from==="wait"){                       // Vorbereitung STARTEN (verankert die echte Uhrzeit)
+      if(x._baseShift==null) x._baseShift=(x.liveShift||0);   // Ausgangs-Verschiebung merken (für „zurück")
+      x.liveState="prep"; x.prepAt=now; lcAnchor(i, now+prep);
+    } else {                                  // ZURÜCK von Prüfung → Vorbereitung (Fehlklick): Prüfung verwerfen, Vorbereitung behalten
+      x.liveState="prep"; x.examAt=null;
+    }
+  }
   else if(to==="exam"){ x.liveState="exam"; x.examAt=now; if(x.prepAt==null) x.prepAt=now; lcAnchor(i, now);
     if(LC_NEXTPREP===lcKey(x)) LC_NEXTPREP=null; }   // sie ist dran → nächste Vorbereitung rückt automatisch nach
   else if(to==="done"){ x.liveState="done"; x.doneAt=now; }
-  else { x.liveState="wait"; x.prepAt=x.examAt=x.doneAt=null; }
+  else {                                      // ZURÜCK zu „wartet" (Fehlklick / Reset): Live-Zeiten verwerfen, Verankerung rückgängig
+    x.liveState="wait"; x.prepAt=x.examAt=x.doneAt=null;
+    if(x._baseShift!=null){ x.liveShift=x._baseShift; x._baseShift=null; }
+  }
   lcSave();
   const r=retime(CUR.order,CUR.P); CUR.res=r; repaintPlan(r,CUR.P);
 }
@@ -1867,20 +1878,22 @@ function tableHtml(res,M){
       </span></td>`;
       const lbl={wait:"wartet",prep:"Vorbereitung",exam:"Prüfung",done:"fertig"}[st];
       const badge=`<span class="lc-badge ${st}">${lbl}</span>`;
-      let timer='', btn='', np='';
+      let timer='', btn='', np='', back='';
       if(st==="wait"){
         btn=`<button class="lc-btn go-prep" data-act="lc" data-i="${i}" data-to="prep">▶ Vorbereitung</button>`;
         const isNP=LC_NEXTPREP===lcKey(x);
         np=`<button class="lc-np ${isNP?'on':''}" data-act="lcnp" data-i="${i}" title="Im Beamer als nächste Vorbereitung rot hervorheben">🔴 nächste</button>`;
       } else if(st==="prep"){
         timer=`<span class="lc-timer" data-since="${x.prepAt}">00:00</span>`;
+        back=`<button class="lc-btn go-wait" data-act="lc" data-i="${i}" data-to="wait" title="Falsch gedrückt? Zurück zu „wartet"">↩</button>`;
         btn=`<button class="lc-btn go-exam" data-act="lc" data-i="${i}" data-to="exam">▶ Prüfung</button>`;
       } else if(st==="exam"){
+        back=`<button class="lc-btn go-wait" data-act="lc" data-i="${i}" data-to="prep" title="Falsch gedrückt? Zurück zur Vorbereitung">↩</button>`;
         btn=`<button class="lc-btn go-done" data-act="lc" data-i="${i}" data-to="done">✓ Fertig</button>`;
       } else {
         btn=`<button class="lc-btn go-wait" data-act="lc" data-i="${i}" data-to="wait" title="Status zurücksetzen">↺</button>`;
       }
-      statusCell=`<td class="lc-cell">${badge}${timer}${btn}${np}</td>`;
+      statusCell=`<td class="lc-cell">${badge}${timer}${back}${btn}${np}</td>`;
     }
     h+=`<tr class="${rowCls}" ${LIVE?'':'draggable="true"'} data-i="${i}">
       <td class="${hardC||softC}">${pos+1}</td>
@@ -2467,7 +2480,7 @@ function saveSnapshot(){
       room:ROOM, live:!!LIVE, pmStart:(PM_START??null), np:LC_NEXTPREP,
       P:CUR.P, matrix:MATRIX,
       order:CUR.order.map(x=>({student:x.student,subject:x.subject,teacher:x.teacher,group:x.group,
-        liveShift:x.liveShift||0, liveState:x.liveState||"wait",
+        liveShift:x.liveShift||0, baseShift:(x._baseShift??null), liveState:x.liveState||"wait",
         prepAt:(x.prepAt??null), examAt:(x.examAt??null), doneAt:(x.doneAt??null)})) };
     localStorage.setItem(SNAP_KEY, JSON.stringify(snap));
   }catch(e){}
@@ -2490,7 +2503,7 @@ function applySnapshot(snap){
   MATRIX=snap.matrix; ROOM=snap.room||ROOM; PM_START=(snap.pmStart??null);
   LIVE=!!snap.live; LC_NEXTPREP=snap.np||null;
   const order=snap.order.map(o=>({student:o.student,subject:o.subject,teacher:o.teacher,group:o.group,
-    liveShift:o.liveShift||0, liveState:o.liveState||"wait",
+    liveShift:o.liveShift||0, _baseShift:(o.baseShift??null), liveState:o.liveState||"wait",
     prepAt:(o.prepAt??null), examAt:(o.examAt??null), doneAt:(o.doneAt??null)}));
   const P=snap.P; _prep=P.prep;
   const r=retime(order,P);
