@@ -1784,7 +1784,12 @@ function roleCell(name,sub){
   return `${name}${sub?' <span class="role-sub" title="Vertretung – die eingestellte Person prüft selbst">(Vert.)</span>':''}`;
 }
 function tableHtml(res,M){
-  const rows=[...res.sched].sort((a,b)=>a.start-b.start);
+  // WICHTIG: data-i der Zeilen muss zu CUR.order[i] passen (so indexieren die Klick-Handler).
+  // res.sched hat exakt die CUR.order-Reihenfolge (gleiche Referenzen). Im Live-Modus daher NICHT
+  // nach Startzeit neu sortieren – sonst zeigt data-i nach „Vorbereitung/Prüfung" (lcAnchor
+  // verschiebt die Zeit) auf den falschen Kandidaten und die Liste springt durcheinander.
+  // Im Planungsmodus ist res.sched ohnehin chronologisch (Zeiten steigen mit der Reihenfolge).
+  const rows = (typeof LIVE!=="undefined" && LIVE) ? res.sched : [...res.sched].sort((a,b)=>a.start-b.start);
   const cmap=teacherColor(M);
   const nHard=rows.reduce((n,x)=>n+(x.hard?x.hard.length:0),0);
   const nSoft=rows.reduce((n,x)=>n+(x.soft?x.soft.length:0),0);
@@ -1959,7 +1964,8 @@ function renderBeamer(){
     else { dl.className="bdelay zero"; dl.textContent="pünktlich"; } }
   // aktuelle / nächste Prüfung + Vorbereitungs-Kandidaten
   let cur=null, next=null;
-  const inPrep = conducting ? order.filter(x=>lcState(x)==="prep") : [];
+  // In Vorbereitung: wer am längsten wartet (frühester prepAt) zuerst → oben in der Liste
+  const inPrep = conducting ? order.filter(x=>lcState(x)==="prep").sort((a,b)=>(a.prepAt||0)-(b.prepAt||0)) : [];
   if(conducting){
     cur = order.filter(x=>lcState(x)==="exam").sort((a,b)=>(b.examAt||0)-(a.examAt||0))[0]||null;
     next = inPrep[0] || order.find(x=>lcState(x)==="wait") || null;   // nächste zur Prüfung: zuerst die in Vorbereitung
@@ -2305,6 +2311,7 @@ function repaintPlan(res,P){
   fillConfFields(res);
   $("planView").innerHTML=planControls(res,P)+legendHtml(MATRIX)+renderGantt(res,MATRIX)+
     `<div style="margin-top:18px"></div>`+tableHtml(res,MATRIX)+exportBar();
+  ensurePlanDelegation();   // einmaliger, neuaufbau-sicherer Klick-Listener am Container
   bindExport(res);
   bindPlanControls(res,P);
   if(!LIVE){
@@ -2342,42 +2349,56 @@ function repaintPlan(res,P){
     const gantt=document.querySelector('.gantt');
     if(gantt) gantt.onclick=(ev)=>{ if(!ev.target.closest('.gblock.gclick')) clearSel(); };
   }
-  // Live-Tag-Umschalter
-  const lt=document.getElementById("liveToggle");
-  if(lt) lt.onchange=()=>{ LIVE=lt.checked;
-    const r=retime(CUR.order,P); CUR.res=r; repaintPlan(r,P); };
-  // Delay-Buttons (−5/−1/+1/+5/+10 je Zeile) — wirkt auf alle folgenden; auch negativ (vor Start)
-  document.querySelectorAll('.dbtn[data-act="dly"]').forEach(b=>{
-    b.onclick=()=>{ const i=+b.dataset.i, m=+b.dataset.m;
-      const slot=CUR.order[i]; slot.liveShift=(slot.liveShift||0)+m;
-      const r=retime(CUR.order,P); CUR.res=r; repaintPlan(r,P); };
-  });
-  // Globale Plan-Verschiebung (−5/−1/+1/+5): verschiebt jede Gruppe ab ihrer ersten Prüfung – auch vor den Start.
-  document.querySelectorAll('.dbtn[data-act="gdly"]').forEach(b=>{
-    b.onclick=()=>{ const m=+b.dataset.m; const seen=new Set();
-      CUR.order.forEach(s=>{ const g=s.group||1; if(!seen.has(g)){ seen.add(g); s.liveShift=(s.liveShift||0)+m; } });
-      const r=retime(CUR.order,P); CUR.res=r; repaintPlan(r,P); };
-  });
-  const rd=document.getElementById("resetDelay");
-  if(rd) rd.onclick=()=>{ CUR.order.forEach(s=>s.liveShift=0);
-    const r=retime(CUR.order,P); CUR.res=r; repaintPlan(r,P); };
-  // Live-Dirigent: Status weiterschalten (Vorbereitung → Prüfung → fertig) — verankert die echte Uhrzeit
-  document.querySelectorAll('.lc-btn[data-act="lc"]').forEach(b=>{
-    b.onclick=()=>lcSetState(+b.dataset.i, b.dataset.to);
-  });
-  // Live-Dirigent: Kandidat als „nächste Vorbereitung" für den Beamer markieren (rot)
-  document.querySelectorAll('.lc-np[data-act="lcnp"]').forEach(b=>{
-    b.onclick=()=>{ const x=CUR.order[+b.dataset.i]; if(!x) return;
-      LC_NEXTPREP=(LC_NEXTPREP===lcKey(x))?null:lcKey(x); lcSave(); repaintPlan(CUR.res,P); };
-  });
+  // Live-Tag-Umschalter, Delay-Buttons (dly/gdly), Reset, Live-Dirigent (lc/lcnp) und Beamer
+  // werden NICHT mehr pro Neuaufbau gebunden, sondern zentral per Event-Delegation am stabilen
+  // Container #planView (siehe ensurePlanDelegation). Dadurch überlebt jeder Klick jeden
+  // innerHTML-Neuaufbau – Buttons können nicht mehr „hängen" / Klicks verloren gehen.
   // Mitlauf-Timer (Vorbereitungsdauer) nur im Live-Modus sekündlich aktualisieren
   if(LIVE){ if(!LIVE_TIMER) LIVE_TIMER=setInterval(lcTick,1000); lcTick(); }
   else if(LIVE_TIMER){ clearInterval(LIVE_TIMER); LIVE_TIMER=null; }
-  // Beamer-Ansicht
-  const bm=document.getElementById("beamer");
-  if(bm) bm.onclick=()=>openBeamer();
   // Kennzahlen (und im Vergleich die Empfehlung) an den aktuellen Plan anpassen.
   refreshStats();
+}
+
+// ===== Robuste Klick-Steuerung per Event-Delegation =====
+// Ein EINZIGER, dauerhaft gebundener Listener am stabilen Container #planView. Er liest die
+// Aktion aus data-act/id des geklickten Buttons. Weil der Listener am Container hängt (und nicht
+// an den Buttons selbst), bleibt er beim Neuaufbau der Tabelle bestehen – Klicks gehen nie
+// verloren, egal ob gerade neu gezeichnet wird. Ersetzt das fragile Neu-Binden pro Button.
+let _planDelegated=false;
+function ensurePlanDelegation(){
+  if(_planDelegated) return;
+  const pv=$("planView"); if(!pv) return;
+  _planDelegated=true;
+  pv.addEventListener("click",ev=>{
+    if(!CUR) return;
+    const b=ev.target.closest('[data-act],#resetDelay,#beamer');
+    if(!b || !pv.contains(b)) return;
+    const P=CUR.P;
+    if(b.id==="beamer"){ openBeamer(); return; }
+    if(b.id==="resetDelay"){ CUR.order.forEach(s=>s.liveShift=0);
+      const r=retime(CUR.order,P); CUR.res=r; repaintPlan(r,P); return; }
+    const act=b.dataset.act;
+    if(act==="dly"){                    // Verzögerung je Zeile (wirkt auf alle folgenden)
+      const slot=CUR.order[+b.dataset.i]; if(!slot) return;
+      slot.liveShift=(slot.liveShift||0)+(+b.dataset.m);
+      const r=retime(CUR.order,P); CUR.res=r; repaintPlan(r,P);
+    } else if(act==="gdly"){            // globale Verschiebung je Gruppe
+      const m=+b.dataset.m; const seen=new Set();
+      CUR.order.forEach(s=>{ const g=s.group||1; if(!seen.has(g)){ seen.add(g); s.liveShift=(s.liveShift||0)+m; } });
+      const r=retime(CUR.order,P); CUR.res=r; repaintPlan(r,P);
+    } else if(act==="lc"){              // Live-Dirigent: Status weiterschalten
+      lcSetState(+b.dataset.i, b.dataset.to);
+    } else if(act==="lcnp"){            // „nächste Vorbereitung" markieren
+      const x=CUR.order[+b.dataset.i]; if(!x) return;
+      LC_NEXTPREP=(LC_NEXTPREP===lcKey(x))?null:lcKey(x); lcSave(); repaintPlan(CUR.res,P);
+    }
+  });
+  pv.addEventListener("change",ev=>{    // Live-Tag-Umschalter (Checkbox) ebenfalls delegiert
+    if(!CUR) return;
+    if(!ev.target.closest("#liveToggle")) return;
+    LIVE=ev.target.checked; const r=retime(CUR.order,CUR.P); CUR.res=r; repaintPlan(r,CUR.P);
+  });
 }
 
 function renderResult(P){
@@ -3392,10 +3413,16 @@ setInterval(tickClock,1000); tickClock();
 if('scrollRestoration' in history) history.scrollRestoration='manual';
 window.addEventListener('load',()=>window.scrollTo(0,0));
 
-// Gantt bei Größenänderung des Fensters neu auf Seitenbreite einpassen
-let _resizeT=null;
+// Gantt bei Größenänderung des Fensters neu auf Seitenbreite einpassen.
+// WICHTIG: Nur bei echter BREITEN-Änderung neu aufbauen. Auf Tablet/Handy feuert
+// resize auch bei reinen Höhenänderungen (Adressleiste ein-/ausfahren beim Scrollen,
+// Tastatur). Würde dann der ganze Plan neu gebaut, gehen mitten im Tippen die
+// Live-Buttons („▶ Prüfung", „✓ Fertig" …) verloren und Klicks reagieren nicht.
+let _resizeT=null, _lastW=window.innerWidth;
 window.addEventListener('resize',()=>{
   if(!CUR) return;
+  if(window.innerWidth===_lastW) return;   // nur Höhe geändert → ignorieren
+  _lastW=window.innerWidth;
   clearTimeout(_resizeT);
   _resizeT=setTimeout(()=>{ if(CUR) repaintPlan(CUR.res, CUR.P); }, 200);
 });
