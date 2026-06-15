@@ -84,6 +84,29 @@ geschütztem Bereich).
 - Nutzen: Wartbarkeit, echte Trennung von Master/Anzeige, echter Zugriffsschutz.
 - Risiko: hoch (größerer Umbau) – bewusst als Zukunftsthema.
 
+### 9. ⚠ Masteransicht/Steuerung gegen Sabotage schützen (SICHERHEIT, wichtig)
+**Problem:** Die Steuerung wird per `?mode=master&key=…` freigeschaltet, und dieser
+**Schlüssel steht im öffentlich ausgelieferten Quellcode** (eine `index.html` auf
+GitHub Pages). Ebenso der Schreib-Schlüssel für die Datenbank (`set_live_state`).
+Wer den Quelltext liest, kann sich also als Master ausgeben und den laufenden
+Prüfungstag **sabotieren**: Status umstellen, Reihenfolge/Zeiten verändern oder
+falsche Daten an **alle** Anzeigen (Beamer + Schülerhandys) senden.
+
+**Mögliche Maßnahmen (zunehmend sicher):**
+1. **Sofort/billig (nur abschreckend, kein echter Schutz):** Schlüssel weniger
+   offensichtlich; Master-URL nicht teilen; Beamer-/Steuer-Adresse verbergen (#7).
+   → Hilft nur gegen Zufallsfunde, nicht gegen jemanden, der den Code anschaut.
+2. **Datenbank absichern (Supabase):** Row-Level-Security so, dass **Schreiben**
+   nur mit einem Geheimnis geht, das **nicht** im Client liegt – z. B. Schreibpfad
+   über eine **Edge Function** mit serverseitigem Schlüssel; Clients dürfen nur lesen.
+3. **Echte Anmeldung:** Master-Steuerung hinter **Login** (Supabase Auth / Passwort),
+   Anzeige bleibt offen. Erfordert Aufteilung der App (#8).
+
+**Empfehlung:** Mindestens Punkt 2 (Schreibrecht serverseitig schützen), damit nicht
+jeder die Live-Daten überschreiben kann. Punkt 3 für vollen Schutz.
+- Risiko der Umsetzung: mittel–hoch; hängt mit #8 (Aufteilung) zusammen.
+- Priorität: **hoch**, sobald die App über den internen Gebrauch hinaus genutzt wird.
+
 ---
 
 ## Bewusst NICHT umgesetzt (mit Begründung)
