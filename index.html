@@ -3695,9 +3695,9 @@ function DEMO(){
     const rtEl=ruhe.querySelector(".rt"); const RT_DEFAULT=rtEl?rtEl.textContent:"";
     function applyPayload(pl){
       last=pl||null;
-      // Session-Code prüfen: trägt der Stand einen Code und passt er nicht zum Link-Code,
-      // ist der Link abgelaufen (neuer Prüfungstag oder neuer Link erzeugt).
-      const expired = !!(pl && pl.sid && pl.sid!==urlSid);
+      // Session-Code prüfen: NUR Links MIT Code (Schüler-QR) können ablaufen. Der Beamer-Link
+      // hat keinen Code (urlSid leer) und gilt daher dauerhaft – einmal am Beamer-PC einrichten.
+      const expired = !!(pl && pl.sid && urlSid && pl.sid!==urlSid);
       const active = !expired && pl && pl.sessionActive && pl.sessionDate===viennaDate() && pl.sched && pl.sched.length;
       if(active){
         ruhe.classList.remove("on");
@@ -3743,13 +3743,17 @@ function DEMO(){
     LIVE_SID=(s&&s.d===viennaDate()&&s.sid)?s.sid:freshSid(); }catch(e){ LIVE_SID=freshSid(); }
   const persistSid = ()=>{ try{ localStorage.setItem("mc_live_sid",JSON.stringify({d:viennaDate(),sid:LIVE_SID})); }catch(e){} };
   persistSid();
+  // Schüler-Link trägt den Session-Code (rotiert). Beamer-Link OHNE Code → gilt dauerhaft.
   const buildAnzeigeUrl = ()=> location.origin+location.pathname+"?mode=anzeige&sid="+encodeURIComponent(LIVE_SID);
+  const buildBeamerUrl  = ()=> location.origin+location.pathname+"?mode=anzeige";
   panel=document.createElement("div"); panel.id="livePanel"; panel.classList.add("show");
   panel.innerHTML='<h4 title="Zum Verschieben ziehen"><span class="lp-grip">⠿</span> 🔴 Live-Spiegelung <span class="lp-dot"></span></h4>'
     +'<button class="lp-main" id="lpToggle">▶ Prüfungstag starten</button>'
-    +'<div class="lp-sub">Anzeige-Link (Beamer / Schülerhandys):</div>'
+    +'<div class="lp-sub">Beamer-Link (einmal am Beamer-PC einrichten – gilt immer):</div>'
+    +'<div class="lp-link"><input id="lpBeam" readonly><button id="lpCopyB">Kopieren</button></div>'
+    +'<div class="lp-sub" style="margin-top:9px">Schüler-Link / QR (pro Session – alte werden ungültig):</div>'
     +'<div class="lp-link"><input id="lpUrl" readonly><button id="lpCopy">Kopieren</button></div>'
-    +'<button id="lpNew" style="margin-top:7px;width:100%;cursor:pointer;border:1px solid #38506b;border-radius:8px;padding:6px 10px;background:transparent;color:#9fb6d2;font-size:12px;font-weight:600" title="Erzeugt einen neuen Schüler-Link/QR. Der bisherige Link wird ungültig – bereits geteilte alte Links funktionieren nicht mehr.">↻ Neuen Schüler-Link erzeugen</button>'
+    +'<button id="lpNew" style="margin-top:7px;width:100%;cursor:pointer;border:1px solid #38506b;border-radius:8px;padding:6px 10px;background:transparent;color:#9fb6d2;font-size:12px;font-weight:600" title="Erzeugt einen neuen Schüler-Link/QR. Der bisherige Link wird ungültig – bereits geteilte alte Links funktionieren nicht mehr. Der Beamer-Link oben bleibt davon unberührt.">↻ Neuen Schüler-Link erzeugen</button>'
     +'<div id="lpQR"></div>';
   document.body.appendChild(panel);
   setStatus(false);
@@ -3759,15 +3763,19 @@ function DEMO(){
     const qr=$id("lpQR"); if(qr){ qr.innerHTML="";
       try{ if(window.QRCode) new QRCode(qr,{text:url,width:150,height:150,correctLevel:QRCode.CorrectLevel.M}); }catch(e){} }
   }
+  $id("lpBeam").value=buildBeamerUrl();   // dauerhafter Beamer-Link – ändert sich nie
   refreshLink();
   function newLink(){
-    if(!confirm("Neuen Schüler-Link erzeugen?\n\nDer bisherige Link/QR-Code wird ungültig – bereits geteilte alte Links funktionieren danach nicht mehr.")) return;
-    LIVE_SID=freshSid(); persistSid(); refreshLink(); lastSent=""; pushNow();   // neuen Code sofort senden → alte Links laufen ab
+    if(!confirm("Neuen Schüler-Link erzeugen?\n\nDer bisherige Schüler-Link/QR wird ungültig – bereits geteilte alte Links funktionieren danach nicht mehr.\n\nDer Beamer-Link bleibt unverändert.")) return;
+    LIVE_SID=freshSid(); persistSid(); refreshLink(); lastSent=""; pushNow();   // neuen Code sofort senden → alte Schüler-Links laufen ab
   }
   $id("lpNew").onclick=newLink;
-  $id("lpCopy").onclick=()=>{ const i=$id("lpUrl"); i.select();
-    if(navigator.clipboard) navigator.clipboard.writeText(i.value); else { try{document.execCommand("copy");}catch(e){} }
-    $id("lpCopy").textContent="✓"; setTimeout(()=>$id("lpCopy").textContent="Kopieren",1200); };
+  function wireCopy(btnId,inputId){
+    $id(btnId).onclick=()=>{ const i=$id(inputId); i.select();
+      if(navigator.clipboard) navigator.clipboard.writeText(i.value); else { try{document.execCommand("copy");}catch(e){} }
+      $id(btnId).textContent="✓"; setTimeout(()=>$id(btnId).textContent="Kopieren",1200); };
+  }
+  wireCopy("lpCopy","lpUrl"); wireCopy("lpCopyB","lpBeam");
   function setActive(a){ sessionActive=a; if(a) sessionDate=viennaDate();
     try{ localStorage.setItem("mc_live_session", a?viennaDate():""); }catch(e){}  // für Auto-Resume nach Reload
     panel.classList.toggle("active",a);
