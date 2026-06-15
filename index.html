@@ -2149,6 +2149,8 @@ function retime(seq,P){
     if(e.liveState==="prep") return (e.prepAt!=null) ? e.prepAt+prep : null;   // Prüfung = Vorber.-Start + Vorbereitung
     return (e.examAt!=null) ? e.examAt : (e.prepAt!=null ? e.prepAt+prep : null); // Prüfung/fertig = echte Prüfungs-Startzeit
   };
+  // Ende: fertige Prüfungen zeigen ihre ECHTE Dauer (Beginn → „Fertig"-Klick), sonst die Plan-Dauer.
+  const anchorEnd = (e,s) => (e.liveState==="done" && e.doneAt!=null && e.doneAt>s) ? e.doneAt : s+dur;
   // 2-Gruppen-Plan erkennen: Prüfungen tragen group=1/2
   const hasGroups = seq.some(e=>e.group===1) && seq.some(e=>e.group===2);
 
@@ -2164,7 +2166,7 @@ function retime(seq,P){
     for(const e of g1){
       const aS=isAnchored(e)?anchorStart(e):null;
       if(aS!=null){                       // gestartet/fertig → feste Echtzeit, keine Kaskade
-        e.start=aS; e.end=aS+dur;
+        e.start=aS; e.end=anchorEnd(e,aS);
         e.prepStart=(e.liveState==="prep"&&e.prepAt!=null)?e.prepAt:Math.max(0,aS-prep);
         e.hard=[]; e.soft=[]; e.liveShift=e.liveShift||0; e.runDelay=0;
         cur=Math.max(cur, e.end-runDelay); lastEndG1[e.student]=e.end;
@@ -2192,7 +2194,7 @@ function retime(seq,P){
       const e=g2[i];
       const aS=isAnchored(e)?anchorStart(e):null;
       if(aS!=null){                       // gestartet/fertig → feste Echtzeit, keine Kaskade
-        e.start=aS; e.end=aS+dur;
+        e.start=aS; e.end=anchorEnd(e,aS);
         e.prepStart=(e.liveState==="prep"&&e.prepAt!=null)?e.prepAt:Math.max(0,aS-prep);
         e.hard=[]; e.soft=[]; e.liveShift=e.liveShift||0; e.runDelay=0;
         cur2=Math.max(cur2, e.end-runDelay2); lastEndG2[e.student]=e.end;
