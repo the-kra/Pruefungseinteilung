@@ -1917,6 +1917,11 @@ let BEAMER_SIG="", BEAMER_LASTTARGET=-1, BEAMER_WAKELOCK=null;
 // Bildschirm wach halten (sofern der Browser die Wake-Lock-API unterstützt) – kein Zutun nötig.
 async function beamerWakeLock(){ try{ if("wakeLock" in navigator){ BEAMER_WAKELOCK=await navigator.wakeLock.request("screen"); } }catch(e){} }
 function openBeamer(){
+  // Beamer-Ansicht ist für den Prüfungstag gedacht → nur bei eingeschaltetem Live-Tag-Modus.
+  if(typeof LIVE!=="undefined" && !LIVE){
+    alert('Bitte zuerst den Live-Tag-Modus einschalten – die Beamer-Ansicht ist für den Prüfungstag gedacht.');
+    return;
+  }
   const bv=document.getElementById("beamerView"); if(!bv||!CUR)return;
   BEAMER_ON=true; bv.classList.add("on");
   BEAMER_SIG=""; BEAMER_LASTTARGET=-1;
