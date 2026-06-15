@@ -3211,6 +3211,7 @@ async function loadPruefungstag(file){
 }
 // Geladenen Prüfungstag (aus PDF ODER Excel) in MATRIX/Plan/Felder übernehmen und anzeigen.
 function applyLoadedPlan(P0, fileName){
+  dismissRestoreBanner();   // frisch geladene Datei → altes Wiederherstellen-Banner entfernen
   const studMap={}, tset=new Set();
   P0.sched.forEach(x=>{ (studMap[x.student]=studMap[x.student]||[]).push({subject:x.subject,teacher:x.teacher}); if(x.teacher)tset.add(x.teacher); if(x.beisitz)tset.add(x.beisitz); });
   Object.values(P0.beisitzer||{}).forEach(arr=>arr.forEach(t=>tset.add(t)));
@@ -3432,8 +3433,11 @@ $("dlTemplate").onclick=downloadTemplate;
 $("loadDayBtn").onclick=()=>$("loadDayFile").click();
 $("loadDayFile").addEventListener("change",e=>{ const f=e.target.files[0]; if(f) loadPruefungstag(f); e.target.value=""; });
 
+// Wiederherstellen-Banner entfernen, sobald man bewusst neu startet (Berechnen/Datei laden).
+function dismissRestoreBanner(){ const b=document.getElementById("snapRestore"); if(b) b.remove(); }
 $("run").onclick=()=>{
   if(!MATRIX){alert("Bitte zuerst eine Matrix laden oder die Demo verwenden.");return;}
+  dismissRestoreBanner();
   const ri=$("roomIn"); if(ri && ri.value.trim()) ROOM=ri.value.trim();
   PM_START=null; // bei Neuberechnung: Nachmittag wieder auf Auto
   renderResult(getParams());
