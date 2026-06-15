@@ -1806,6 +1806,7 @@ function tableHtml(res,M){
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto">
           <rect x="3" y="4" width="18" height="12" rx="1.5"></rect><path d="M12 16v4"></path><path d="M8 20h8"></path>
         </svg>Beamer-Ansicht</button>
+      <button class="btn-sm btn-ghost" data-act="livereset" style="margin-left:8px" title="Alle Live-Eingaben löschen (Status abgeschlossen/aktiv/wartend + Verschiebungen) und den gespeicherten Stand verwerfen. Der Plan bleibt erhalten.">↺ Live zurücksetzen</button>
       <span class="lt-sub">Zum Mitloggen am Prüfungstag: Verzögerungen einklicken, alle folgenden Prüfungen verschieben sich live. Nicht zum Vorausplanen — zum Planen die Zeilen ziehen.</span>
     </div>`;
 
@@ -2358,6 +2359,7 @@ function repaintPlan(res,P){
   else if(LIVE_TIMER){ clearInterval(LIVE_TIMER); LIVE_TIMER=null; }
   // Kennzahlen (und im Vergleich die Empfehlung) an den aktuellen Plan anpassen.
   refreshStats();
+  saveSnapshot();   // kompletten Live-Stand sichern – überlebt Absturz / Neuladen
 }
 
 // ===== Robuste Klick-Steuerung per Event-Delegation =====
@@ -2392,6 +2394,8 @@ function ensurePlanDelegation(){
     } else if(act==="lcnp"){            // „nächste Vorbereitung" markieren
       const x=CUR.order[+b.dataset.i]; if(!x) return;
       LC_NEXTPREP=(LC_NEXTPREP===lcKey(x))?null:lcKey(x); lcSave(); repaintPlan(CUR.res,P);
+    } else if(act==="livereset"){        // alles zurücksetzen (sauber neu starten)
+      lcResetAll();
     }
   });
   pv.addEventListener("change",ev=>{    // Live-Tag-Umschalter (Checkbox) ebenfalls delegiert
@@ -2443,6 +2447,60 @@ function renderResult(P){
     CUR={order, optimal:order.slice(), P, res:r, compare:false, edited:false};
     repaintPlan(r,P);
   }
+}
+
+/* ===== Voller Live-Stand: Snapshot speichern & wiederherstellen =====
+   Sichert nach JEDER Änderung (Tausch, ±Verzögerung, Vorbereitung/Prüfung/Fertig, Raum, Live-An/Aus)
+   den kompletten Stand in localStorage. So geht bei Master-Absturz / Neuladen NICHTS verloren –
+   Reihenfolge, Verschiebungen und der Status (abgeschlossen / aktiv / wartend) inkl. Zeitstempel
+   werden exakt wiederhergestellt. Gespeichert wird der Bauplan (Matrix, Parameter, Reihenfolge +
+   liveShift + Live-Status); die konkreten Uhrzeiten rechnet retime() daraus deterministisch nach. */
+const SNAP_KEY="mc_snapshot_v1";
+function snapToday(){ try{ return new Date().toLocaleDateString("en-CA"); }catch(e){ return ""; } }
+function saveSnapshot(){
+  try{
+    if(!CUR||!CUR.order||!CUR.P||!MATRIX) return;
+    const snap={ v:1, savedAt:Date.now(), day:snapToday(),
+      room:ROOM, live:!!LIVE, pmStart:(PM_START??null), np:LC_NEXTPREP,
+      P:CUR.P, matrix:MATRIX,
+      order:CUR.order.map(x=>({student:x.student,subject:x.subject,teacher:x.teacher,group:x.group,
+        liveShift:x.liveShift||0, liveState:x.liveState||"wait",
+        prepAt:(x.prepAt??null), examAt:(x.examAt??null), doneAt:(x.doneAt??null)})) };
+    localStorage.setItem(SNAP_KEY, JSON.stringify(snap));
+  }catch(e){}
+}
+function readSnapshot(){
+  try{ const s=JSON.parse(localStorage.getItem(SNAP_KEY)); return (s&&s.order&&s.P&&s.matrix)?s:null; }catch(e){ return null; }
+}
+// Wirklich neu starten: alle Live-Eingaben (Status + Verschiebungen) löschen und den
+// gespeicherten Stand verwerfen. Der Plan (Schüler/Fächer/Reihenfolge) bleibt erhalten.
+function lcResetAll(){
+  if(!CUR||!CUR.order) return;
+  if(!confirm("Live-Stand wirklich zurücksetzen?\n\nAlle Status (abgeschlossen/aktiv/wartend) und Verschiebungen werden gelöscht und der gespeicherte Stand verworfen. Der Plan selbst bleibt erhalten.")) return;
+  CUR.order.forEach(x=>{ x.liveState="wait"; x.prepAt=null; x.examAt=null; x.doneAt=null; x.liveShift=0; });
+  LC_NEXTPREP=null;
+  try{ localStorage.removeItem(SNAP_KEY); localStorage.removeItem(LC_KEY); localStorage.removeItem("mc_live_session"); }catch(e){}
+  const r=retime(CUR.order,CUR.P); CUR.res=r; repaintPlan(r,CUR.P);
+}
+function applySnapshot(snap){
+  if(!snap) return false;
+  MATRIX=snap.matrix; ROOM=snap.room||ROOM; PM_START=(snap.pmStart??null);
+  LIVE=!!snap.live; LC_NEXTPREP=snap.np||null;
+  const order=snap.order.map(o=>({student:o.student,subject:o.subject,teacher:o.teacher,group:o.group,
+    liveShift:o.liveShift||0, liveState:o.liveState||"wait",
+    prepAt:(o.prepAt??null), examAt:(o.examAt??null), doneAt:(o.doneAt??null)}));
+  const P=snap.P; _prep=P.prep;
+  const r=retime(order,P);
+  // _lcHydrated=true: der Status kommt schon aus dem Snapshot, nicht aus der alten LC-Ablage überschreiben.
+  CUR={order, optimal:order.slice(), P, res:r, compare:false, edited:false, _lcHydrated:true};
+  LAST={r,mode:"single",M:MATRIX};
+  const ri=$("roomIn"); if(ri && ROOM) ri.value=ROOM;
+  const klTitle=P.klasse?` · Klasse ${P.klasse}`:"";
+  $("out").innerHTML=`<h2>Prüfungsplan${klTitle}</h2><div id="statSingle">${statBlock(r)}</div><div id="planView"></div>`;
+  repaintPlan(r,P);
+  // Falls vor dem Reload live gesendet wurde: Spiegelung automatisch wieder aufnehmen.
+  try{ if(localStorage.getItem("mc_live_session")===snapToday() && typeof window.__mcResumeSession==="function") window.__mcResumeSession(); }catch(e){}
+  return true;
 }
 
 /* Aktualisiert nach manuellem Verschieben die Kennzahlen-Blöcke (und im Vergleich die
@@ -3322,6 +3380,37 @@ $("run").onclick=()=>{
   renderResult(getParams());
   scrollToPlan();
 };
+
+/* Absturz-/Reload-Schutz: gespeicherten Live-Stand von heute beim Laden anbieten.
+   Nicht-blockierendes Banner – ein Klick stellt Plan, Reihenfolge, Verschiebungen und
+   den Status (abgeschlossen/aktiv/wartend) exakt wieder her. „Verwerfen" löscht den Stand. */
+(function offerRestore(){
+  // Im reinen Anzeige-Modus (Zuschauer/Beamer) kein Wiederherstellen anbieten.
+  if(((new URLSearchParams(location.search).get("mode")||"").toLowerCase())==="anzeige") return;
+  const snap=readSnapshot();
+  if(!snap || snap.day!==snapToday()) return;   // nur den heutigen Stand anbieten
+  const t=new Date(snap.savedAt||Date.now());
+  const hhmm=String(t.getHours()).padStart(2,"0")+":"+String(t.getMinutes()).padStart(2,"0");
+  const done=snap.order.filter(o=>o.liveState==="done").length;
+  const active=snap.order.filter(o=>o.liveState==="exam"||o.liveState==="prep").length;
+  let info=`Stand ${hhmm}`;
+  if(done) info+=` · ${done} fertig`;
+  if(active) info+=` · ${active} laufend`;
+  const bar=document.createElement("div");
+  bar.id="snapRestore";
+  bar.setAttribute("style","position:fixed;top:0;left:0;right:0;z-index:10050;display:flex;flex-wrap:wrap;"
+    +"align-items:center;gap:12px;justify-content:center;background:#10243b;color:#dCe8f5;"
+    +"font-family:'Lexend',sans-serif;font-size:14px;padding:10px 16px;box-shadow:0 4px 18px -6px rgba(0,0,0,.5)");
+  bar.innerHTML=`<span>🔴 Letzter Live-Stand gefunden (<b>${info}</b>).</span>`
+    +`<button id="snapDo" style="cursor:pointer;border:0;border-radius:8px;padding:7px 14px;font-weight:700;background:#2fae8e;color:#06251d">Wiederherstellen</button>`
+    +`<button id="snapNo" style="cursor:pointer;border:1px solid #38506b;border-radius:8px;padding:7px 12px;background:transparent;color:#9fb6d2">Verwerfen</button>`;
+  document.body.appendChild(bar);
+  document.getElementById("snapDo").onclick=()=>{
+    if(applySnapshot(readSnapshot())){ bar.remove(); scrollToPlan(); } };
+  document.getElementById("snapNo").onclick=()=>{
+    try{ localStorage.removeItem(SNAP_KEY); localStorage.removeItem(LC_KEY); localStorage.removeItem("mc_live_session"); }catch(e){}
+    bar.remove(); };
+})();
 // nach dem Berechnen: Seite auf den Gantt/das Ergebnis zentrieren (Topbar bleibt sticky oben)
 function scrollToPlan(){
   setTimeout(()=>{
@@ -3586,9 +3675,14 @@ function DEMO(){
       document.body.appendChild(lb);
     }
     let last=null;
+    const urlSid=(q.get("sid")||"");
+    const rtEl=ruhe.querySelector(".rt"); const RT_DEFAULT=rtEl?rtEl.textContent:"";
     function applyPayload(pl){
       last=pl||null;
-      const active = pl && pl.sessionActive && pl.sessionDate===viennaDate() && pl.sched && pl.sched.length;
+      // Session-Code prüfen: trägt der Stand einen Code und passt er nicht zum Link-Code,
+      // ist der Link abgelaufen (neuer Prüfungstag oder neuer Link erzeugt).
+      const expired = !!(pl && pl.sid && pl.sid!==urlSid);
+      const active = !expired && pl && pl.sessionActive && pl.sessionDate===viennaDate() && pl.sched && pl.sched.length;
       if(active){
         ruhe.classList.remove("on");
         // Objekte inkl. Live-Dirigent-Status nachbauen und als CUR.order setzen, damit renderBeamer die manuelle Steuerung anzeigt
@@ -3604,6 +3698,7 @@ function DEMO(){
         renderBeamer();
       } else {
         BEAMER_ON=false; const bv=$id("beamerView"); if(bv) bv.classList.remove("on");
+        if(rtEl) rtEl.textContent = expired ? "Link abgelaufen – bitte den aktuellen QR-Code scannen" : RT_DEFAULT;
         ruhe.classList.add("on");
       }
     }
@@ -3623,25 +3718,48 @@ function DEMO(){
 
   // ============================ MASTER ============================
   let sessionActive=false, sessionDate=null, lastSent="";
-  const anzeigeUrl = location.origin+location.pathname+"?mode=anzeige";
+  // Session-Code: pro Prüfungstag ein eigener Code im Schüler-Link/QR. Ein neuer Tag (oder der
+  // „Neuer Link"-Knopf) erzeugt einen frischen Code → alte/geteilte Links werden ungültig
+  // (die Anzeige zeigt dann „Link abgelaufen"). Bleibt über Master-Reload hinweg stabil.
+  const freshSid = ()=> viennaDate()+"-"+Math.random().toString(36).slice(2,8);
+  let LIVE_SID;
+  try{ const s=JSON.parse(localStorage.getItem("mc_live_sid")||"null");
+    LIVE_SID=(s&&s.d===viennaDate()&&s.sid)?s.sid:freshSid(); }catch(e){ LIVE_SID=freshSid(); }
+  const persistSid = ()=>{ try{ localStorage.setItem("mc_live_sid",JSON.stringify({d:viennaDate(),sid:LIVE_SID})); }catch(e){} };
+  persistSid();
+  const buildAnzeigeUrl = ()=> location.origin+location.pathname+"?mode=anzeige&sid="+encodeURIComponent(LIVE_SID);
   panel=document.createElement("div"); panel.id="livePanel"; panel.classList.add("show");
   panel.innerHTML='<h4 title="Zum Verschieben ziehen"><span class="lp-grip">⠿</span> 🔴 Live-Spiegelung <span class="lp-dot"></span></h4>'
     +'<button class="lp-main" id="lpToggle">▶ Prüfungstag starten</button>'
     +'<div class="lp-sub">Anzeige-Link (Beamer / Schülerhandys):</div>'
     +'<div class="lp-link"><input id="lpUrl" readonly><button id="lpCopy">Kopieren</button></div>'
+    +'<button id="lpNew" style="margin-top:7px;width:100%;cursor:pointer;border:1px solid #38506b;border-radius:8px;padding:6px 10px;background:transparent;color:#9fb6d2;font-size:12px;font-weight:600" title="Erzeugt einen neuen Schüler-Link/QR. Der bisherige Link wird ungültig – bereits geteilte alte Links funktionieren nicht mehr.">↻ Neuen Schüler-Link erzeugen</button>'
     +'<div id="lpQR"></div>';
   document.body.appendChild(panel);
-  $id("lpUrl").value=anzeigeUrl;
   setStatus(false);
-  try{ if(window.QRCode) new QRCode($id("lpQR"),{text:anzeigeUrl,width:150,height:150,correctLevel:QRCode.CorrectLevel.M}); }catch(e){}
+  function refreshLink(){
+    const url=buildAnzeigeUrl();
+    const u=$id("lpUrl"); if(u) u.value=url;
+    const qr=$id("lpQR"); if(qr){ qr.innerHTML="";
+      try{ if(window.QRCode) new QRCode(qr,{text:url,width:150,height:150,correctLevel:QRCode.CorrectLevel.M}); }catch(e){} }
+  }
+  refreshLink();
+  function newLink(){
+    if(!confirm("Neuen Schüler-Link erzeugen?\n\nDer bisherige Link/QR-Code wird ungültig – bereits geteilte alte Links funktionieren danach nicht mehr.")) return;
+    LIVE_SID=freshSid(); persistSid(); refreshLink(); lastSent=""; pushNow();   // neuen Code sofort senden → alte Links laufen ab
+  }
+  $id("lpNew").onclick=newLink;
   $id("lpCopy").onclick=()=>{ const i=$id("lpUrl"); i.select();
     if(navigator.clipboard) navigator.clipboard.writeText(i.value); else { try{document.execCommand("copy");}catch(e){} }
     $id("lpCopy").textContent="✓"; setTimeout(()=>$id("lpCopy").textContent="Kopieren",1200); };
   function setActive(a){ sessionActive=a; if(a) sessionDate=viennaDate();
+    try{ localStorage.setItem("mc_live_session", a?viennaDate():""); }catch(e){}  // für Auto-Resume nach Reload
     panel.classList.toggle("active",a);
     $id("lpToggle").textContent = a ? "■ Prüfungstag beenden" : "▶ Prüfungstag starten";
     pushNow(); }
   $id("lpToggle").onclick=()=>setActive(!sessionActive);
+  // Nach Wiederherstellung des Live-Stands (Reload) die Spiegelung automatisch fortsetzen.
+  window.__mcResumeSession=()=>{ if(!sessionActive) setActive(true); };
 
   // Grüner Punkt = minimieren / maximieren (Zustand wird gemerkt)
   const dot=panel.querySelector(".lp-dot");
@@ -3675,7 +3793,7 @@ function DEMO(){
     const haveCur = (typeof CUR!=="undefined") && CUR && CUR.res && CUR.res.sched;
     const rows = (sessionActive && haveCur) ? [...CUR.res.sched].sort((a,b)=>a.start-b.start) : [];
     const cmap = (typeof MATRIX!=="undefined" && MATRIX) ? (typeof teacherColor==="function"?teacherColor(MATRIX):(MATRIX.teacherColors||{})) : {};
-    return { v:1, sessionActive, sessionDate,
+    return { v:1, sessionActive, sessionDate, sid:LIVE_SID,
       room:(typeof ROOM!=="undefined"?ROOM:""), prep:!!BEAMER_PREP,
       totalDelay:(haveCur && CUR.res.totalDelay)||0,
       teachers:(typeof MATRIX!=="undefined" && MATRIX && MATRIX.teachers)||[], teacherColors:cmap,
