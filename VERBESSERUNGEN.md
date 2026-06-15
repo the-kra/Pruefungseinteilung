@@ -53,6 +53,37 @@ mitwachsen lassen (statt fix Beginn + Plandauer), bis „Fertig" gedrückt wird.
 - Nutzen: zeigt am Beamer den echten Überzug in Echtzeit.
 - Risiko: mittel (sekündliches Re-Rendern nötig, Performance beachten).
 
+### 6. QR-Code für die Schüleransicht direkt im Beamer einbetten
+**Idee:** In der Beamer-Ansicht (projizierter Schirm) einen **QR-Code** für die
+Schüler-Anzeige einblenden, damit Schüler ihn direkt vom Beamer scannen können –
+ohne dass der Lehrer den Link separat teilen muss.
+
+- Nutzen: Schüler kommen mit einem Blick aufs Handy zur Live-Ansicht.
+- Risiko: gering (QR-Lib ist schon vorhanden).
+- Hinweis: Der QR muss den **rotierenden Schüler-Link** (mit `sid`) zeigen, nicht den
+  dauerhaften Beamer-Link.
+
+### 7. Beamer-Adresse vor Schülern verbergen
+**Idee:** Die Adresszeile/den Steuer-Link am Beamer **nicht offen anzeigen** – entweder
+ausblenden oder so lang/unleserlich gestalten, dass Schüler sie nicht einfach
+abfotografieren oder abtippen können (z. B. nur QR zeigen, URL kürzen/verstecken).
+
+- Nutzen: verhindert, dass Schüler die Steuer-/Master-Adresse mitlesen.
+- Risiko: gering (nur Anzeige).
+- **Wichtiger Hinweis:** Echte Sicherheit gibt das nicht – der Link/Schlüssel steht
+  ohnehin im **öffentlichen Quellcode** der einen `index.html`. Für echten Schutz
+  müsste die App sauber aufgeteilt werden (siehe #8).
+
+### 8. Projekt aus der einen großen `index.html` sauber aufteilen
+**Idee:** Die App ist aktuell eine einzige `index.html` (HTML + CSS + gesamtes JS +
+Konfiguration inkl. Schlüssel/Links). Künftig sinnvoll: in getrennte Dateien
+(HTML / CSS / JS-Module) aufteilen und **Geheimnisse/Steuer-Schlüssel** nicht im
+öffentlich ausgelieferten Code halten (z. B. Master-Steuerung serverseitig / per
+geschütztem Bereich).
+
+- Nutzen: Wartbarkeit, echte Trennung von Master/Anzeige, echter Zugriffsschutz.
+- Risiko: hoch (größerer Umbau) – bewusst als Zukunftsthema.
+
 ---
 
 ## Bewusst NICHT umgesetzt (mit Begründung)
