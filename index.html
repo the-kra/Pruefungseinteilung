@@ -1784,12 +1784,13 @@ function roleCell(name,sub){
   return `${name}${sub?' <span class="role-sub" title="Vertretung – die eingestellte Person prüft selbst">(Vert.)</span>':''}`;
 }
 function tableHtml(res,M){
-  // WICHTIG: data-i der Zeilen muss zu CUR.order[i] passen (so indexieren die Klick-Handler).
-  // res.sched hat exakt die CUR.order-Reihenfolge (gleiche Referenzen). Im Live-Modus daher NICHT
-  // nach Startzeit neu sortieren – sonst zeigt data-i nach „Vorbereitung/Prüfung" (lcAnchor
-  // verschiebt die Zeit) auf den falschen Kandidaten und die Liste springt durcheinander.
-  // Im Planungsmodus ist res.sched ohnehin chronologisch (Zeiten steigen mit der Reihenfolge).
-  const rows = (typeof LIVE!=="undefined" && LIVE) ? res.sched : [...res.sched].sort((a,b)=>a.start-b.start);
+  // Immer chronologisch anzeigen (Vergangenheit oben → Zukunft unten): die laufende/zuletzt
+  // gestartete Prüfung wandert dadurch automatisch nach oben.
+  // WICHTIG: data-i der Zeilen muss zum CUR.order-Index passen (so indexieren die Klick-Handler),
+  // NICHT zur sortierten Anzeigeposition. Darum den echten Index aus res.sched bestimmen
+  // (gleiche Reihenfolge/Referenzen wie CUR.order) und nur die Anzeige sortieren.
+  const orderIdx=new Map(res.sched.map((x,i)=>[x,i]));
+  const rows=[...res.sched].sort((a,b)=>a.start-b.start);
   const cmap=teacherColor(M);
   const nHard=rows.reduce((n,x)=>n+(x.hard?x.hard.length:0),0);
   const nSoft=rows.reduce((n,x)=>n+(x.soft?x.soft.length:0),0);
@@ -1836,11 +1837,13 @@ function tableHtml(res,M){
     <th>Schüler</th><th>Fach</th><th>Prüfer</th><th>Beisitz</th><th>Vorsitz</th><th>KV</th>${statusCol}${liveCol}</tr></thead><tbody>`;
   const nowM=nowMinutes();
   const isSplit=rows.some(r=>r.group);
-  rows.forEach((x,i)=>{
+  rows.forEach((x,pos)=>{
+    // pos = Anzeigeposition (für „#" und Gruppen-Trenner); i = echter Index in CUR.order (für data-i)
+    const i = orderIdx.has(x) ? orderIdx.get(x) : pos;
     // Gruppen-Trenner einfügen, wenn sich die Gruppe ändert (2-Gruppen-Plan)
-    if(isSplit && i===0){
+    if(isSplit && pos===0){
       h+=`<tr class="group-sep"><td colspan="${LIVE?12:10}">Gruppe 1 — Vormittag</td></tr>`;
-    } else if(isSplit && i>0 && x.group!==rows[i-1].group){
+    } else if(isSplit && pos>0 && x.group!==rows[pos-1].group){
       h+=`<tr class="group-sep"><td colspan="${LIVE?12:10}">Gruppe 2 — Nachmittag</td></tr>`;
     }
     const hardC=x.hard&&x.hard.length?"hard":"";
@@ -1880,7 +1883,7 @@ function tableHtml(res,M){
       statusCell=`<td class="lc-cell">${badge}${timer}${btn}${np}</td>`;
     }
     h+=`<tr class="${rowCls}" ${LIVE?'':'draggable="true"'} data-i="${i}">
-      <td class="${hardC||softC}">${i+1}</td>
+      <td class="${hardC||softC}">${pos+1}</td>
       <td class="${hardC}">${min2hm(x.prepStart)}</td>
       <td class="${beginCls}">${min2hm(x.start)}${shiftBadge}</td><td class="${beginCls}">${min2hm(x.end)}</td>
       <td class="${hardC||softC}">${x.student}${flagHtml}</td>
