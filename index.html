@@ -1762,14 +1762,13 @@ function lcSetState(i,to){
   const now=nowMinutes(), prep=(CUR.P&&CUR.P.prep)||0;
   const from=lcState(x);
   if(to==="prep"){
-    if(from==="wait"){                       // Vorbereitung STARTEN (verankert die echte Uhrzeit)
-      if(x._baseShift==null) x._baseShift=(x.liveShift||0);   // Ausgangs-Verschiebung merken (für „zurück")
-      x.liveState="prep"; x.prepAt=now; lcAnchor(i, now+prep);
+    if(from==="wait"){                       // Vorbereitung STARTEN: echte Startzeit merken (retime nagelt darauf fest)
+      x.liveState="prep"; x.prepAt=now;
     } else {                                  // ZURÜCK von Prüfung → Vorbereitung (Fehlklick): Prüfung verwerfen, Vorbereitung behalten
       x.liveState="prep"; x.examAt=null;
     }
   }
-  else if(to==="exam"){ x.liveState="exam"; x.examAt=now; if(x.prepAt==null) x.prepAt=now; lcAnchor(i, now);
+  else if(to==="exam"){ x.liveState="exam"; x.examAt=now; if(x.prepAt==null) x.prepAt=now;   // Prüfungs-Startzeit = jetzt
     if(LC_NEXTPREP===lcKey(x)) LC_NEXTPREP=null; }   // sie ist dran → nächste Vorbereitung rückt automatisch nach
   else if(to==="done"){ x.liveState="done"; x.doneAt=now; }
   else {                                      // ZURÜCK zu „wartet" (Fehlklick / Reset): Live-Zeiten verwerfen, Verankerung rückgängig
@@ -1869,13 +1868,15 @@ function tableHtml(res,M){
     const shiftBadge = shifted?`<span class="row-shift">+${x.runDelay} min</span>`:'';
     let liveCell='', statusCell='';
     if(LIVE){
-      liveCell=`<td><span class="delaybtns">
+      // Verzögern nur für WARTENDE: gestartete/fertige stehen an ihrer echten Zeit fest.
+      liveCell = (st==="wait") ? `<td><span class="delaybtns">
         <button class="dbtn minus" data-act="dly" data-i="${i}" data-m="-5">−5</button>
         <button class="dbtn minus" data-act="dly" data-i="${i}" data-m="-1">−1</button>
         <button class="dbtn" data-act="dly" data-i="${i}" data-m="1">+1</button>
         <button class="dbtn" data-act="dly" data-i="${i}" data-m="5">+5</button>
         <button class="dbtn" data-act="dly" data-i="${i}" data-m="10">+10</button>
-      </span></td>`;
+      </span></td>`
+      : `<td><span class="lc-fixed" title="Bereits gestartet – Zeit ist fixiert" style="color:#9aa7b5">— fix —</span></td>`;
       const lbl={wait:"wartet",prep:"Vorbereitung",exam:"Prüfung",done:"fertig"}[st];
       const badge=`<span class="lc-badge ${st}">${lbl}</span>`;
       let timer='', btn='', np='', back='';
@@ -2134,6 +2135,15 @@ function warnHtml(res){
 function retime(seq,P){
   const dur=P.dur, prep=P.prep;
   const dayStart=hm2min(P.start);
+  // Live-Anker: gestartete/fertige Prüfungen (Vorbereitung/Prüfung/fertig) stehen an ihrer ECHTEN
+  // Zeit fest (aus prepAt/examAt) und nehmen an der Verschiebungs-Kaskade NICHT teil – sie werden
+  // also nicht verzögert, wenn man eine andere Prüfung anstößt oder verschiebt. Nur WARTENDE
+  // Prüfungen verschieben sich. (Im Planungsmodus ist nichts verankert → unverändertes Verhalten.)
+  const isAnchored = e => e.liveState && e.liveState!=="wait";
+  const anchorStart = e => {
+    if(e.liveState==="prep") return (e.prepAt!=null) ? e.prepAt+prep : null;   // Prüfung = Vorber.-Start + Vorbereitung
+    return (e.examAt!=null) ? e.examAt : (e.prepAt!=null ? e.prepAt+prep : null); // Prüfung/fertig = echte Prüfungs-Startzeit
+  };
   // 2-Gruppen-Plan erkennen: Prüfungen tragen group=1/2
   const hasGroups = seq.some(e=>e.group===1) && seq.some(e=>e.group===2);
 
@@ -2147,6 +2157,14 @@ function retime(seq,P){
     let cur=dayStart+prep;
     const lastEndG1={};
     for(const e of g1){
+      const aS=isAnchored(e)?anchorStart(e):null;
+      if(aS!=null){                       // gestartet/fertig → feste Echtzeit, keine Kaskade
+        e.start=aS; e.end=aS+dur;
+        e.prepStart=(e.liveState==="prep"&&e.prepAt!=null)?e.prepAt:Math.max(0,aS-prep);
+        e.hard=[]; e.soft=[]; e.liveShift=e.liveShift||0; e.runDelay=0;
+        cur=Math.max(cur, e.end-runDelay); lastEndG1[e.student]=e.end;
+        continue;
+      }
       runDelay += (e.liveShift||0);
       let s=cur+runDelay;
       // Abstand Ende→Beginn = Vorbereitung + echte Freipause (Min.Pause)
@@ -2167,6 +2185,14 @@ function retime(seq,P){
     const lastEndG2={};
     for(let i=0;i<g2.length;i++){
       const e=g2[i];
+      const aS=isAnchored(e)?anchorStart(e):null;
+      if(aS!=null){                       // gestartet/fertig → feste Echtzeit, keine Kaskade
+        e.start=aS; e.end=aS+dur;
+        e.prepStart=(e.liveState==="prep"&&e.prepAt!=null)?e.prepAt:Math.max(0,aS-prep);
+        e.hard=[]; e.soft=[]; e.liveShift=e.liveShift||0; e.runDelay=0;
+        cur2=Math.max(cur2, e.end-runDelay2); lastEndG2[e.student]=e.end;
+        continue;
+      }
       runDelay2 += (e.liveShift||0);
       let s = cur2 + runDelay2;
       // Abstand Ende→Beginn = Vorbereitung + echte Freipause (Min.Pause)
@@ -2189,6 +2215,16 @@ function retime(seq,P){
   let prev=null, lunchDone=(cur>=hm2min("12:00")); const lunchAt=hm2min("12:00");
   let runDelay=0;
   for(const e of seq){
+    const aS=isAnchored(e)?anchorStart(e):null;
+    if(aS!=null){                         // gestartet/fertig → feste Echtzeit, keine Kaskade
+      e.start=aS; e.end=aS+dur;
+      e.prepStart=(e.liveState==="prep"&&e.prepAt!=null)?e.prepAt:Math.max(0,aS-prep);
+      e.hard=[]; e.soft=[]; e.liveShift=e.liveShift||0; e.runDelay=0;
+      sched.push(e);
+      cur=Math.max(cur, e.end-runDelay); lastStudentEnd[e.student]=e.end;
+      prev=e.teacher;
+      continue;
+    }
     runDelay += (e.liveShift||0);
     let s=cur+runDelay;
     if(!lunchDone && s>=lunchAt && P.lunch>0){ s+=P.lunch; lunchDone=true; }
