@@ -549,6 +549,36 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
   font-weight:600;text-align:right;padding:0 8px;white-space:nowrap;vertical-align:middle}
 .me-table .me-beilabel small{display:block;font-size:9px;letter-spacing:0;text-transform:none;color:var(--muted);font-weight:400}
 .me-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+
+/* ===== Live-Dirigent: Status & Steuerung in der Live-Tabelle ===== */
+.lc-cell{white-space:nowrap;min-width:160px}
+.lc-badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:8px;letter-spacing:.3px}
+.lc-badge.wait{background:#eef1f5;color:#5b6b7e}
+.lc-badge.prep{background:#fff3d6;color:#9a6a00}
+.lc-badge.exam{background:#ffe0e3;color:#c01828}
+.lc-badge.done{background:#dff3e6;color:#1f7a44}
+.lc-timer{font-family:ui-monospace,monospace;font-weight:700;font-size:13px;color:#9a6a00;margin-left:7px}
+.lc-btn{margin-left:7px;padding:3px 10px;border:1px solid var(--line);border-radius:7px;background:#fff;cursor:pointer;font-size:12px;font-weight:600}
+.lc-btn.go-prep{border-color:#e7b84d;color:#9a6a00}.lc-btn.go-prep:hover{background:#fff3d6}
+.lc-btn.go-exam{border-color:#ff8090;color:#c01828}.lc-btn.go-exam:hover{background:#ffe0e3}
+.lc-btn.go-done{border-color:#7fce9e;color:#1f7a44}.lc-btn.go-done:hover{background:#dff3e6}
+.lc-btn.go-wait{border-color:var(--line);color:#5b6b7e}.lc-btn.go-wait:hover{background:#eef1f5}
+.lc-np{margin-left:6px;padding:2px 8px;border:1px solid var(--line);border-radius:7px;background:#fff;cursor:pointer;font-size:11px;color:#8a93a0}
+.lc-np.on{border-color:#ff2b2b;background:#ffe0e3;color:#c01828;font-weight:700}
+/* ===== Live-Dirigent: Beamer-Zonen (Vorbereitung) ===== */
+.beamer-prep{margin-top:-8px}
+.bcard.prep{border-color:#caa23a;box-shadow:0 0 0 1px #caa23a30}
+.bcard.prep .bprep-people{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+.bprep-person{display:flex;align-items:baseline;gap:14px}
+.bprep-person .pnm{font-size:26px;font-weight:600;color:#fff}
+.bprep-person .pmeta{font-size:15px;color:#aebfd4}
+.bprep-person .btimer{margin-left:auto;font-family:ui-monospace,monospace;font-size:26px;font-weight:700;color:#e7c14d}
+.bcard.nextprep:not(.idle){border-color:#ff2b2b;background:linear-gradient(160deg,#2a1012,#1a0a0c);box-shadow:0 0 0 1px #ff2b2b55,0 10px 40px -16px rgba(255,40,40,.5)}
+.bcard.nextprep:not(.idle) .blabel{color:#ff8a93}
+.beamer-list tr.prep td{background:linear-gradient(90deg,#2a2410,#1c2230);border-color:#caa23a;box-shadow:0 0 0 1px #caa23a40}
+.beamer-list tr.prep td:first-child{border-left:3px solid #caa23a}
+.beamer-list tr.prep .st{color:#e7c14d}
+.beamer-list tr.prep .bnm{color:#fff}
 </style>
 
 <div class="bg">
@@ -659,6 +689,10 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
   <div class="beamer-now">
     <div class="bcard current" id="bCurrent"><div class="blabel">Jetzt dran</div><div class="bname">—</div></div>
     <div class="bcard" id="bNext"><div class="blabel">Als Nächstes</div><div class="bname">—</div></div>
+  </div>
+  <div class="beamer-now beamer-prep">
+    <div class="bcard prep" id="bPrep"><div class="blabel">In Vorbereitung</div><div class="bprep-people" id="bPrepPeople"><div class="bname" style="font-size:24px;color:#6a83a3">—</div></div></div>
+    <div class="bcard nextprep idle" id="bNextPrep"><div class="blabel">Nächste Vorbereitung</div><div class="bname">—</div></div>
   </div>
   <div class="beamer-list" id="bList"></div>
   <div class="beamer-foot">Live-Ansicht · aktualisiert automatisch · zum Schließen ✕ oder Esc</div>
@@ -1688,6 +1722,62 @@ function legendHtml(M){
 let CUR=null; // {order:[exam...], P, M}
 let LIVE=false; // Live-Tag-Modus
 
+/* ===== Live-Dirigent: manueller Status je Kandidat (Vorbereitung → Prüfung → fertig) =====
+   Klicks verankern die echte Uhrzeit und steuern den Beamer; der Stand bleibt im localStorage. */
+const LC_KEY="mc_live_v1";
+let LC_NEXTPREP=null;   // Key des manuell gewählten nächsten Vorbereitungs-Kandidaten (sonst automatisch)
+let LIVE_TIMER=null;    // 1-Sekunden-Ticker für die Mitlauf-Timer in der Live-Tabelle
+function lcKey(x){ return (x.student||"")+"|"+(x.subject||""); }
+function lcState(x){ return x.liveState||"wait"; }
+function lcSave(){
+  if(!CUR||!CUR.order) return;
+  const m={};
+  CUR.order.forEach(x=>{ if(lcState(x)!=="wait") m[lcKey(x)]={s:x.liveState,p:x.prepAt??null,e:x.examAt??null,d:x.doneAt??null}; });
+  try{ localStorage.setItem(LC_KEY,JSON.stringify({np:LC_NEXTPREP,m})); }catch(e){}
+}
+function lcHydrate(){
+  if(!CUR||!CUR.order) return;
+  let raw={}; try{ raw=JSON.parse(localStorage.getItem(LC_KEY))||{}; }catch(e){}
+  const m=raw.m||{}; LC_NEXTPREP=raw.np||null;
+  CUR.order.forEach(x=>{ const r=m[lcKey(x)];
+    x.liveState=r?r.s:"wait"; x.prepAt=r?r.p:null; x.examAt=r?r.e:null; x.doneAt=r?r.d:null; });
+  CUR._lcHydrated=true;
+}
+function lcEnsure(){ if(CUR&&CUR.order&&!CUR._lcHydrated) lcHydrate(); }
+// Verschiebt Zeile i so, dass ihr Prüfungsbeginn = desiredStart (Minuten); folgende Prüfungen rutschen automatisch mit.
+function lcAnchor(i,desiredStart){
+  const x=CUR.order[i]; if(!x) return;
+  const delta=Math.round(desiredStart-x.start);
+  if(delta) x.liveShift=(x.liveShift||0)+delta;
+}
+// Nächste Vorbereitung auflösen: manuell gewählter (sofern noch wartend), sonst erster Wartender in Reihenfolge.
+function lcResolveNextPrep(){
+  if(!CUR||!CUR.order) return null;
+  if(LC_NEXTPREP){ const sel=CUR.order.find(x=>lcKey(x)===LC_NEXTPREP); if(sel&&lcState(sel)==="wait") return sel; }
+  return CUR.order.find(x=>lcState(x)==="wait")||null;
+}
+function lcSetState(i,to){
+  if(!CUR||!CUR.order) return;
+  const x=CUR.order[i]; if(!x) return;
+  const now=nowMinutes(), prep=(CUR.P&&CUR.P.prep)||0;
+  if(to==="prep"){ x.liveState="prep"; x.prepAt=now; lcAnchor(i, now+prep); }
+  else if(to==="exam"){ x.liveState="exam"; x.examAt=now; if(x.prepAt==null) x.prepAt=now; lcAnchor(i, now);
+    if(LC_NEXTPREP===lcKey(x)) LC_NEXTPREP=null; }   // sie ist dran → nächste Vorbereitung rückt automatisch nach
+  else if(to==="done"){ x.liveState="done"; x.doneAt=now; }
+  else { x.liveState="wait"; x.prepAt=x.examAt=x.doneAt=null; }
+  lcSave();
+  const r=retime(CUR.order,CUR.P); CUR.res=r; repaintPlan(r,CUR.P);
+}
+// Mitlauf-Timer (mm:ss) in der Live-Tabelle aktualisieren – ohne Repaint, damit Klicks/Scroll nicht stören.
+function lcTick(){
+  const now=nowMinutes();
+  document.querySelectorAll(".lc-timer[data-since]").forEach(el=>{
+    const t=parseFloat(el.dataset.since); if(isNaN(t)) return;
+    const sec=Math.max(0,Math.round((now-t)*60));
+    el.textContent=String(Math.floor(sec/60)).padStart(2,"0")+":"+String(sec%60).padStart(2,"0");
+  });
+}
+
 // Rollen-Zelle (Vorsitz/KV): zeigt Kürzel; bei Vertretung (Person prüft selbst) ein "(Vert.)"-Tag
 function roleCell(name,sub){
   if(!name) return "—";
@@ -1735,27 +1825,29 @@ function tableHtml(res,M){
   }
 
   const liveCol = LIVE? `<th>Live-Verzögerung</th>`:``;
+  const statusCol = LIVE? `<th>Live-Status</th>`:``;
   h+=`<div class="tbl-wrap"><table id="planTable"><thead><tr><th>#</th><th>Vorber.</th><th>Beginn</th><th>Ende</th>
-    <th>Schüler</th><th>Fach</th><th>Prüfer</th><th>Beisitz</th><th>Vorsitz</th><th>KV</th>${liveCol}</tr></thead><tbody>`;
+    <th>Schüler</th><th>Fach</th><th>Prüfer</th><th>Beisitz</th><th>Vorsitz</th><th>KV</th>${statusCol}${liveCol}</tr></thead><tbody>`;
   const nowM=nowMinutes();
   const isSplit=rows.some(r=>r.group);
   rows.forEach((x,i)=>{
     // Gruppen-Trenner einfügen, wenn sich die Gruppe ändert (2-Gruppen-Plan)
     if(isSplit && i===0){
-      h+=`<tr class="group-sep"><td colspan="${LIVE?11:10}">Gruppe 1 — Vormittag</td></tr>`;
+      h+=`<tr class="group-sep"><td colspan="${LIVE?12:10}">Gruppe 1 — Vormittag</td></tr>`;
     } else if(isSplit && i>0 && x.group!==rows[i-1].group){
-      h+=`<tr class="group-sep"><td colspan="${LIVE?11:10}">Gruppe 2 — Nachmittag</td></tr>`;
+      h+=`<tr class="group-sep"><td colspan="${LIVE?12:10}">Gruppe 2 — Nachmittag</td></tr>`;
     }
     const hardC=x.hard&&x.hard.length?"hard":"";
     const softC=(!hardC&&x.soft&&x.soft.length)?"soft":"";
     const flagTxt=[...(x.hard||[]),...(x.soft||[])];
     const flagHtml=flagTxt.length?`<span class="cell-flag">${flagTxt.join("; ")}</span>`:"";
-    const isNow = LIVE && nowM>=x.start && nowM<x.end;
+    const st = lcState(x);
+    const isNow = LIVE && st==="exam";
     const shifted = (x.runDelay||0)>0;
     const rowCls = `draggable${isNow?' live-now':''}`;
     const beginCls = shifted?'delayed':'';
     const shiftBadge = shifted?`<span class="row-shift">+${x.runDelay} min</span>`:'';
-    let liveCell='';
+    let liveCell='', statusCell='';
     if(LIVE){
       liveCell=`<td><span class="delaybtns">
         <button class="dbtn minus" data-act="dly" data-i="${i}" data-m="-5">−5</button>
@@ -1764,6 +1856,22 @@ function tableHtml(res,M){
         <button class="dbtn" data-act="dly" data-i="${i}" data-m="5">+5</button>
         <button class="dbtn" data-act="dly" data-i="${i}" data-m="10">+10</button>
       </span></td>`;
+      const lbl={wait:"wartet",prep:"Vorbereitung",exam:"Prüfung",done:"fertig"}[st];
+      const badge=`<span class="lc-badge ${st}">${lbl}</span>`;
+      let timer='', btn='', np='';
+      if(st==="wait"){
+        btn=`<button class="lc-btn go-prep" data-act="lc" data-i="${i}" data-to="prep">▶ Vorbereitung</button>`;
+        const isNP=LC_NEXTPREP===lcKey(x);
+        np=`<button class="lc-np ${isNP?'on':''}" data-act="lcnp" data-i="${i}" title="Im Beamer als nächste Vorbereitung rot hervorheben">🔴 nächste</button>`;
+      } else if(st==="prep"){
+        timer=`<span class="lc-timer" data-since="${x.prepAt}">00:00</span>`;
+        btn=`<button class="lc-btn go-exam" data-act="lc" data-i="${i}" data-to="exam">▶ Prüfung</button>`;
+      } else if(st==="exam"){
+        btn=`<button class="lc-btn go-done" data-act="lc" data-i="${i}" data-to="done">✓ Fertig</button>`;
+      } else {
+        btn=`<button class="lc-btn go-wait" data-act="lc" data-i="${i}" data-to="wait" title="Status zurücksetzen">↺</button>`;
+      }
+      statusCell=`<td class="lc-cell">${badge}${timer}${btn}${np}</td>`;
     }
     h+=`<tr class="${rowCls}" ${LIVE?'':'draggable="true"'} data-i="${i}">
       <td class="${hardC||softC}">${i+1}</td>
@@ -1774,7 +1882,7 @@ function tableHtml(res,M){
       <td><span class="pill" style="background:${cmap[x.teacher]}">${x.teacher}</span></td>
       <td class="role-cell">${x.beisitz||"—"}</td>
       <td class="role-cell">${roleCell(x.vorsitz,x.vorsitzSub)}</td>
-      <td class="role-cell">${roleCell(x.kv,x.kvSub)}</td>${liveCell}</tr>`;
+      <td class="role-cell">${roleCell(x.kv,x.kvSub)}</td>${statusCell}${liveCell}</tr>`;
   });
   return h+`</tbody></table></div>`;
 }
@@ -1814,10 +1922,12 @@ function closeBeamer(){
 }
 // Wake-Lock nach Tab-Wechsel / Bildschirmsperre erneut anfordern (er wird dabei automatisch freigegeben).
 document.addEventListener("visibilitychange",()=>{ if(BEAMER_ON && document.visibilityState==="visible" && !BEAMER_WAKELOCK) beamerWakeLock(); });
-function beamerRowHtml(x,cmap,now){
-  const done=now>=x.end, isc=now>=x.start&&now<x.end;
-  const icon = isc?'▶' : (done?'✓':'·');
-  const cls = isc?'cur' : (done?'done':'');
+function beamerRowHtml(x,cmap,now,conducting){
+  let done,isc,isp=false;
+  if(conducting){ const s=lcState(x); done=s==="done"; isc=s==="exam"; isp=s==="prep"; }
+  else { done=now>=x.end; isc=now>=x.start&&now<x.end; }
+  const icon = isc?'▶' : isp?'◐' : (done?'✓':'·');
+  const cls = isc?'cur' : isp?'prep' : (done?'done':'');
   const prepSt = BEAMER_PREP ? `<span class="bprep-st">ab ${min2hm(x.prepStart)}</span>` : "";
   return `<tr class="${cls}">
     <td class="st">${icon}${prepSt}</td>
@@ -1830,9 +1940,14 @@ function renderBeamer(){
   if(!BEAMER_ON||!CUR)return;
   const res=CUR.res, cmap=teacherColor(MATRIX);
   const rows=[...res.sched].sort((a,b)=>a.start-b.start);
-  const now=nowMinutes();   // echte Live-Zeit (Verschiebungen laufen über die Live-Verzögerung im Plan)
+  const order=CUR.order||[];
+  const now=nowMinutes();   // echte Live-Zeit
+  // Sobald irgendein Kandidat manuell weitergeschaltet wurde, steuern die Klicks den Beamer (statt der Planzeit).
+  const conducting=order.some(x=>x.liveState&&x.liveState!=="wait");
+  const p=z=>String(z).padStart(2,"0");
+  const fmtDur=t=>{ if(t==null) return "00:00"; const sec=Math.max(0,Math.round((now-t)*60)); return p(Math.floor(sec/60))+":"+p(sec%60); };
   // Uhr
-  const n=new Date(), p=x=>String(x).padStart(2,"0");
+  const n=new Date();
   const ct=document.getElementById("bClock");
   if(ct) ct.textContent=`${p(n.getHours())}:${p(n.getMinutes())}:${p(n.getSeconds())}`;
   // zentraler Raum (Steckbrett oben)
@@ -1842,48 +1957,74 @@ function renderBeamer(){
   const dl=document.getElementById("bDelay");
   if(dl){ if(td>0){ dl.className="bdelay late"; dl.textContent=`+${td} min Verzögerung`; }
     else { dl.className="bdelay zero"; dl.textContent="pünktlich"; } }
-  // aktuelle / nächste Prüfung (mit Index für das Auto-Scrolling)
-  let cur=null, next=null, curIdx=-1, nextIdx=-1;
-  for(let i=0;i<rows.length;i++){ const x=rows[i];
-    if(now>=x.start && now<x.end){ cur=x; curIdx=i; }
-    else if(now<x.start && !next){ next=x; nextIdx=i; } }
+  // aktuelle / nächste Prüfung + Vorbereitungs-Kandidaten
+  let cur=null, next=null;
+  const inPrep = conducting ? order.filter(x=>lcState(x)==="prep") : [];
+  if(conducting){
+    cur = order.filter(x=>lcState(x)==="exam").sort((a,b)=>(b.examAt||0)-(a.examAt||0))[0]||null;
+    next = inPrep[0] || order.find(x=>lcState(x)==="wait") || null;   // nächste zur Prüfung: zuerst die in Vorbereitung
+  } else {
+    for(let i=0;i<rows.length;i++){ const x=rows[i];
+      if(now>=x.start && now<x.end){ cur=x; }
+      else if(now<x.start && !next){ next=x; } }
+  }
+  // Karte "Jetzt dran" (in Prüfung)
   const cc=document.getElementById("bCurrent");
   if(cc){ if(cur){ cc.className="bcard current";
       cc.innerHTML=`<div class="blabel">Jetzt dran · ${min2hm(cur.start)}–${min2hm(cur.end)}</div>
         <div class="bname">${cur.student}</div>
         <div class="bmeta">Fach <b>${cur.subject}</b> · Prüfer <span class="bp" style="background:${cmap[cur.teacher]}">${cur.teacher}</span></div>`; }
     else { cc.className="bcard current idle"; cc.innerHTML=`<div class="blabel">Jetzt dran</div><div class="bname">— Pause / keine laufende Prüfung —</div>`; } }
+  // Karte "Als Nächstes" (zur Prüfung)
   const nc=document.getElementById("bNext");
   if(nc){ if(next){ nc.className="bcard";
-      const prep=next.prepStart;
-      const prepHtml = BEAMER_PREP ? ` · Vorber. ab <b>${min2hm(prep)}</b>` : "";
+      const prepHtml = BEAMER_PREP ? ` · Vorber. ab <b>${min2hm(next.prepStart)}</b>` : "";
       nc.innerHTML=`<div class="blabel">Als Nächstes · ${min2hm(next.start)}</div>
         <div class="bname">${next.student}</div>
         <div class="bmeta">Fach <b>${next.subject}</b> · Prüfer <span class="bp" style="background:${cmap[next.teacher]}">${next.teacher}</span>${prepHtml}</div>`; }
     else { nc.className="bcard idle"; nc.innerHTML=`<div class="blabel">Als Nächstes</div><div class="bname">— Ende —</div>`; } }
-  // Liste: nur neu aufbauen, wenn sich Inhalt/Reihenfolge ändert – sonst bleibt die Scrollposition erhalten
+  // Karte "In Vorbereitung" (mehrere möglich, je mit Mitlauf-Timer)
+  const bpp=document.getElementById("bPrepPeople");
+  if(bpp){
+    if(inPrep.length){
+      bpp.innerHTML=inPrep.map(x=>`<div class="bprep-person"><span class="pnm">${x.student}</span><span class="pmeta">${x.subject} · <span class="bp" style="background:${cmap[x.teacher]}">${x.teacher}</span></span><span class="btimer">${fmtDur(x.prepAt)}</span></div>`).join("");
+    } else {
+      bpp.innerHTML=`<div class="bname" style="font-size:24px;color:#6a83a3">— niemand in Vorbereitung —</div>`;
+    }
+  }
+  // Karte "Nächste Vorbereitung" (rot hervorgehoben)
+  const np=conducting?lcResolveNextPrep():null;
+  const bnp=document.getElementById("bNextPrep");
+  if(bnp){ if(np){ bnp.className="bcard nextprep";
+      bnp.innerHTML=`<div class="blabel">Nächste Vorbereitung</div><div class="bname">${np.student}</div>
+        <div class="bmeta">Fach <b>${np.subject}</b> · Prüfer <span class="bp" style="background:${cmap[np.teacher]}">${np.teacher}</span></div>`; }
+    else { bnp.className="bcard nextprep idle"; bnp.innerHTML=`<div class="blabel">Nächste Vorbereitung</div><div class="bname">—</div>`; } }
+  // Liste: nur neu aufbauen, wenn sich Inhalt/Reihenfolge/Status ändert – sonst bleibt die Scrollposition erhalten
   const lb=document.getElementById("bList"); if(!lb) return;
-  const sig=BEAMER_PREP+"|"+rows.map(x=>x.student+"@"+x.start+"-"+x.end).join("|");
+  const sig=BEAMER_PREP+"|"+conducting+"|"+rows.map(x=>x.student+"@"+x.start+"-"+x.end+":"+lcState(x)).join("|");
   if(sig!==BEAMER_SIG){
     let h=`<table class="${BEAMER_PREP?'has-prep':''}"><thead><tr><th class="st"></th><th>Zeit</th><th>Schüler</th><th>Fach</th><th>Prüfer</th></tr></thead><tbody>`;
-    rows.forEach(x=>{ h+=beamerRowHtml(x,cmap,now); });
+    rows.forEach(x=>{ h+=beamerRowHtml(x,cmap,now,conducting); });
     lb.innerHTML=h+`</tbody></table>`;
     BEAMER_SIG=sig; BEAMER_LASTTARGET=-1;
   } else {
-    // nur die Zustände (erledigt / läuft) der bestehenden Zeilen aktualisieren
+    // nur die Zustände (Vorbereitung / läuft / erledigt) der bestehenden Zeilen aktualisieren
     const trs=lb.querySelectorAll("tbody tr");
     rows.forEach((x,i)=>{ const tr=trs[i]; if(!tr) return;
-      const done=now>=x.end, isc=now>=x.start&&now<x.end;
-      const cls=isc?'cur':(done?'done':'');
+      let done,isc,isp=false;
+      if(conducting){ const s=lcState(x); done=s==="done"; isc=s==="exam"; isp=s==="prep"; }
+      else { done=now>=x.end; isc=now>=x.start&&now<x.end; }
+      const cls=isc?'cur':isp?'prep':(done?'done':'');
       if(tr.className!==cls) tr.className=cls;
       const stc=tr.querySelector(".st");
-      if(stc){ const icon=isc?'▶':(done?'✓':'·'); const key=icon+(BEAMER_PREP?"p":"");
+      if(stc){ const icon=isc?'▶':isp?'◐':(done?'✓':'·'); const key=icon+(BEAMER_PREP?"p":"");
         if(stc.dataset.k!==key){ stc.dataset.k=key;
           stc.innerHTML=icon+(BEAMER_PREP?`<span class="bprep-st">ab ${min2hm(x.prepStart)}</span>`:""); } }
     });
   }
   // Auto-Scroll: laufende (sonst nächste, sonst letzte) Prüfung an den oberen Rand der Liste rücken.
-  // Sobald ein Kandidat fertig ist, rückt der nächste in den Kopf → die Tabelle scrollt von selbst hoch.
+  let curIdx = cur?rows.indexOf(cur):-1;
+  let nextIdx = next?rows.indexOf(next):-1;
   const target = curIdx>=0 ? curIdx : (nextIdx>=0 ? nextIdx : rows.length-1);
   if(target>=0 && target!==BEAMER_LASTTARGET){
     BEAMER_LASTTARGET=target;
@@ -2159,6 +2300,7 @@ function fillConfFields(res){
   });
 }
 function repaintPlan(res,P){
+  lcEnsure();   // Live-Dirigent-Status aus localStorage auf die Prüfungsobjekte spiegeln (einmalig je Plan)
   $("warn").innerHTML=warnHtml(res);
   fillConfFields(res);
   $("planView").innerHTML=planControls(res,P)+legendHtml(MATRIX)+renderGantt(res,MATRIX)+
@@ -2219,6 +2361,18 @@ function repaintPlan(res,P){
   const rd=document.getElementById("resetDelay");
   if(rd) rd.onclick=()=>{ CUR.order.forEach(s=>s.liveShift=0);
     const r=retime(CUR.order,P); CUR.res=r; repaintPlan(r,P); };
+  // Live-Dirigent: Status weiterschalten (Vorbereitung → Prüfung → fertig) — verankert die echte Uhrzeit
+  document.querySelectorAll('.lc-btn[data-act="lc"]').forEach(b=>{
+    b.onclick=()=>lcSetState(+b.dataset.i, b.dataset.to);
+  });
+  // Live-Dirigent: Kandidat als „nächste Vorbereitung" für den Beamer markieren (rot)
+  document.querySelectorAll('.lc-np[data-act="lcnp"]').forEach(b=>{
+    b.onclick=()=>{ const x=CUR.order[+b.dataset.i]; if(!x) return;
+      LC_NEXTPREP=(LC_NEXTPREP===lcKey(x))?null:lcKey(x); lcSave(); repaintPlan(CUR.res,P); };
+  });
+  // Mitlauf-Timer (Vorbereitungsdauer) nur im Live-Modus sekündlich aktualisieren
+  if(LIVE){ if(!LIVE_TIMER) LIVE_TIMER=setInterval(lcTick,1000); lcTick(); }
+  else if(LIVE_TIMER){ clearInterval(LIVE_TIMER); LIVE_TIMER=null; }
   // Beamer-Ansicht
   const bm=document.getElementById("beamer");
   if(bm) bm.onclick=()=>openBeamer();
@@ -3410,7 +3564,11 @@ function DEMO(){
       const active = pl && pl.sessionActive && pl.sessionDate===viennaDate() && pl.sched && pl.sched.length;
       if(active){
         ruhe.classList.remove("on");
-        CUR={ res:{ sched: pl.sched.map(r=>({student:r.student,subject:r.subject,teacher:r.teacher,start:r.start,end:r.end,prepStart:r.prepStart,group:r.group})), totalDelay:pl.totalDelay||0 } };
+        // Objekte inkl. Live-Dirigent-Status nachbauen und als CUR.order setzen, damit renderBeamer die manuelle Steuerung anzeigt
+        const schedObjs = pl.sched.map(r=>({student:r.student,subject:r.subject,teacher:r.teacher,start:r.start,end:r.end,prepStart:r.prepStart,group:r.group,
+          liveState:r.liveState||"wait", prepAt:(r.prepAt!=null?r.prepAt:null), examAt:(r.examAt!=null?r.examAt:null)}));
+        CUR={ res:{ sched: schedObjs, totalDelay:pl.totalDelay||0 }, order: schedObjs.slice() };
+        LC_NEXTPREP = pl.nextPrepKey||null;
         MATRIX={ teachers:pl.teachers||[], teacherColors:pl.teacherColors||{}, students:[], subjects:[] };
         ROOM=pl.room||""; BEAMER_PREP=(pl.prep!==false);
         BEAMER_ON=true; BEAMER_SIG="";
@@ -3494,7 +3652,10 @@ function DEMO(){
       room:(typeof ROOM!=="undefined"?ROOM:""), prep:!!BEAMER_PREP,
       totalDelay:(haveCur && CUR.res.totalDelay)||0,
       teachers:(typeof MATRIX!=="undefined" && MATRIX && MATRIX.teachers)||[], teacherColors:cmap,
-      sched: rows.map(x=>({student:x.student,subject:x.subject,teacher:x.teacher,start:x.start,end:x.end,prepStart:x.prepStart,group:x.group||null})) };
+      // Live-Dirigent: manueller Status mitschicken, damit die Anzeige die Klicks (Vorbereitung/Prüfung/nächste) spiegelt
+      nextPrepKey:(typeof LC_NEXTPREP!=="undefined"?LC_NEXTPREP:null),
+      sched: rows.map(x=>({student:x.student,subject:x.subject,teacher:x.teacher,start:x.start,end:x.end,prepStart:x.prepStart,group:x.group||null,
+        liveState:x.liveState||"wait", prepAt:(x.prepAt!=null?x.prepAt:null), examAt:(x.examAt!=null?x.examAt:null)})) };
   }
   async function pushNow(){
     const pl=buildPayload(); const cmp=JSON.stringify(pl);
