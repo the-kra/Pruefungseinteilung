@@ -448,6 +448,9 @@ td.delayed{background:#fff3f3 !important}
 .beamer-list .bprep{color:#4fd6bf;font-size:16px}
 .beamer-list .bnm{font-weight:600;font-size:20px;color:#fff}
 .beamer-list .bf{font-size:16px;color:#9fb3cc}
+.beamer-list .bbei-td{text-align:center}
+.bbei{display:inline-block;font-family:'Lexend',sans-serif;font-size:15px;font-weight:600;color:#d3def0;background:#26354b;border-radius:7px;padding:2px 9px}
+.bbei.dim{color:#566a85;background:transparent;font-weight:400}
 /* erledigt */
 .beamer-list tr.done td{background:#0e1622;color:#5f7290}
 .beamer-list tr.done .bnm{color:#7c93b0;font-weight:400}
@@ -2056,12 +2059,14 @@ function beamerRowHtml(x,cmap,now,conducting){
   const icon = isc?'▶' : isp?'◐' : (done?'✓':'·');
   const cls = isc?'cur' : isp?'prep' : (done?'done':'');
   const prepSt = BEAMER_PREP ? `<span class="bprep-st">ab ${min2hm(x.prepStart)}</span>` : "";
+  const bei = x.beisitz ? `<span class="bbei">${x.beisitz}</span>` : `<span class="bbei dim">—</span>`;
   return `<tr class="${cls}">
     <td class="st">${icon}${prepSt}</td>
     <td class="bt">${min2hm(x.start)}–${min2hm(x.end)}</td>
     <td class="bnm">${x.student}</td>
     <td class="bf">${x.subject}</td>
-    <td><span class="bp" style="background:${cmap[x.teacher]}">${x.teacher}</span></td></tr>`;
+    <td><span class="bp" style="background:${cmap[x.teacher]}">${x.teacher}</span></td>
+    <td class="bbei-td">${bei}</td></tr>`;
 }
 function renderBeamer(){
   if(!BEAMER_ON||!CUR)return;
@@ -2101,17 +2106,19 @@ function renderBeamer(){
   const cc=document.getElementById("bCurrent");
   if(cc){ if(cur){ cc.className="bcard current";
       const runHtml = (cur.examAt!=null) ? `<div class="bcur-timer">läuft <span class="btimer">${fmtDur(cur.examAt)}</span></div>` : "";
+      const curBei = cur.beisitz ? ` · Beisitz <span class="bp" style="background:${cmap[cur.beisitz]||'#5b6b7e'}">${cur.beisitz}</span>` : "";
       cc.innerHTML=`<div class="blabel">Jetzt dran · ${min2hm(cur.start)}–${min2hm(cur.end)}</div>
         <div class="bname">${cur.student}</div>
-        <div class="bmeta">Fach <b>${cur.subject}</b> · Prüfer <span class="bp" style="background:${cmap[cur.teacher]}">${cur.teacher}</span></div>${runHtml}`; }
+        <div class="bmeta">Fach <b>${cur.subject}</b> · Prüfer <span class="bp" style="background:${cmap[cur.teacher]}">${cur.teacher}</span>${curBei}</div>${runHtml}`; }
     else { cc.className="bcard current idle"; cc.innerHTML=`<div class="blabel">Jetzt dran</div><div class="bname">— Pause / keine laufende Prüfung —</div>`; } }
   // Karte "Als Nächstes" (zur Prüfung)
   const nc=document.getElementById("bNext");
   if(nc){ if(next){ nc.className="bcard";
       const prepHtml = BEAMER_PREP ? ` · Vorber. ab <b>${min2hm(next.prepStart)}</b>` : "";
+      const nextBei = next.beisitz ? ` · Beisitz <span class="bp" style="background:${cmap[next.beisitz]||'#5b6b7e'}">${next.beisitz}</span>` : "";
       nc.innerHTML=`<div class="blabel">Als Nächstes · ${min2hm(next.start)}</div>
         <div class="bname">${next.student}</div>
-        <div class="bmeta">Fach <b>${next.subject}</b> · Prüfer <span class="bp" style="background:${cmap[next.teacher]}">${next.teacher}</span>${prepHtml}</div>`; }
+        <div class="bmeta">Fach <b>${next.subject}</b> · Prüfer <span class="bp" style="background:${cmap[next.teacher]}">${next.teacher}</span>${nextBei}${prepHtml}</div>`; }
     else { nc.className="bcard idle"; nc.innerHTML=`<div class="blabel">Als Nächstes</div><div class="bname">— Ende —</div>`; } }
   // Karte "In Vorbereitung" (mehrere möglich, je mit Mitlauf-Timer)
   const bpp=document.getElementById("bPrepPeople");
@@ -2131,9 +2138,9 @@ function renderBeamer(){
     else { bnp.className="bcard nextprep idle"; bnp.innerHTML=`<div class="blabel">Nächste Vorbereitung</div><div class="bname">—</div>`; } }
   // Liste: nur neu aufbauen, wenn sich Inhalt/Reihenfolge/Status ändert – sonst bleibt die Scrollposition erhalten
   const lb=document.getElementById("bList"); if(!lb) return;
-  const sig=BEAMER_PREP+"|"+conducting+"|"+rows.map(x=>x.student+"@"+x.start+"-"+x.end+":"+lcState(x)).join("|");
+  const sig=BEAMER_PREP+"|"+conducting+"|"+rows.map(x=>x.student+"@"+x.start+"-"+x.end+":"+lcState(x)+":"+(x.beisitz||"")).join("|");
   if(sig!==BEAMER_SIG){
-    let h=`<table class="${BEAMER_PREP?'has-prep':''}"><thead><tr><th class="st"></th><th>Zeit</th><th>Schüler</th><th>Fach</th><th>Prüfer</th></tr></thead><tbody>`;
+    let h=`<table class="${BEAMER_PREP?'has-prep':''}"><thead><tr><th class="st"></th><th>Zeit</th><th>Schüler</th><th>Fach</th><th>Prüfer</th><th>Beisitz</th></tr></thead><tbody>`;
     rows.forEach(x=>{ h+=beamerRowHtml(x,cmap,now,conducting); });
     lb.innerHTML=h+`</tbody></table>`;
     BEAMER_SIG=sig; BEAMER_LASTTARGET=-1;
@@ -3878,7 +3885,7 @@ function DEMO(){
       if(active){
         ruhe.classList.remove("on");
         // Objekte inkl. Live-Dirigent-Status nachbauen und als CUR.order setzen, damit renderBeamer die manuelle Steuerung anzeigt
-        const schedObjs = pl.sched.map(r=>({student:r.student,subject:r.subject,teacher:r.teacher,start:r.start,end:r.end,prepStart:r.prepStart,group:r.group,
+        const schedObjs = pl.sched.map(r=>({student:r.student,subject:r.subject,teacher:r.teacher,beisitz:r.beisitz||null,start:r.start,end:r.end,prepStart:r.prepStart,group:r.group,
           liveState:r.liveState||"wait", prepAt:(r.prepAt!=null?r.prepAt:null), examAt:(r.examAt!=null?r.examAt:null)}));
         CUR={ res:{ sched: schedObjs, totalDelay:pl.totalDelay||0 }, order: schedObjs.slice() };
         LC_NEXTPREP = pl.nextPrepKey||null;
@@ -4005,7 +4012,7 @@ function DEMO(){
       teachers:(typeof MATRIX!=="undefined" && MATRIX && MATRIX.teachers)||[], teacherColors:cmap,
       // Live-Dirigent: manueller Status mitschicken, damit die Anzeige die Klicks (Vorbereitung/Prüfung/nächste) spiegelt
       nextPrepKey:(typeof LC_NEXTPREP!=="undefined"?LC_NEXTPREP:null),
-      sched: rows.map(x=>({student:x.student,subject:x.subject,teacher:x.teacher,start:x.start,end:x.end,prepStart:x.prepStart,group:x.group||null,
+      sched: rows.map(x=>({student:x.student,subject:x.subject,teacher:x.teacher,beisitz:x.beisitz||null,start:x.start,end:x.end,prepStart:x.prepStart,group:x.group||null,
         liveState:x.liveState||"wait", prepAt:(x.prepAt!=null?x.prepAt:null), examAt:(x.examAt!=null?x.examAt:null)})) };
   }
   async function pushNow(force){
