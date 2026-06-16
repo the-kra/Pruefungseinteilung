@@ -1,1 +1,6 @@
 .DS_Store
+# Echte Schüler-/Prüfungsdaten NIE versionieren (Datenschutz):
+Gp_Einteilung*.xlsx
+*5AHME*.xlsx
+*_Matrix_import.xlsx
+Einteilung_*.xlsx
