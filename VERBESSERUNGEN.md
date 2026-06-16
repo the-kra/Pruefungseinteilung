@@ -107,6 +107,20 @@ jeder die Live-Daten überschreiben kann. Punkt 3 für vollen Schutz.
 - Risiko der Umsetzung: mittel–hoch; hängt mit #8 (Aufteilung) zusammen.
 - Priorität: **hoch**, sobald die App über den internen Gebrauch hinaus genutzt wird.
 
+### 10. Plan beim „Steuerung übernehmen" aus der Cloud laden (Übergabe/Vertretung)
+**Problem:** Der Plan/​die Schülerliste liegt pro Gerät lokal. Öffnet ein zweites Gerät den
+Master-Link (z. B. Vertretung, Ersatz-Laptop), sieht es die leere Startseite — die Liste
+erscheint erst, wenn dieses Gerät den Prüfungstag selbst lädt.
+
+**Idee:** Der Live-Payload enthält inzwischen die **komplette** Einteilung (sched, Zeiten,
+Kommission, Status). Beim Klick auf **„Steuerung übernehmen"** (oder beim Master-Start ohne
+eigenen Plan) könnte das Gerät den **aktuellen Plan aus der Cloud rekonstruieren** (wie es die
+Anzeige-Ansicht bereits tut) und als CUR übernehmen → sofortige, nahtlose Übergabe.
+
+- Nutzen: echte Übergabe/Vertretung ohne Datei-Hantieren; Ausfallsicherheit.
+- Risiko: mittel (Master müsste Payload → CUR/MATRIX zurückbauen; Konflikt mit lokalem Stand klären).
+- Priorität: mittel–hoch (sehr praktisch am Prüfungstag).
+
 ---
 
 ## Bewusst NICHT umgesetzt (mit Begründung)

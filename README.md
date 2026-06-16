@@ -38,16 +38,21 @@ Die interne „Punktezahl" ist dabei nur eine simple Rechenregel, die diese Spie
 - **Solver** mit einstellbaren Parametern (Prüfungsdauer, Vorbereitung, Pausen, max. Blocklänge, Tagesbeginn, Mittagspause)
 - **Gantt-Plan** mit farbcodierten Prüfern und live mitlaufender roter „Jetzt"-Linie
 - **Drag-and-drop** zur manuellen Umsortierung mit Konflikt-Wächter
-- **Live-Tag-Modus** zum Mitloggen am Prüfungstag: pro Zeile +5/+10/−5-min-Buttons, alle folgenden Prüfungen verschieben sich automatisch
-- **Live-Dirigent** — manuelle Tagessteuerung: jeden Kandidaten per Klick weiterschalten (wartet → in Vorbereitung → in Prüfung → fertig). Der Klick verankert die echte Uhrzeit, alle folgenden Prüfungen rücken automatisch nach. Mitlaufender Timer zeigt die Vorbereitungsdauer; der Status bleibt im Browser gespeichert (übersteht einen Reload).
-- **Beamer-Ansicht** (Vollbild, read-only) zum Aushängen oder Projizieren — mit großer 7-Segment-Live-Uhr, getrennten Zonen für *Jetzt in Prüfung*, *Als Nächstes*, *In Vorbereitung* (mehrere gleichzeitig, je mit Timer) und *Nächste Vorbereitung* (rot hervorgehoben), plus Status-Liste mit Auto-Scroll
-- **Live-Spiegelung** (optional, Supabase): ein Steuergerät (Master) treibt den Tag, beliebig viele Anzeige-Geräte (Beamer, Schülerhandys) sehen den Plan live mit — Teilen per Link oder QR-Code. Ohne Konfiguration/Session bleibt die App rein lokal.
-- **Excel-Export** professionell formatiert: HTL-Logo, Titelblock, farbcodierte Prüferzellen, AV-Block, zwei Sheets (Schüler- und Lehrersicht)
+- **Live-Tag-Modus** zum Mitloggen am Prüfungstag: pro **wartende** Zeile +1/+5/+10/−1/−5-min-Buttons, alle folgenden **wartenden** Prüfungen verschieben sich automatisch
+- **Live-Dirigent** — manuelle Tagessteuerung: jeden Kandidaten per Klick weiterschalten (wartet → Vorbereitung → Prüfung → fertig). Der Klick verankert die **echte Uhrzeit** (Vorbereitung = jetzt + Vorbereitungszeit, Prüfung = jetzt). Ein **„↩ zurück"-Knopf** macht Fehlklicks rückgängig (Prüfung → Vorbereitung → wartet).
+- **Gestartete/fertige Prüfungen sind fixiert** — wer schon dran war oder läuft, behält seine echte Zeit; nur **wartende** Prüfungen verschieben sich, wenn man eine andere anstößt oder verzögert. **Fertige** Prüfungen zeigen ihre **tatsächliche Dauer** (Beginn → „Fertig").
+- **Chronologische Live-Liste** — die Tabelle sortiert sich nach Uhrzeit (Vergangenheit oben → Zukunft unten); die laufende Prüfung wandert nach oben. Klicks treffen trotz Umsortierung immer die richtige Person.
+- **Beamer-Ansicht** (Vollbild, read-only) zum Aushängen oder Projizieren — große 7-Segment-Live-Uhr, Raumschild, Zonen für *Jetzt in Prüfung*, *Als Nächstes*, *In Vorbereitung* (mehrere, je mit Timer) und *Nächste Vorbereitung* (rot), plus Status-Liste mit Auto-Scroll. Zeigt **Prüfer und Beisitz/2. Prüfer**. Öffnet **automatisch im Vollbild** (Adresszeile weg); nur bei eingeschaltetem Live-Tag-Modus.
+- **Live-Stand-Sicherung** — der komplette Stand (Plan, Reihenfolge, Verschiebungen, Status, Zeiten) wird laufend lokal gesichert. Nach Absturz/Neuladen bietet ein Banner **„Wiederherstellen"** an; **„↺ Live zurücksetzen"** startet sauber neu.
+- **Live-Spiegelung** (optional, Supabase): ein Steuergerät (Master) treibt den Tag, beliebig viele Anzeige-Geräte sehen live mit. **Zwei getrennte Links:** dauerhafter **Beamer-Link** (einmal einrichten) und **Schüler-QR mit Session-Code** (pro Prüfungstag neu; „↻ Neuen Schüler-Link erzeugen" macht alte ungültig). Ohne Konfiguration/Session bleibt die App rein lokal.
+- **Prüfungskommission editierbar** — nach einem Import lassen sich **Beisitz/Vorsitz/KV** direkt in der Liste eintragen; „↻ Vorsitz/KV auf alle" übernimmt die Einstellungswerte auf alle Zeilen. Alles wird gespeichert und mit-exportiert.
+- **Prüfungstag laden** (PDF/Excel) — fertige Einteilung 1:1 übernehmen (Zeiten, Fächer, Kommission) statt neu zu rechnen.
+- **Excel-Export** professionell formatiert: HTL-Logo, Titelblock, farbcodierte Prüferzellen, Kommission, zwei Sheets (Schüler- und Lehrersicht)
 - **Retro 7-Segment-Digitaluhr** im Header (DSEG7, live) mit Wochentag & Datum
-- **Integrierte Erklärung** — aufklappbarer „So funktioniert die Einteilung"-Block direkt im Tool: erklärt die Block-Idee und die Logik in einfachen Worten, ohne Programmierwissen
-- **Mitlaufende Prüfungszeit** — in der Beamer-Karte „Jetzt dran" läuft (wie bei der Vorbereitung) eine Live-Dauer der aktuellen Prüfung mit.
-- **QR-Code in der Beamer-Ansicht** — „Live mitschauen": Schüler/Kollegen scannen direkt von der Projektion den Anzeige-Link.
-- **Technik-/Blueprint-Look** — Hintergrund mit Raster, Akzent-Orbs, Schaltsymbolen (Zahnrad, Schaltkreis, Diode, Transistor, Kondensator, Spule) und einer animierten Oszilloskop-Sinuskurve; glasige, transparente Panels.
+- **Integrierte Erklärung** — aufklappbarer „So funktioniert die Einteilung"-Block direkt im Tool
+- **QR-Code in der Beamer-Ansicht** — „Live mitschauen": Schüler scannen direkt von der Projektion den **Schüler-Link** (mit Session-Code).
+- **Versionskennung im Footer** (und Untertitel) — z. B. „Version 2026-06-16 … (r5)" als verlässlicher Cache-Check nach einem Update.
+- **Technik-/Blueprint-Look** — Hintergrund mit Raster, Akzent-Orbs, Schaltsymbolen und animierter Oszilloskop-Sinuskurve; glasige Panels.
 
 ## Die zwei Schalter: lokal steuern vs. live spiegeln
 
@@ -71,6 +76,53 @@ Damit sich nicht zwei Steuergeräte gegenseitig überschreiben, gilt: Es kann im
 - Per Klick auf **„Steuerung übernehmen"** (oder einfach durch eine Steueraktion) wird dieses Gerät aktiv; das andere wird automatisch passiv.
 - Fällt der aktive Master aus (kein Heartbeat > 9 s), meldet das andere „Aktuell steuert kein Gerät" und kann konfliktfrei übernehmen.
 - Technisch: der Besitzer-Stempel steckt nur im Live-Payload (JSON) — **keine Datenbank-Änderung nötig**.
+
+> **Wichtig — der Plan ist pro Gerät:** Die Master-Sperre ist nur ein Banner und blendet **nichts** aus. Über die Cloud läuft nur die **Anzeige-Spiegelung** für Zuschauer, **nicht** der Plan zwischen Steuergeräten. Öffnet ein **anderes/zweites Gerät** den Master-Link, sieht es zunächst die **leere Startseite** — die Schülerliste erscheint dort erst, wenn dieses Gerät den Prüfungstag **selbst lädt** (gleiche Excel/PDF) oder eine **eigene** Sicherung wiederherstellt. Auf dem ursprünglichen Gerät bleibt alles sichtbar. Für eine **Übergabe/Vertretung** also die Prüfungstag-Datei am Ersatzgerät laden.
+
+## Am Prüfungstag — Ablauf & sauber beenden
+
+**Starten**
+1. Plan berechnen *oder* fertigen **Prüfungstag laden** (PDF/Excel).
+2. **Live-Tag-Modus** einschalten.
+3. **Beamer-Ansicht** öffnen → geht automatisch in **Vollbild** (Adresszeile weg; `✕`/Esc beendet es).
+4. Sollen Schüler/zweiter Beamer mitsehen: im Live-Spiegelung-Fenster **„▶ Prüfungstag starten"** und **Schüler-QR** verteilen.
+
+**Steuern (Live-Dirigent)**
+- Pro Kandidat: **▶ Vorbereitung → ▶ Prüfung → ✓ Fertig**. Falsch geklickt? **↩ zurück**.
+- **Verzögerungen** (+/−min) nur bei **wartenden** Zeilen; gestartete/fertige bleiben fix.
+- Die Liste sortiert sich automatisch chronologisch; die laufende Prüfung steht oben.
+
+**Sauber beenden**
+1. **„■ Prüfungstag beenden"** drücken → Beamer und alle Schülerhandys schalten sofort auf den **Ruheschirm** (keine Live-Daten mehr).
+2. Beamer mit **`✕` / Esc** schließen (beendet auch das Vollbild).
+3. Optional fürs Archiv vorher **Excel exportieren** (enthält die Kommission).
+
+> Der Stand bleibt **lokal gespeichert** (Absturzschutz) — du verlierst nichts. Um Mitternacht schaltet die Anzeige ohnehin selbst auf den Ruheschirm. Für einen **ganz neuen** Prüfungstag zusätzlich **„↺ Live zurücksetzen"** und ggf. **„↻ Neuen Schüler-Link erzeugen"**.
+
+## Beamer-Link vs. Schüler-QR (Session-Codes)
+
+Im Live-Spiegelung-Fenster gibt es **zwei Links** mit unterschiedlichem Zweck:
+
+| Link | Zweck | Verhalten |
+| --- | --- | --- |
+| **Beamer-Link** (`…?mode=anzeige`) | Einmal am **Beamer-/Presenter-PC** einrichten | **Gilt dauerhaft**, läuft nie ab, zeigt immer die aktuelle Session |
+| **Schüler-Link / QR** (`…?mode=anzeige&sid=…`) | An **Schüler** verteilen | Trägt einen **Session-Code**; pro Prüfungstag automatisch neu. **„↻ Neuen Schüler-Link erzeugen"** macht alte Links sofort ungültig (sie zeigen dann „Link abgelaufen"). Der Beamer-Link bleibt davon unberührt. |
+
+Der **QR-Code in der Beamer-Ansicht** zeigt immer auf den aktuellen **Schüler-Link** (mit Code), nicht auf den Beamer-Link.
+
+## Live-Stand: sichern, wiederherstellen, zurücksetzen
+
+- **Automatisch gesichert:** Nach jeder Änderung wird der komplette Live-Stand (Plan, Reihenfolge/Tausche, Verschiebungen, Status fertig/aktiv/wartend inkl. Zeitstempel, Kommission) lokal im Browser (`localStorage`) gespeichert.
+- **Wiederherstellen:** Stürzt der Master ab oder lädt die Seite neu, erscheint oben ein Banner **„Letzter Live-Stand … Wiederherstellen / Verwerfen"** (nur für den heutigen Stand). Ein Klick holt alles exakt zurück; die Spiegelung nimmt automatisch wieder auf. Beim **Berechnen** oder **Datei-Laden** verschwindet das Banner (dann ist alles neu).
+- **Zurücksetzen:** **„↺ Live zurücksetzen"** löscht alle Status + Verschiebungen + den gespeicherten Stand (der **Plan bleibt**).
+
+> Hinweis: Der Stand liegt **pro Gerät + Browser**. Ein Reload auf demselben Laptop stellt wieder her; ein anderes Gerät hat den Stand nicht.
+
+## Prüfungstag laden & Kommission bearbeiten
+
+- **Prüfungstag laden (PDF/Excel):** Übernimmt eine bereits erstellte Einteilung 1:1 (Zeiten, Fächer, Prüfer, Kommission) — kein Neurechnen.
+- **Kommission bearbeiten:** Im **Planungsmodus** sind die Spalten **Beisitz / Vorsitz / KV** direkt in der Tabelle editierbar (klicken, Kürzel eintragen). **„↻ Vorsitz/KV auf alle"** überträgt die Werte aus den Einstellungen auf alle Zeilen. Beisitz/2. Prüfer erscheint auch im **Beamer** und in der **Schüler-/QR-Ansicht**.
+- **Export:** Alle manuellen Änderungen landen wieder im **Excel-Export** (Reiter „Prüfungskommission"), der sich erneut laden lässt.
 
 ## Eingabeformat
 
