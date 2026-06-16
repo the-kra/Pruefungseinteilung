@@ -837,7 +837,7 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
     </span>
     <div class="title-stack">
       <h1>Matura-Einteilung</h1>
-      <div class="sub">Mündliche Reife- &amp; Diplomprüfung · <b>zeitoptimierter Prüfungsplan</b> für Schüler &amp; Lehrer <span style="opacity:.5;font-size:11px">· Version 2026-06-16 (r3)</span></div>
+      <div class="sub">Mündliche Reife- &amp; Diplomprüfung · <b>zeitoptimierter Prüfungsplan</b> für Schüler &amp; Lehrer <span style="opacity:.5;font-size:11px">· Version 2026-06-16 (r4)</span></div>
     </div>
     <div class="clock" aria-label="Uhrzeit">
       <div class="time"><span class="off">88:88:88</span><span class="lit" id="clockTime">00:00:00</span></div>
@@ -1202,7 +1202,7 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
   </div>
   <footer>Erstellt offline im Browser · Daten verlassen das Gerät nicht · XLSX-Import/-Export via SheetJS<br>
     <span style="opacity:.7">© DI Theodor Kranz · kranzlab</span><br>
-    <span id="appVersion" style="opacity:.55;font-size:11px">Version 2026-06-16 · Live-Dirigent + Kommission (r3)</span><br>
+    <span id="appVersion" style="opacity:.55;font-size:11px">Version 2026-06-16 · Live-Dirigent + Kommission (r4)</span><br>
     <svg class="kl-footer" viewBox="122 50 292 100" role="img" aria-label="kranzlab" xmlns="http://www.w3.org/2000/svg">
 <defs>
 <radialGradient id="klMoonGrad" cx="36%" cy="34%"><stop offset="0%" stop-color="#f6f8fb"/><stop offset="55%" stop-color="#c2ccd9"/><stop offset="100%" stop-color="#8a98ab"/></radialGradient>
@@ -2018,6 +2018,11 @@ function tableHtml(res,M){
 function nowMinutes(){ const n=new Date(); return n.getHours()*60+n.getMinutes()+n.getSeconds()/60; }
 
 /* ---------- Beamer-Ansicht (read-only, live, Auto-Scroll) ---------- */
+// Vollbild = einzige Möglichkeit, die Browser-Adresszeile per JS auszublenden (braucht eine Nutzeraktion).
+function beamerFullscreen(){ try{ const el=document.getElementById("beamerView")||document.documentElement;
+  const rq=el.requestFullscreen||el.webkitRequestFullscreen||el.msRequestFullscreen;
+  if(rq && !document.fullscreenElement){ const p=rq.call(el); if(p&&p.catch) p.catch(()=>{}); } }catch(e){} }
+function beamerExitFullscreen(){ try{ if(document.fullscreenElement && document.exitFullscreen){ const p=document.exitFullscreen(); if(p&&p.catch) p.catch(()=>{}); } }catch(e){} }
 let BEAMER_ON=false, BEAMER_TIMER=null, BEAMER_PREP=true;   // Vorbereitungszeit standardmäßig sichtbar
 let BEAMER_SIG="", BEAMER_LASTTARGET=-1, BEAMER_WAKELOCK=null;
 // Bildschirm wach halten (sofern der Browser die Wake-Lock-API unterstützt) – kein Zutun nötig.
@@ -2048,6 +2053,7 @@ function openBeamer(){
   if(BEAMER_TIMER) clearInterval(BEAMER_TIMER);
   BEAMER_TIMER=setInterval(renderBeamer,1000);   // läuft den ganzen Tag, ohne Zutun
   beamerWakeLock();
+  beamerFullscreen();   // Adresszeile ausblenden (Klick auf „Beamer" ist die nötige Nutzeraktion)
 }
 function closeBeamer(){
   BEAMER_ON=false;
@@ -2055,6 +2061,7 @@ function closeBeamer(){
   const lb=document.getElementById("masterLock"); if(lb) lb.style.display="";   // Übernehmen-Banner wieder zulassen
   if(BEAMER_TIMER){ clearInterval(BEAMER_TIMER); BEAMER_TIMER=null; }
   if(BEAMER_WAKELOCK){ try{ BEAMER_WAKELOCK.release(); }catch(e){} BEAMER_WAKELOCK=null; }
+  beamerExitFullscreen();
 }
 // Wake-Lock nach Tab-Wechsel / Bildschirmsperre erneut anfordern (er wird dabei automatisch freigegeben).
 document.addEventListener("visibilitychange",()=>{ if(BEAMER_ON && document.visibilityState==="visible" && !BEAMER_WAKELOCK) beamerWakeLock(); });
@@ -2076,7 +2083,11 @@ function beamerRowHtml(x,cmap,now,conducting){
 }
 function renderBeamer(){
   if(!BEAMER_ON||!CUR)return;
-  (function(){ const el=document.getElementById("bQR"); if(el && el.dataset.done!=="1" && window.QRCode){ try{ new QRCode(el,{text:location.origin+location.pathname+"?mode=anzeige",width:140,height:140,correctLevel:QRCode.CorrectLevel.M}); el.dataset.done="1"; }catch(e){} } })();
+  (function(){ const el=document.getElementById("bQR"); if(!el||!window.QRCode) return;
+    // QR zeigt auf den SCHÜLER-Link (mit Session-Code). Master liefert ihn über __mcStudentUrl;
+    // sonst Fallback. Neu zeichnen, sobald sich der Link ändert (z. B. „Neuer Schüler-Link").
+    const qurl = (typeof window.__mcStudentUrl==="function" && window.__mcStudentUrl()) || (location.origin+location.pathname+"?mode=anzeige");
+    if(el.dataset.url!==qurl){ el.innerHTML=""; try{ new QRCode(el,{text:qurl,width:140,height:140,correctLevel:QRCode.CorrectLevel.M}); el.dataset.url=qurl; }catch(e){} } })();
   const res=CUR.res, cmap=teacherColor(MATRIX);
   const rows=[...res.sched].sort((a,b)=>a.start-b.start);
   const order=CUR.order||[];
@@ -3876,6 +3887,8 @@ function DEMO(){
   if(role!=="master"){
     document.body.classList.add("anzeige");
     ["bClose","bPrepToggle"].forEach(id=>{ const e=$id(id); if(e) e.style.display="none"; });
+    // Projizierter Beamer: ein Tipp/Klick aufs Bild → Vollbild (Adresszeile weg). Auto geht nicht ohne Geste.
+    if(typeof beamerFullscreen==="function") document.addEventListener("click",()=>beamerFullscreen());
     if(role==="locked"){
       const lb=document.createElement("div"); lb.id="lockBanner";
       lb.textContent="⚠ Kein Steuerzugriff – ungültiger oder fehlender Schlüssel. Nur-Anzeige.";
@@ -3886,6 +3899,8 @@ function DEMO(){
     const rtEl=ruhe.querySelector(".rt"); const RT_DEFAULT=rtEl?rtEl.textContent:"";
     function applyPayload(pl){
       last=pl||null;
+      // QR im (projizierten) Beamer soll auf den aktuellen SCHÜLER-Link zeigen: Code aus dem Payload.
+      if(pl && pl.sid) window.__mcStudentUrl=()=>location.origin+location.pathname+"?mode=anzeige&sid="+encodeURIComponent(pl.sid);
       // Session-Code prüfen: NUR Links MIT Code (Schüler-QR) können ablaufen. Der Beamer-Link
       // hat keinen Code (urlSid leer) und gilt daher dauerhaft – einmal am Beamer-PC einrichten.
       const expired = !!(pl && pl.sid && urlSid && pl.sid!==urlSid);
@@ -3944,6 +3959,7 @@ function DEMO(){
   // Schüler-Link trägt den Session-Code (rotiert). Beamer-Link OHNE Code → gilt dauerhaft.
   const buildAnzeigeUrl = ()=> location.origin+location.pathname+"?mode=anzeige&sid="+encodeURIComponent(LIVE_SID);
   const buildBeamerUrl  = ()=> location.origin+location.pathname+"?mode=anzeige";
+  window.__mcStudentUrl = buildAnzeigeUrl;   // Beamer-QR (renderBeamer) zeigt auf den aktuellen Schüler-Link
   panel=document.createElement("div"); panel.id="livePanel"; panel.classList.add("show");
   panel.innerHTML='<h4 title="Zum Verschieben ziehen"><span class="lp-grip">⠿</span> Live-Spiegelung <span class="lp-state">offline</span><button class="lp-min" type="button" title="Verkleinern / Vergrößern">▾</button></h4>'
     +'<button class="lp-main" id="lpToggle">▶ Prüfungstag starten</button>'
