@@ -3733,29 +3733,33 @@ function DEMO(){
    #liveStatus.live .dot{background:#4fd6bf}
    #lockBanner{position:fixed;top:0;left:0;right:0;z-index:10002;background:#3a1416;color:#ff9b9b;text-align:center;
      font-family:'Lexend',sans-serif;font-weight:600;padding:10px 14px}
-   #livePanel{position:fixed;right:16px;bottom:16px;z-index:9000;width:300px;background:#0e1622;border:1px solid #24344a;
-     border-radius:14px;padding:14px 16px;font-family:'Lexend',sans-serif;color:#dce6f2;box-shadow:0 12px 40px -16px #000;display:none;cursor:move;touch-action:none}
+   #livePanel{position:fixed;right:16px;bottom:16px;z-index:9000;width:300px;font-family:'Lexend',sans-serif;color:var(--ink);
+     background:linear-gradient(155deg,rgba(255,255,255,.66),rgba(255,255,255,.46));backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4);
+     border:1px solid rgba(255,255,255,.6);border-radius:18px;padding:14px 16px;
+     box-shadow:0 28px 60px -34px rgba(20,30,50,.5),0 1px 0 rgba(255,255,255,.6) inset;display:none;cursor:move;touch-action:none}
    #livePanel.dragging{opacity:.92}
    #livePanel button,#livePanel input,#livePanel #lpQR{cursor:auto}
    #livePanel button{cursor:pointer}
    #livePanel.show{display:block}
-   #livePanel h4{margin:0 0 10px;font-size:14px;color:#9fb3cc;font-weight:600;display:flex;align-items:center;gap:8px;cursor:move;user-select:none;touch-action:none}
-   #livePanel h4 .lp-grip{color:#46566b;font-size:13px;letter-spacing:1px}
-   #livePanel .lp-dot{width:14px;height:14px;border-radius:50%;background:#ff5a5a;margin-left:auto;cursor:pointer;
-     box-shadow:0 0 0 3px transparent;transition:box-shadow .15s}
-   #livePanel .lp-dot:hover{box-shadow:0 0 0 4px #ffffff22}
-   #livePanel.live .lp-dot{background:#4fd6bf}
+   #livePanel h4{margin:0 0 10px;font-size:14px;color:var(--ink);font-weight:600;display:flex;align-items:center;gap:8px;cursor:move;user-select:none;touch-action:none}
+   #livePanel h4 .lp-grip{color:var(--muted);font-size:13px;letter-spacing:1px}
+   #livePanel .lp-state{margin-left:auto;font-size:10.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--bad)}
+   #livePanel.live .lp-state{color:var(--good)}
+   #livePanel .lp-min{margin-left:8px;width:28px;height:28px;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;border-radius:9px;border:1px solid var(--line);background:rgba(255,255,255,.65);color:var(--ink);font-size:13px;cursor:pointer}
+   #livePanel .lp-min:hover{border-color:var(--brand)}
    /* minimiert: nur die Kopfzeile bleibt sichtbar */
    #livePanel.min{width:auto;padding:9px 13px}
    #livePanel.min h4{margin:0}
-   #livePanel.min .lp-main,#livePanel.min .lp-sub,#livePanel.min .lp-link,#livePanel.min #lpQR{display:none}
-   #livePanel button.lp-main{width:100%;padding:11px;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-size:14px;color:#fff;background:#2bb673}
-   #livePanel.active button.lp-main{background:#cc4444}
-   #livePanel .lp-sub{font-size:11px;color:#6a83a3;margin:9px 0 3px}
+   #livePanel.min .lp-main,#livePanel.min .lp-sub,#livePanel.min .lp-link,#livePanel.min #lpNew,#livePanel.min #lpQR{display:none}
+   #livePanel button.lp-main{width:100%;padding:11px;border:none;border-radius:12px;font-weight:700;cursor:pointer;font-size:14px;color:#fff;background:var(--good)}
+   #livePanel.active button.lp-main{background:var(--bad)}
+   #livePanel .lp-sub{font-size:11px;color:var(--muted);margin:9px 0 3px;font-weight:500}
    #livePanel .lp-link{display:flex;gap:6px}
-   #livePanel .lp-link input{flex:1;font-size:11px;background:#0a121d;border:1px solid #24344a;color:#aebfd4;border-radius:8px;padding:6px 8px;min-width:0}
-   #livePanel .lp-link button{border:none;background:#1e2a3a;color:#cfe3f2;border-radius:8px;padding:0 10px;cursor:pointer;font-size:12px}
-   #livePanel #lpQR{margin-top:10px;display:flex;justify-content:center;background:#fff;padding:8px;border-radius:8px}
+   #livePanel .lp-link input{flex:1;font-size:11px;background:rgba(255,255,255,.7);border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:7px 9px;min-width:0}
+   #livePanel .lp-link button{border:1px solid var(--line);background:rgba(255,255,255,.8);color:var(--ink);border-radius:9px;padding:0 12px;cursor:pointer;font-size:12px;font-weight:600;flex:0 0 auto;min-width:74px}
+   #livePanel #lpNew{margin-top:8px;width:100%;cursor:pointer;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:rgba(255,255,255,.6);color:var(--ink);font-size:12px;font-weight:600}
+   #livePanel #lpNew:hover{border-color:var(--brand)}
+   #livePanel #lpQR{margin-top:10px;display:flex;justify-content:center;background:#fff;padding:8px;border-radius:10px}
    #livePanel #lpQR img,#livePanel #lpQR canvas{display:block}
    body.anzeige .wrap{display:none!important}
   `;
@@ -3809,7 +3813,7 @@ function DEMO(){
   function setStatus(live){
     if(role!=="master"){ status.classList.add("show"); status.classList.toggle("live",!!live);
       status.querySelector(".txt").textContent= live?"live":"getrennt"; }
-    if(panel) panel.classList.toggle("live",!!live);
+    if(panel){ panel.classList.toggle("live",!!live); const st=panel.querySelector(".lp-state"); if(st) st.textContent=live?"live":"offline"; }
   }
 
   // ============================ ANZEIGE / LOCKED ============================
@@ -3885,13 +3889,13 @@ function DEMO(){
   const buildAnzeigeUrl = ()=> location.origin+location.pathname+"?mode=anzeige&sid="+encodeURIComponent(LIVE_SID);
   const buildBeamerUrl  = ()=> location.origin+location.pathname+"?mode=anzeige";
   panel=document.createElement("div"); panel.id="livePanel"; panel.classList.add("show");
-  panel.innerHTML='<h4 title="Zum Verschieben ziehen"><span class="lp-grip">⠿</span> 🔴 Live-Spiegelung <span class="lp-dot"></span></h4>'
+  panel.innerHTML='<h4 title="Zum Verschieben ziehen"><span class="lp-grip">⠿</span> Live-Spiegelung <span class="lp-state">offline</span><button class="lp-min" type="button" title="Verkleinern / Vergrößern">▾</button></h4>'
     +'<button class="lp-main" id="lpToggle">▶ Prüfungstag starten</button>'
     +'<div class="lp-sub">Beamer-Link (einmal am Beamer-PC einrichten – gilt immer):</div>'
     +'<div class="lp-link"><input id="lpBeam" readonly><button id="lpCopyB">Kopieren</button></div>'
     +'<div class="lp-sub" style="margin-top:9px">Schüler-Link / QR (pro Session – alte werden ungültig):</div>'
     +'<div class="lp-link"><input id="lpUrl" readonly><button id="lpCopy">Kopieren</button></div>'
-    +'<button id="lpNew" style="margin-top:7px;width:100%;cursor:pointer;border:1px solid #38506b;border-radius:8px;padding:6px 10px;background:transparent;color:#9fb6d2;font-size:12px;font-weight:600" title="Erzeugt einen neuen Schüler-Link/QR. Der bisherige Link wird ungültig – bereits geteilte alte Links funktionieren nicht mehr. Der Beamer-Link oben bleibt davon unberührt.">↻ Neuen Schüler-Link erzeugen</button>'
+    +'<button id="lpNew" title="Erzeugt einen neuen Schüler-Link/QR. Der bisherige Link wird ungültig – bereits geteilte alte Links funktionieren nicht mehr. Der Beamer-Link oben bleibt davon unberührt.">↻ Neuen Schüler-Link erzeugen</button>'
     +'<div id="lpQR"></div>';
   document.body.appendChild(panel);
   setStatus(false);
@@ -3923,13 +3927,12 @@ function DEMO(){
   // Nach Wiederherstellung des Live-Stands (Reload) die Spiegelung automatisch fortsetzen.
   window.__mcResumeSession=()=>{ if(!sessionActive) setActive(true); };
 
-  // Grüner Punkt = minimieren / maximieren (Zustand wird gemerkt)
-  const dot=panel.querySelector(".lp-dot");
-  function setMin(m){ panel.classList.toggle("min",m); if(dot) dot.title=m?"maximieren":"minimieren";
+  // Pfeil = verkleinern / vergrößern (Zustand wird gemerkt; am Handy standardmäßig zu)
+  const minBtn=panel.querySelector(".lp-min");
+  function setMin(m){ panel.classList.toggle("min",m); if(minBtn) minBtn.textContent=m?"▸":"▾";
     try{ localStorage.setItem("livePanelMin", m?"1":"0"); }catch(e){} }
-  if(dot){ dot.title="minimieren";
-    dot.addEventListener("click",e=>{ e.stopPropagation(); setMin(!panel.classList.contains("min")); }); }
-  try{ if(localStorage.getItem("livePanelMin")==="1") setMin(true); }catch(e){}
+  if(minBtn){ minBtn.addEventListener("click",e=>{ e.stopPropagation(); setMin(!panel.classList.contains("min")); }); }
+  try{ if(matchMedia("(max-width:760px)").matches) setMin(true); else setMin(localStorage.getItem("livePanelMin")==="1"); }catch(e){ setMin(false); }
 
   // Ganzes Panel frei verschiebbar (Maus + Touch) – außer auf Buttons/Link-Feld/Punkt. Position wird gemerkt.
   (function dragPanel(){
