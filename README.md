@@ -39,7 +39,9 @@ Die interne „Punktezahl" ist dabei nur eine simple Rechenregel, die diese Spie
 - **Gantt-Plan** mit farbcodierten Prüfern und live mitlaufender roter „Jetzt"-Linie
 - **Drag-and-drop** zur manuellen Umsortierung mit Konflikt-Wächter
 - **Live-Tag-Modus** zum Mitloggen am Prüfungstag: pro Zeile +5/+10/−5-min-Buttons, alle folgenden Prüfungen verschieben sich automatisch
-- **Beamer-Ansicht** (Vollbild, read-only) zum Aushängen oder Projizieren — mit großer 7-Segment-Live-Uhr, aktueller & nächster Prüfung, Status-Liste
+- **Live-Dirigent** — manuelle Tagessteuerung: jeden Kandidaten per Klick weiterschalten (wartet → in Vorbereitung → in Prüfung → fertig). Der Klick verankert die echte Uhrzeit, alle folgenden Prüfungen rücken automatisch nach. Mitlaufender Timer zeigt die Vorbereitungsdauer; der Status bleibt im Browser gespeichert (übersteht einen Reload).
+- **Beamer-Ansicht** (Vollbild, read-only) zum Aushängen oder Projizieren — mit großer 7-Segment-Live-Uhr, getrennten Zonen für *Jetzt in Prüfung*, *Als Nächstes*, *In Vorbereitung* (mehrere gleichzeitig, je mit Timer) und *Nächste Vorbereitung* (rot hervorgehoben), plus Status-Liste mit Auto-Scroll
+- **Live-Spiegelung** (optional, Supabase): ein Steuergerät (Master) treibt den Tag, beliebig viele Anzeige-Geräte (Beamer, Schülerhandys) sehen den Plan live mit — Teilen per Link oder QR-Code. Ohne Konfiguration/Session bleibt die App rein lokal.
 - **Excel-Export** professionell formatiert: HTL-Logo, Titelblock, farbcodierte Prüferzellen, AV-Block, zwei Sheets (Schüler- und Lehrersicht)
 - **Retro 7-Segment-Digitaluhr** im Header (DSEG7, live) mit Wochentag & Datum
 - **Integrierte Erklärung** — aufklappbarer „So funktioniert die Einteilung"-Block direkt im Tool: erklärt die Block-Idee und die Logik in einfachen Worten, ohne Programmierwissen
@@ -85,20 +87,31 @@ Eine fertige Demo-Matrix kann im Tool per Klick geladen werden, oder du lädst [
 4. **„Plan berechnen"** klicken
 5. Ergebnis als Gantt-Plan und Tabelle prüfen, ggf. Zeilen ziehen
 6. **Excel-Plan exportieren** für Aushang/Verteilung
-7. Am Prüfungstag: **Live-Tag-Modus** aktivieren, **Beamer-Ansicht** öffnen
+7. Am Prüfungstag: **Live-Tag-Modus** aktivieren, Kandidaten im **Live-Dirigent** weiterschalten, **Beamer-Ansicht** öffnen
+8. Optional mit mehreren Geräten: Steuergerät über `index.html?mode=master&key=…` öffnen, **„Prüfungstag starten"**, dann Anzeige-Link/QR an Beamer & Schüler verteilen
 
 ## Datenschutz
 
-Das Tool läuft **vollständig im Browser**. Hochgeladene Daten werden nicht an einen Server übertragen, nichts wird gespeichert. Auch der Excel-Export wird lokal im Browser erzeugt.
+Die **Planung** läuft vollständig im Browser: hochgeladene Excel-Daten verlassen das Gerät nicht, und der Excel-Export wird lokal erzeugt.
+
+Zwei Dinge weichen davon bewusst ab und werden nur aktiv, wenn du sie nutzt:
+
+- **Live-Dirigent-Status** wird lokal im Browser gespeichert (`localStorage`), damit ein versehentlicher Reload am Prüfungstag den Stand nicht verliert. Diese Daten bleiben auf dem Gerät.
+- **Live-Spiegelung:** Sobald du am Master-Gerät **„Prüfungstag starten"** drückst, wird der aktuelle Plan (Schülernamen, Fächer, Prüfer, Zeiten) an eine **Supabase-Datenbank** übertragen, damit die Anzeige-Geräte ihn live sehen. Wer den Anzeige-Link bzw. QR-Code kennt, kann den laufenden Plan einsehen. Ohne aktive Session – und ohne hinterlegte Supabase-Konfiguration – wird nichts übertragen und die App bleibt rein lokal.
 
 ## Technik
 
-Eine einzige `index.html`-Datei — keine Installation, kein Build, keine Abhängigkeiten zur Laufzeit. Eingebettet sind:
+Eine einzige `index.html`-Datei — keine Installation, kein Build. Die Kernfunktionen (Planung, Gantt, Excel-Export, Beamer, Live-Dirigent) laufen vollständig offline. **Eingebettet** (offline verfügbar) sind:
 
 - [SheetJS](https://sheetjs.com/) für Excel-Import
 - [ExcelJS](https://github.com/exceljs/exceljs) für formatierten Export inkl. Logo
 - [DSEG7](https://www.keshikan.net/fonts-e.html)-Font für die Retro-Uhr (eingebettet als base64)
 - [Lexend](https://fonts.google.com/specimen/Lexend) als Hauptschrift
+
+Nur für die **optionale Live-Spiegelung** werden zwei Bibliotheken per CDN nachgeladen (also Internet nötig):
+
+- [Supabase JS](https://supabase.com/) für die geräteübergreifende Echtzeit-Spiegelung
+- [qrcode.js](https://github.com/davidshimjs/qrcodejs) für den Anzeige-QR-Code
 
 ## Hosting auf GitHub Pages
 
@@ -120,7 +133,6 @@ Nach ein paar Minuten ist das Tool unter `https://the-kra.github.io/Pruefungsein
 
 - **Lehrer-Fixierung:** gewünschte Lehrer-Zeiten und Wünsche vorab festlegen, die der Solver berücksichtigt
 - Parallele Prüfungskommissionen (mehrere Räume gleichzeitig)
-- Live-Sync zwischen mehreren Geräten am Prüfungstag
 
 ## Autor
 

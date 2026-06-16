@@ -67,9 +67,35 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 html,body{margin:0;color:var(--ink);
   font-family:'Lexend',ui-sans-serif,system-ui,sans-serif;font-weight:400;
   background:transparent;}
-/* ---- abstrakter Planeten-Hintergrund: weit entfernte, sich überlagernde Sphären ---- */
+/* ---- Technik-Hero: Blueprint-Raster + treibende Akzent-Orbs (wie Konferenztool) ---- */
 .bg{position:fixed;inset:0;z-index:-2;overflow:hidden;background:
-  radial-gradient(130% 100% at 78% 8%, #f3e9f6 0%, #e7ecf6 38%, #dde4ee 100%);}
+  repeating-linear-gradient(0deg,  transparent 0 43px, rgba(86,108,150,.05) 43px 44px),
+  repeating-linear-gradient(90deg, transparent 0 43px, rgba(86,108,150,.05) 43px 44px),
+  radial-gradient(130% 100% at 78% 8%, #f4ecf7 0%, #e8edf7 40%, #dde4ee 100%);}
+.bg::before,.bg-orb{content:"";position:fixed;border-radius:50%;filter:blur(80px);z-index:-2;pointer-events:none;will-change:transform}
+.bg::before{width:48vw;height:48vw;top:-15vw;right:-9vw;background:var(--accent);opacity:.30;animation:orbA 20s ease-in-out infinite}
+.bg-orb{width:40vw;height:40vw;bottom:-14vw;left:-8vw;background:var(--accent2);opacity:.24;animation:orbB 26s ease-in-out infinite}
+@keyframes orbA{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-3vw,3vh) scale(1.06)}}
+@keyframes orbB{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(3vw,-2vh) scale(1.08)}}
+.heart-planet{display:none!important}   /* Herz-Planet raus – passt nicht zur Technik-Anmutung */
+@media(prefers-reduced-motion:reduce){.bg::before,.bg-orb{animation:none}}
+/* abstrakte Technik-Skizzen */
+.hero-art{position:fixed;z-index:-1;pointer-events:none;fill:none;stroke:#34507e;stroke-opacity:.2;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.hi-gear{top:9vh;right:4vw;width:170px;height:170px;animation:spin 80s linear infinite}
+.hi-gear2{bottom:24vh;right:14vw;width:110px;height:110px;animation:spin 60s linear infinite reverse}
+.hi-circuit{bottom:15vh;left:3vw;width:240px;height:78px}
+.hi-chip{top:14vh;left:5vw;width:120px;height:120px}
+.hi-diode{top:62vh;left:5vw;width:160px;height:50px}
+.hi-trans{top:34vh;right:9vw;width:120px;height:120px}
+.hi-cap{top:70vh;right:16vw;width:110px;height:64px}
+.hi-coil{top:50vh;right:5vw;width:190px;height:44px}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* Oszilloskop: stehende Sinuskurve mit abfahrendem Punkt (Akzentfarbe) */
+.hero-scope{position:fixed;left:0;top:40vh;width:100vw;height:auto;z-index:-1;pointer-events:none;opacity:.4;filter:drop-shadow(0 0 6px var(--accent))}
+.scope-wave{fill:none;stroke:var(--accent);stroke-width:2.2;stroke-linecap:round;opacity:.7}
+.scope-dot{fill:var(--accent);filter:drop-shadow(0 0 7px var(--accent))}
+@media(prefers-reduced-motion:reduce){.hi-gear,.hi-gear2{animation:none}}
+@media(max-width:760px){.hero-art{stroke-opacity:.16}.hi-diode,.hi-cap{display:none}.hero-scope{top:auto;bottom:14vh;opacity:.35}}
 /* dedizierter Herz-Planet, garantiert sichtbar, hinter den Panels */
 .heart-planet{position:fixed;top:-200px;right:-150px;width:640px;height:640px;z-index:0;
   pointer-events:none;filter:drop-shadow(0 30px 60px rgba(91,59,156,.25));opacity:.92}
@@ -573,6 +599,9 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
 .bprep-person .pnm{font-size:26px;font-weight:600;color:#fff}
 .bprep-person .pmeta{font-size:15px;color:#aebfd4}
 .bprep-person .btimer{margin-left:auto;font-family:ui-monospace,monospace;font-size:26px;font-weight:700;color:#e7c14d}
+/* mitlaufende Prüfungszeit in der "Jetzt dran"-Karte */
+.bcur-timer{margin-top:10px;font-size:clamp(20px,3vw,40px);font-weight:700;color:#ff2323}
+.bcur-timer .btimer{font-family:"DSEG7 Classic",ui-monospace,monospace;letter-spacing:2px;text-shadow:0 0 8px rgba(255,40,40,.4)}
 .bcard.nextprep:not(.idle){border-color:#ff2b2b;background:linear-gradient(160deg,#2a1012,#1a0a0c);box-shadow:0 0 0 1px #ff2b2b55,0 10px 40px -16px rgba(255,40,40,.5)}
 .bcard.nextprep:not(.idle) .blabel{color:#ff8a93}
 .beamer-list tr.prep td{background:linear-gradient(90deg,#2a2410,#1c2230);border-color:#caa23a;box-shadow:0 0 0 1px #caa23a40}
@@ -607,6 +636,45 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
     </g>
   </svg>
 </div>
+<div class="bg-orb" aria-hidden="true"></div>
+<!-- Technik-Skizzen (Blueprint) -->
+<svg class="hero-art hi-gear" viewBox="0 0 100 100" aria-hidden="true">
+  <circle cx="50" cy="50" r="26"/><circle cx="50" cy="50" r="10"/>
+  <line x1="76" y1="50" x2="84" y2="50"/><line x1="68.4" y1="68.4" x2="74" y2="74"/><line x1="50" y1="76" x2="50" y2="84"/><line x1="31.6" y1="68.4" x2="26" y2="74"/>
+  <line x1="24" y1="50" x2="16" y2="50"/><line x1="31.6" y1="31.6" x2="26" y2="26"/><line x1="50" y1="24" x2="50" y2="16"/><line x1="68.4" y1="31.6" x2="74" y2="26"/>
+</svg>
+<svg class="hero-art hi-gear2" viewBox="0 0 100 100" aria-hidden="true">
+  <circle cx="50" cy="50" r="24"/><circle cx="50" cy="50" r="9"/>
+  <line x1="74" y1="50" x2="82" y2="50"/><line x1="67" y1="67" x2="72.7" y2="72.7"/><line x1="50" y1="74" x2="50" y2="82"/><line x1="33" y1="67" x2="27.3" y2="72.7"/>
+  <line x1="26" y1="50" x2="18" y2="50"/><line x1="33" y1="33" x2="27.3" y2="27.3"/><line x1="50" y1="26" x2="50" y2="18"/><line x1="67" y1="33" x2="72.7" y2="27.3"/>
+</svg>
+<svg class="hero-art hi-chip" viewBox="0 0 100 100" aria-hidden="true">
+  <rect x="30" y="30" width="40" height="40" rx="4"/><circle cx="50" cy="50" r="6"/>
+  <line x1="40" y1="30" x2="40" y2="18"/><line x1="50" y1="30" x2="50" y2="18"/><line x1="60" y1="30" x2="60" y2="18"/>
+  <line x1="40" y1="70" x2="40" y2="82"/><line x1="50" y1="70" x2="50" y2="82"/><line x1="60" y1="70" x2="60" y2="82"/>
+  <line x1="30" y1="40" x2="18" y2="40"/><line x1="30" y1="60" x2="18" y2="60"/><line x1="70" y1="40" x2="82" y2="40"/><line x1="70" y1="60" x2="82" y2="60"/>
+</svg>
+<svg class="hero-art hi-circuit" viewBox="0 0 240 78" aria-hidden="true">
+  <path d="M6,39 H70 l10,-18 l14,36 l14,-36 l14,36 l10,-18 H170"/><circle cx="6" cy="39" r="4"/><circle cx="170" cy="39" r="4"/>
+  <path d="M170,39 H210 a10,10 0 1 1 0,0.1"/><circle cx="220" cy="39" r="4"/>
+</svg>
+<svg class="hero-art hi-diode" viewBox="0 0 170 54" aria-hidden="true">
+  <path d="M6,27 H64"/><path d="M64,10 L64,44 L98,27 Z"/><line x1="98" y1="10" x2="98" y2="44"/><path d="M98,27 H164"/>
+</svg>
+<svg class="hero-art hi-trans" viewBox="0 0 100 100" aria-hidden="true">
+  <circle cx="50" cy="50" r="30"/><line x1="20" y1="50" x2="40" y2="50"/><line x1="40" y1="34" x2="40" y2="66"/>
+  <line x1="40" y1="42" x2="70" y2="26"/><line x1="40" y1="58" x2="70" y2="74"/><line x1="70" y1="26" x2="70" y2="14"/><line x1="70" y1="74" x2="70" y2="86"/>
+</svg>
+<svg class="hero-art hi-cap" viewBox="0 0 120 70" aria-hidden="true">
+  <line x1="6" y1="35" x2="50" y2="35"/><line x1="50" y1="10" x2="50" y2="60"/><line x1="70" y1="10" x2="70" y2="60"/><line x1="70" y1="35" x2="114" y2="35"/>
+</svg>
+<svg class="hero-art hi-coil" viewBox="0 0 190 44" aria-hidden="true">
+  <path d="M6,30 H40 a9,9 0 0 1 18,0 a9,9 0 0 1 18,0 a9,9 0 0 1 18,0 a9,9 0 0 1 18,0 H184"/>
+</svg>
+<svg class="hero-scope" viewBox="0 0 1600 160" aria-hidden="true">
+  <path id="scopePathHero" class="scope-wave" d="M0,80 Q25,20 50,80 T100,80 T150,80 T200,80 T250,80 T300,80 T350,80 T400,80 T450,80 T500,80 T550,80 T600,80 T650,80 T700,80 T750,80 T800,80 T850,80 T900,80 T950,80 T1000,80 T1050,80 T1100,80 T1150,80 T1200,80 T1250,80 T1300,80 T1350,80 T1400,80 T1450,80 T1500,80 T1550,80 T1600,80"/>
+  <circle class="scope-dot" r="9"><animateMotion dur="9s" repeatCount="indefinite"><mpath href="#scopePathHero"/></animateMotion></circle>
+</svg>
 <div class="heart-planet" aria-hidden="true">
   <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
     <defs>
@@ -2000,9 +2068,10 @@ function renderBeamer(){
   // Karte "Jetzt dran" (in Prüfung)
   const cc=document.getElementById("bCurrent");
   if(cc){ if(cur){ cc.className="bcard current";
+      const runHtml = (cur.examAt!=null) ? `<div class="bcur-timer">läuft <span class="btimer">${fmtDur(cur.examAt)}</span></div>` : "";
       cc.innerHTML=`<div class="blabel">Jetzt dran · ${min2hm(cur.start)}–${min2hm(cur.end)}</div>
         <div class="bname">${cur.student}</div>
-        <div class="bmeta">Fach <b>${cur.subject}</b> · Prüfer <span class="bp" style="background:${cmap[cur.teacher]}">${cur.teacher}</span></div>`; }
+        <div class="bmeta">Fach <b>${cur.subject}</b> · Prüfer <span class="bp" style="background:${cmap[cur.teacher]}">${cur.teacher}</span></div>${runHtml}`; }
     else { cc.className="bcard current idle"; cc.innerHTML=`<div class="blabel">Jetzt dran</div><div class="bname">— Pause / keine laufende Prüfung —</div>`; } }
   // Karte "Als Nächstes" (zur Prüfung)
   const nc=document.getElementById("bNext");
