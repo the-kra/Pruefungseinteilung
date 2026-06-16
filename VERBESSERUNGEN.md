@@ -108,6 +108,9 @@ jeder die Live-Daten überschreiben kann. Punkt 3 für vollen Schutz.
 - Priorität: **hoch**, sobald die App über den internen Gebrauch hinaus genutzt wird.
 
 ### 10. Plan beim „Steuerung übernehmen" aus der Cloud laden (Übergabe/Vertretung)
+**Kurz gesagt:** Ein zweites Master-Gerät soll die Schülerliste **sofort sehen**, ohne erst die
+Datei laden zu müssen — reine Sichtbarkeit/Komfort, keine Rechtefrage.
+
 **Problem:** Der Plan/​die Schülerliste liegt pro Gerät lokal. Öffnet ein zweites Gerät den
 Master-Link (z. B. Vertretung, Ersatz-Laptop), sieht es die leere Startseite — die Liste
 erscheint erst, wenn dieses Gerät den Prüfungstag selbst lädt.
@@ -120,6 +123,25 @@ Anzeige-Ansicht bereits tut) und als CUR übernehmen → sofortige, nahtlose Üb
 - Nutzen: echte Übergabe/Vertretung ohne Datei-Hantieren; Ausfallsicherheit.
 - Risiko: mittel (Master müsste Payload → CUR/MATRIX zurückbauen; Konflikt mit lokalem Stand klären).
 - Priorität: mittel–hoch (sehr praktisch am Prüfungstag).
+
+### 11. Übernahme nur mit Bestätigung des aktuellen Masters (Schutz vor versehentlichem Kapern)
+**Heute:** Eine Übernahme ist **immer erzwingbar** — wer „Steuerung übernehmen" klickt (oder
+eine Steueraktion macht), wird sofort Master.
+
+**Wunsch:** Solange jemand wirklich steuert, soll eine Übernahme **eine Zustimmung** des
+aktuellen Masters brauchen (kein versehentliches/fremdes Kapern).
+
+**Knackpunkt:** Ist der aktuelle Master **abgestürzt**, kann er nicht zustimmen → sonst Sackgasse.
+
+**Saubere Lösung (nutzt den vorhandenen Heartbeat):**
+- **Master lebt** (Heartbeat frisch): Übernahme-Anfrage → der aktuelle Master sieht
+  „Gerät X will übernehmen — erlauben?" und bestätigt/lehnt ab.
+- **Master tot** (kein Heartbeat > Zeitlimit, z. B. 9 s): Übernahme **sofort erlaubt**, ohne
+  Bestätigung (niemand da, der zustimmen könnte).
+
+- Nutzen: kein versehentliches Überschreiben bei laufender Steuerung; trotzdem kein Deadlock.
+- Risiko: mittel (bidirektionale Anfrage/Bestätigung über den Payload; mehr Zustände).
+- Hinweis: Erhöht die Komplexität spürbar — nur umsetzen, wenn Mehrfach-Geräte real ein Problem werden.
 
 ---
 
