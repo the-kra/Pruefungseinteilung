@@ -60,6 +60,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   --ink:#1b2330; --paper:#eef2f7; --line:#d8dee8; --panel:#ffffff; --muted:#7c879a;
   --accent:#2bb6a8;        /* Türkis (Insulin) */
   --accent2:#5577e6;       /* Blau (Zelle), etwas kräftiger fürs UI */
+  --brand:#0891b2;         /* Cyan – CTA-Buttons (wie Konferenztool) */
   --good:#2bb6a8; --bad:#ef5d70; --warn:#e0972a;
   --moon:#aeb8c6; --deep:#080b11;
 }
@@ -200,15 +201,17 @@ input:focus,select:focus{outline:none;border-color:var(--accent2);box-shadow:0 0
 .param-grid input:disabled,.param-grid select:disabled{background:#eef2f7;color:#9aa4b3;cursor:not-allowed}
 .param-grid .ph{font-size:11px;font-weight:600;color:var(--accent);letter-spacing:1.5px;text-transform:uppercase;
   padding-bottom:2px;border-bottom:1.5px solid var(--accent);margin-bottom:2px;text-align:center}
-.btn{display:inline-block;width:100%;padding:12px;border:none;border-radius:10px;cursor:pointer;
-  font-family:'Lexend',sans-serif;font-weight:500;font-size:14px;margin-top:12px;
-  transition:transform .08s,filter .15s,box-shadow .15s}
+.btn{display:inline-block;width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;cursor:pointer;
+  background:rgba(255,255,255,.85);color:var(--ink);
+  font-family:'Lexend',sans-serif;font-weight:600;font-size:14px;margin-top:12px;
+  transition:transform .08s,filter .15s,box-shadow .15s,border-color .15s,background .15s}
 .btn:active{transform:translateY(1px)}
-.btn-primary{background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 130%);color:#fff;
-  box-shadow:0 10px 24px -12px var(--accent2)}
-.btn-primary:hover{filter:brightness(1.05)}
-.btn-ghost{background:transparent;color:var(--accent2);border:1px solid var(--line)}
-.btn-ghost:hover{border-color:var(--accent2);background:#5577e608}
+.btn:hover{border-color:var(--brand)}
+/* CTA = Cyan (statt Türkis-Verlauf) */
+.btn-primary{background:var(--brand);color:#fff;border-color:transparent;box-shadow:0 10px 24px -14px var(--brand)}
+.btn-primary:hover{filter:brightness(1.06);border-color:transparent}
+.btn-ghost{background:rgba(255,255,255,.85);color:var(--ink);border:1px solid var(--line)}
+.btn-ghost:hover{border-color:var(--brand);background:#0891b20a}
 .hint{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.55;font-weight:300}
 .tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
 .tab{padding:8px 16px;border:1px solid var(--line);background:#fff;border-radius:22px;cursor:pointer;
