@@ -201,10 +201,11 @@ input:focus,select:focus{outline:none;border-color:var(--accent2);box-shadow:0 0
 .param-grid input:disabled,.param-grid select:disabled{background:#eef2f7;color:#9aa4b3;cursor:not-allowed}
 .param-grid .ph{font-size:11px;font-weight:600;color:var(--accent);letter-spacing:1.5px;text-transform:uppercase;
   padding-bottom:2px;border-bottom:1.5px solid var(--accent);margin-bottom:2px;text-align:center}
-.btn{display:inline-block;width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;cursor:pointer;
-  background:rgba(255,255,255,.85);color:var(--ink);
-  font-family:'Lexend',sans-serif;font-weight:600;font-size:14px;margin-top:12px;
+.btn{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;min-height:46px;padding:11px 14px;border:1px solid var(--line);border-radius:12px;cursor:pointer;
+  background:rgba(255,255,255,.85);color:var(--ink);text-align:center;
+  font-family:'Lexend',sans-serif;font-weight:600;font-size:14px;margin-top:10px;
   transition:transform .08s,filter .15s,box-shadow .15s,border-color .15s,background .15s}
+.btn svg{flex:0 0 auto}
 .btn:active{transform:translateY(1px)}
 .btn:hover{border-color:var(--brand)}
 /* CTA = Cyan (statt Türkis-Verlauf) */
