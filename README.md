@@ -45,6 +45,32 @@ Die interne „Punktezahl" ist dabei nur eine simple Rechenregel, die diese Spie
 - **Excel-Export** professionell formatiert: HTL-Logo, Titelblock, farbcodierte Prüferzellen, AV-Block, zwei Sheets (Schüler- und Lehrersicht)
 - **Retro 7-Segment-Digitaluhr** im Header (DSEG7, live) mit Wochentag & Datum
 - **Integrierte Erklärung** — aufklappbarer „So funktioniert die Einteilung"-Block direkt im Tool: erklärt die Block-Idee und die Logik in einfachen Worten, ohne Programmierwissen
+- **Mitlaufende Prüfungszeit** — in der Beamer-Karte „Jetzt dran" läuft (wie bei der Vorbereitung) eine Live-Dauer der aktuellen Prüfung mit.
+- **QR-Code in der Beamer-Ansicht** — „Live mitschauen": Schüler/Kollegen scannen direkt von der Projektion den Anzeige-Link.
+- **Technik-/Blueprint-Look** — Hintergrund mit Raster, Akzent-Orbs, Schaltsymbolen (Zahnrad, Schaltkreis, Diode, Transistor, Kondensator, Spule) und einer animierten Oszilloskop-Sinuskurve; glasige, transparente Panels.
+
+## Die zwei Schalter: lokal steuern vs. live spiegeln
+
+Am Prüfungstag gibt es **zwei getrennte Schalter** — sie machen Unterschiedliches:
+
+| Schalter | Was er tut | Internet/Cloud? |
+| --- | --- | --- |
+| **Live-Tag-Modus** (Schalter im Tool) | Schaltet den **lokalen Prüfungstag-Modus auf DIESEM Gerät** ein: der **Live-Dirigent** (Kandidaten per Klick weiterschalten, +5/−5 min) wird aktiv, und die **Beamer-Ansicht** lässt sich öffnen. | **Nein** – rein lokal, funktioniert offline. |
+| **„Prüfungstag starten"** (im Live-Spiegelung-Fenster) | Schaltet die **Cloud-Spiegelung (Supabase)** ein: der Plan wird an **andere Geräte** gesendet, die den **Anzeige-Link/QR** geöffnet haben (zweiter Beamer, Schülerhandys). Ohne ihn zeigen externe Geräte nur den Ruhe-Bildschirm. | **Ja** – sendet live an alle Anzeige-Geräte. |
+
+**Kurzregel:**
+- Du projizierst **nur am Beamer-PC** → es reicht **Live-Tag-Modus**.
+- Auch **Schüler/zweiter Beamer** sollen live mitsehen → zusätzlich **„Prüfungstag starten"** und QR/Link verteilen.
+
+Typischer Ablauf: **Live-Tag an** → Kandidaten im **Live-Dirigent** durchsteuern → bei Bedarf **„Prüfungstag starten"** für die Multi-Geräte-Spiegelung.
+
+## Master-Sperre (nur ein steuerndes Gerät)
+
+Damit sich nicht zwei Steuergeräte gegenseitig überschreiben, gilt: Es kann immer nur **ein aktiver Master** schreiben.
+- Öffnet ein zweites Gerät den Master-Link, geht es automatisch in **passiv** und zeigt das Banner **„Ein anderes Gerät steuert gerade – Steuerung übernehmen"** (mit „✕ Später").
+- Per Klick auf **„Steuerung übernehmen"** (oder einfach durch eine Steueraktion) wird dieses Gerät aktiv; das andere wird automatisch passiv.
+- Fällt der aktive Master aus (kein Heartbeat > 9 s), meldet das andere „Aktuell steuert kein Gerät" und kann konfliktfrei übernehmen.
+- Technisch: der Besitzer-Stempel steckt nur im Live-Payload (JSON) — **keine Datenbank-Änderung nötig**.
 
 ## Eingabeformat
 
