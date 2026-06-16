@@ -431,7 +431,7 @@ td.delayed{background:#fff3f3 !important}
 .bcard .bmeta{font-size:18px;color:#aebfd4}
 .bcard .bmeta b{color:#fff}
 .bcard.idle .bname{font-size:24px;color:#6a83a3}
-.beamer-list{flex:1;overflow-y:auto;border-top:1px solid #24344a;padding-top:12px;margin-top:4px}
+.beamer-list{flex:1;min-width:0;overflow-y:auto;border-top:1px solid #24344a;padding-top:12px}
 .beamer-list table{width:100%;border-collapse:separate;border-spacing:0 6px;font-family:'Lexend',sans-serif}
 .beamer-list thead th{font-size:18px;letter-spacing:2px;text-transform:uppercase;color:#aebfd4;
   font-weight:600;text-align:left;padding:4px 16px 14px;position:sticky;top:0;background:#070b12;
@@ -449,7 +449,7 @@ td.delayed{background:#fff3f3 !important}
 .beamer-list .bnm{font-weight:600;font-size:20px;color:#fff}
 .beamer-list .bf{font-size:16px;color:#9fb3cc}
 .beamer-list .bbei-td{text-align:center}
-.bbei{display:inline-block;font-family:'Lexend',sans-serif;font-size:15px;font-weight:600;color:#d3def0;background:#26354b;border-radius:7px;padding:2px 9px}
+.bbei{display:inline-block;font-family:'Lexend',sans-serif;font-size:20px;font-weight:700;color:#e3ecf7;background:#2b3c54;border-radius:9px;padding:3px 12px}
 .bbei.dim{color:#566a85;background:transparent;font-weight:400}
 /* erledigt */
 .beamer-list tr.done td{background:#0e1622;color:#5f7290}
@@ -464,8 +464,10 @@ td.delayed{background:#fff3f3 !important}
 .beamer-list tr.cur .st{color:#ff5a5a}
 .beamer-list tr.cur .bt{color:#ffb3b3}
 /* kommend (Standard) hebt sich durch helleren Grund ab */
-.beamer-list .bp{display:inline-block;padding:3px 13px;border-radius:13px;font-size:15px;color:#fff;font-weight:600;
+.beamer-list .bp{display:inline-block;padding:4px 15px;border-radius:13px;font-size:21px;color:#fff;font-weight:700;
   box-shadow:0 2px 8px -3px rgba(0,0,0,.6)}
+/* Kürzel in den Karten (Jetzt dran / Als Nächstes / Vorbereitung) – groß & gut lesbar */
+.bcard .bp,.bprep-person .bp{display:inline-block;padding:2px 13px;border-radius:12px;color:#fff;font-weight:700;font-size:23px;line-height:1.3;vertical-align:middle}
 /* Raum-Anzeige im Beamer (Steckschild-Optik) */
 .beamer-room{padding:8px 16px;border-width:2px;margin-left:auto}
 .beamer-room .lb-arrow{font-size:20px;transform:translateY(-1px)}
@@ -478,7 +480,8 @@ td.delayed{background:#fff3f3 !important}
 .beamer-list tr.done .broom-cell{color:#8a7a4a}
 .beamer-foot{font-size:13px;color:#5a72a0;text-align:center;padding-top:12px;font-weight:300}
 /* QR im Beamer zum Mitschauen */
-.beamer-qr{position:absolute;right:18px;bottom:18px;z-index:60;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 10px 8px;box-shadow:0 14px 40px -22px rgba(20,30,50,.6);display:flex;flex-direction:column;align-items:center;gap:6px}
+.beamer-listrow{flex:1;display:flex;gap:22px;min-height:0;margin-top:4px}
+.beamer-qr{align-self:flex-start;flex:0 0 auto;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 12px 9px;box-shadow:0 14px 40px -22px rgba(20,30,50,.6);display:flex;flex-direction:column;align-items:center;gap:7px}
 .beamer-qr .bqr-code{width:140px;height:140px;display:flex;align-items:center;justify-content:center}
 .beamer-qr .bqr-code img,.beamer-qr .bqr-code canvas{width:140px;height:140px;display:block}
 .beamer-qr .bqr-label{font-size:12px;font-weight:600;color:var(--muted)}
@@ -619,7 +622,7 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
 .bcard.prep .bprep-people{display:flex;flex-direction:column;gap:12px;margin-top:12px}
 .bprep-person{display:flex;align-items:baseline;gap:14px}
 .bprep-person .pnm{font-size:26px;font-weight:600;color:#fff}
-.bprep-person .pmeta{font-size:15px;color:#aebfd4}
+.bprep-person .pmeta{font-size:19px;color:#aebfd4}
 .bprep-person .btimer{margin-left:auto;font-family:ui-monospace,monospace;font-size:26px;font-weight:700;color:#e7c14d}
 /* mitlaufende Prüfungszeit in der "Jetzt dran"-Karte */
 .bcur-timer{margin-top:10px;font-size:clamp(20px,3vw,40px);font-weight:700;color:#ff2323}
@@ -784,9 +787,11 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
     <div class="bcard prep" id="bPrep"><div class="blabel">In Vorbereitung</div><div class="bprep-people" id="bPrepPeople"><div class="bname" style="font-size:24px;color:#6a83a3">—</div></div></div>
     <div class="bcard nextprep idle" id="bNextPrep"><div class="blabel">Nächste Vorbereitung</div><div class="bname">—</div></div>
   </div>
-  <div class="beamer-list" id="bList"></div>
+  <div class="beamer-listrow">
+    <div class="beamer-list" id="bList"></div>
+    <div class="beamer-qr" id="bQRWrap"><div class="bqr-code" id="bQR"></div><div class="bqr-label">📱 Live mitschauen</div></div>
+  </div>
   <div class="beamer-foot">Live-Ansicht · aktualisiert automatisch · zum Schließen ✕ oder Esc</div>
-  <div class="beamer-qr" id="bQRWrap"><div class="bqr-code" id="bQR"></div><div class="bqr-label">📱 Live mitschauen</div></div>
 </div>
 
 <div class="wrap">
@@ -832,7 +837,7 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
     </span>
     <div class="title-stack">
       <h1>Matura-Einteilung</h1>
-      <div class="sub">Mündliche Reife- &amp; Diplomprüfung · <b>zeitoptimierter Prüfungsplan</b> für Schüler &amp; Lehrer <span style="opacity:.5;font-size:11px">· Version 2026-06-16 (r2)</span></div>
+      <div class="sub">Mündliche Reife- &amp; Diplomprüfung · <b>zeitoptimierter Prüfungsplan</b> für Schüler &amp; Lehrer <span style="opacity:.5;font-size:11px">· Version 2026-06-16 (r3)</span></div>
     </div>
     <div class="clock" aria-label="Uhrzeit">
       <div class="time"><span class="off">88:88:88</span><span class="lit" id="clockTime">00:00:00</span></div>
@@ -1197,7 +1202,7 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
   </div>
   <footer>Erstellt offline im Browser · Daten verlassen das Gerät nicht · XLSX-Import/-Export via SheetJS<br>
     <span style="opacity:.7">© DI Theodor Kranz · kranzlab</span><br>
-    <span id="appVersion" style="opacity:.55;font-size:11px">Version 2026-06-16 · Live-Dirigent + Kommission (r2)</span><br>
+    <span id="appVersion" style="opacity:.55;font-size:11px">Version 2026-06-16 · Live-Dirigent + Kommission (r3)</span><br>
     <svg class="kl-footer" viewBox="122 50 292 100" role="img" aria-label="kranzlab" xmlns="http://www.w3.org/2000/svg">
 <defs>
 <radialGradient id="klMoonGrad" cx="36%" cy="34%"><stop offset="0%" stop-color="#f6f8fb"/><stop offset="55%" stop-color="#c2ccd9"/><stop offset="100%" stop-color="#8a98ab"/></radialGradient>
@@ -2125,7 +2130,8 @@ function renderBeamer(){
   const bpp=document.getElementById("bPrepPeople");
   if(bpp){
     if(inPrep.length){
-      bpp.innerHTML=inPrep.map(x=>`<div class="bprep-person"><span class="pnm">${x.student}</span><span class="pmeta">${x.subject} · <span class="bp" style="background:${cmap[x.teacher]}">${x.teacher}</span></span><span class="btimer">${fmtDur(x.prepAt)}</span></div>`).join("");
+      bpp.innerHTML=inPrep.map(x=>{ const bei=x.beisitz?` · Beisitz <span class="bp" style="background:${cmap[x.beisitz]||'#5b6b7e'}">${x.beisitz}</span>`:"";
+        return `<div class="bprep-person"><span class="pnm">${x.student}</span><span class="pmeta">${x.subject} · <span class="bp" style="background:${cmap[x.teacher]}">${x.teacher}</span>${bei}</span><span class="btimer">${fmtDur(x.prepAt)}</span></div>`; }).join("");
     } else {
       bpp.innerHTML=`<div class="bname" style="font-size:24px;color:#6a83a3">— niemand in Vorbereitung —</div>`;
     }
@@ -2134,8 +2140,9 @@ function renderBeamer(){
   const np=conducting?lcResolveNextPrep():null;
   const bnp=document.getElementById("bNextPrep");
   if(bnp){ if(np){ bnp.className="bcard nextprep";
+      const npBei = np.beisitz ? ` · Beisitz <span class="bp" style="background:${cmap[np.beisitz]||'#5b6b7e'}">${np.beisitz}</span>` : "";
       bnp.innerHTML=`<div class="blabel">Nächste Vorbereitung</div><div class="bname">${np.student}</div>
-        <div class="bmeta">Fach <b>${np.subject}</b> · Prüfer <span class="bp" style="background:${cmap[np.teacher]}">${np.teacher}</span></div>`; }
+        <div class="bmeta">Fach <b>${np.subject}</b> · Prüfer <span class="bp" style="background:${cmap[np.teacher]}">${np.teacher}</span>${npBei}</div>`; }
     else { bnp.className="bcard nextprep idle"; bnp.innerHTML=`<div class="blabel">Nächste Vorbereitung</div><div class="bname">—</div>`; } }
   // Liste: nur neu aufbauen, wenn sich Inhalt/Reihenfolge/Status ändert – sonst bleibt die Scrollposition erhalten
   const lb=document.getElementById("bList"); if(!lb) return;
