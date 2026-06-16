@@ -469,6 +469,11 @@ td.delayed{background:#fff3f3 !important}
 .beamer-qr .bqr-code img,.beamer-qr .bqr-code canvas{width:140px;height:140px;display:block}
 .beamer-qr .bqr-label{font-size:12px;font-weight:600;color:var(--muted)}
 @media(max-width:760px){.beamer-qr{position:static;margin:12px auto 4px}.beamer-qr .bqr-code,.beamer-qr .bqr-code img,.beamer-qr .bqr-code canvas{width:120px;height:120px}}
+/* Master-Sperre: Banner wenn ein anderes Gerät steuert */
+#masterLock{position:fixed;top:0;left:0;right:0;z-index:11000;display:none;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;background:rgba(27,35,48,.94);color:#fff;padding:11px 16px;font-weight:600;box-shadow:0 10px 30px -14px #000}
+#masterLock.show{display:flex}
+#masterLock button{background:var(--good);color:#06201c;border:none;border-radius:10px;padding:8px 15px;font-weight:700;cursor:pointer}
+#masterLock .ml-x{background:transparent;color:#fff;border:1px solid #ffffff55;padding:6px 11px;font-weight:600}
 input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
 /* schöner Upload-Button */
 .file-drop{position:relative;display:flex;align-items:center;gap:12px;width:100%;
@@ -1996,6 +2001,7 @@ function openBeamer(){
   }
   const bv=document.getElementById("beamerView"); if(!bv||!CUR)return;
   BEAMER_ON=true; bv.classList.add("on");
+  const lb=document.getElementById("masterLock"); if(lb) lb.style.display="none";   // Banner in Beamer-Ansicht aus
   BEAMER_SIG=""; BEAMER_LASTTARGET=-1;
   document.getElementById("bDate").textContent=new Date().toLocaleDateString("de-AT",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});
   document.getElementById("bClose").onclick=closeBeamer;
@@ -2017,6 +2023,7 @@ function openBeamer(){
 function closeBeamer(){
   BEAMER_ON=false;
   const bv=document.getElementById("beamerView"); if(bv) bv.classList.remove("on");
+  const lb=document.getElementById("masterLock"); if(lb) lb.style.display="";   // Übernehmen-Banner wieder zulassen
   if(BEAMER_TIMER){ clearInterval(BEAMER_TIMER); BEAMER_TIMER=null; }
   if(BEAMER_WAKELOCK){ try{ BEAMER_WAKELOCK.release(); }catch(e){} BEAMER_WAKELOCK=null; }
 }
@@ -3855,6 +3862,13 @@ function DEMO(){
 
   // ============================ MASTER ============================
   let sessionActive=false, sessionDate=null, lastSent="";
+  // --- Master-Sperre: nur EIN aktiver Steuermaster gleichzeitig (wie Konferenztool) ---
+  let MASTER_ID;
+  try{ MASTER_ID=localStorage.getItem("mc_master_id")||("m_"+Math.random().toString(36).slice(2,9)); localStorage.setItem("mc_master_id",MASTER_ID); }
+  catch(e){ MASTER_ID="m_"+Math.random().toString(36).slice(2,9); }
+  const OWNER_TIMEOUT=9000;
+  let amOwner=false, claimTs=0;
+  window.__mcPullCloud=()=>refetchAndClaim();
   // Session-Code: pro Prüfungstag ein eigener Code im Schüler-Link/QR. Ein neuer Tag (oder der
   // „Neuer Link"-Knopf) erzeugt einen frischen Code → alte/geteilte Links werden ungültig
   // (die Anzeige zeigt dann „Link abgelaufen"). Bleibt über Master-Reload hinweg stabil.
@@ -3938,7 +3952,7 @@ function DEMO(){
     const haveCur = (typeof CUR!=="undefined") && CUR && CUR.res && CUR.res.sched;
     const rows = (sessionActive && haveCur) ? [...CUR.res.sched].sort((a,b)=>a.start-b.start) : [];
     const cmap = (typeof MATRIX!=="undefined" && MATRIX) ? (typeof teacherColor==="function"?teacherColor(MATRIX):(MATRIX.teacherColors||{})) : {};
-    return { v:1, sessionActive, sessionDate, sid:LIVE_SID,
+    return { v:1, sessionActive, sessionDate, sid:LIVE_SID, owner:{id:MASTER_ID, ts:Date.now()},
       room:(typeof ROOM!=="undefined"?ROOM:""), prep:!!BEAMER_PREP,
       totalDelay:(haveCur && CUR.res.totalDelay)||0,
       teachers:(typeof MATRIX!=="undefined" && MATRIX && MATRIX.teachers)||[], teacherColors:cmap,
@@ -3947,14 +3961,45 @@ function DEMO(){
       sched: rows.map(x=>({student:x.student,subject:x.subject,teacher:x.teacher,start:x.start,end:x.end,prepStart:x.prepStart,group:x.group||null,
         liveState:x.liveState||"wait", prepAt:(x.prepAt!=null?x.prepAt:null), examAt:(x.examAt!=null?x.examAt:null)})) };
   }
-  async function pushNow(){
-    const pl=buildPayload(); const cmp=JSON.stringify(pl);
-    if(cmp===lastSent) return; lastSent=cmp;
+  async function pushNow(force){
+    const pl=buildPayload();
+    const cmp=JSON.stringify({...pl, owner:undefined});   // owner.ts NICHT vergleichen (sonst Dauer-Push)
+    if(force){ if(!amOwner) return; }
+    else { if(cmp===lastSent) return; if(!amOwner) setOwner(true); }   // erste echte Steueraktion -> Kontrolle übernehmen
+    lastSent=cmp;
     try{ await SB.rpc("set_live_state",{p_payload:pl,p_key:LIVE_KEY}); setStatus(true); }
     catch(e){ setStatus(false); }
   }
-  // Poll-Diff (~600 ms): sendet nur bei echter Änderung (Verzögerung, Umsortierung, Raum, Prep, Start/Ende).
-  setInterval(pushNow, 600);
+  // Poll-Diff (~600 ms) bei echter Änderung + Heartbeat (4 s) für den Besitz-Stempel.
+  setInterval(()=>pushNow(false), 600);
+  setInterval(()=>pushNow(true), 4000);
+
+  // ---- Übernahme-/Sperr-Logik ----
+  const lockBar=document.createElement("div"); lockBar.id="masterLock";
+  lockBar.innerHTML='<span class="ml-txt">Ein anderes Gerät steuert gerade.</span><button id="mlTake">Steuerung übernehmen</button><button id="mlDismiss" class="ml-x" title="Später / ausblenden">✕</button>';
+  document.body.appendChild(lockBar);
+  function ownerOther(o){ return !!(o && o.id && o.id!==MASTER_ID && (Date.now()-(o.ts||0))<OWNER_TIMEOUT); }
+  function setOwner(on){
+    amOwner=on; lockBar.classList.toggle("show",!on);
+    if(on){ claimTs=Date.now(); lastSent=""; pushNow(true); } else setStatus(false);
+  }
+  $id("mlTake").onclick=()=>refetchAndClaim();
+  $id("mlDismiss").onclick=()=>lockBar.classList.remove("show");
+  async function readCloud(){ try{ const {data}=await SB.from("live_state").select("payload").eq("id",ROW_ID).maybeSingle(); return (data&&data.payload)||null; }catch(e){ return null; } }
+  async function refetchAndClaim(){ const pl=await readCloud(); /* Stand nicht überschreiben – matura-Master hat eigenen Plan */ setOwner(true); }
+  function handleCloud(pl){
+    if(!pl) return; const o=pl.owner;
+    if(amOwner){ if(ownerOther(o) && (o.ts||0)>claimTs){ setOwner(false); } }
+    else { const t=lockBar.querySelector(".ml-txt"); if(t) t.textContent= ownerOther(o) ? "Ein anderes Gerät steuert gerade." : "Aktuell steuert kein Gerät."; }
+  }
+  (async function initOwnership(){
+    const pl=await readCloud();
+    if(pl && ownerOther(pl.owner)) setOwner(false); else setOwner(true);
+  })();
+  SB.channel("ctrl_"+ROW_ID)
+    .on("postgres_changes",{event:"*",schema:"public",table:"live_state",filter:"id=eq."+ROW_ID}, p=>handleCloud(p.new&&p.new.payload))
+    .subscribe();
+  setInterval(async ()=>{ if(!amOwner) handleCloud(await readCloud()); }, 5000);
 })();
 </script>
 
