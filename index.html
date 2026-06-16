@@ -463,6 +463,12 @@ td.delayed{background:#fff3f3 !important}
   color:#ffd86b;text-align:center;white-space:nowrap}
 .beamer-list tr.done .broom-cell{color:#8a7a4a}
 .beamer-foot{font-size:13px;color:#5a72a0;text-align:center;padding-top:12px;font-weight:300}
+/* QR im Beamer zum Mitschauen */
+.beamer-qr{position:absolute;right:18px;bottom:18px;z-index:60;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 10px 8px;box-shadow:0 14px 40px -22px rgba(20,30,50,.6);display:flex;flex-direction:column;align-items:center;gap:6px}
+.beamer-qr .bqr-code{width:140px;height:140px;display:flex;align-items:center;justify-content:center}
+.beamer-qr .bqr-code img,.beamer-qr .bqr-code canvas{width:140px;height:140px;display:block}
+.beamer-qr .bqr-label{font-size:12px;font-weight:600;color:var(--muted)}
+@media(max-width:760px){.beamer-qr{position:static;margin:12px auto 4px}.beamer-qr .bqr-code,.beamer-qr .bqr-code img,.beamer-qr .bqr-code canvas{width:120px;height:120px}}
 input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
 /* schöner Upload-Button */
 .file-drop{position:relative;display:flex;align-items:center;gap:12px;width:100%;
@@ -761,6 +767,7 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
   </div>
   <div class="beamer-list" id="bList"></div>
   <div class="beamer-foot">Live-Ansicht · aktualisiert automatisch · zum Schließen ✕ oder Esc</div>
+  <div class="beamer-qr" id="bQRWrap"><div class="bqr-code" id="bQR"></div><div class="bqr-label">📱 Live mitschauen</div></div>
 </div>
 
 <div class="wrap">
@@ -2031,6 +2038,7 @@ function beamerRowHtml(x,cmap,now,conducting){
 }
 function renderBeamer(){
   if(!BEAMER_ON||!CUR)return;
+  (function(){ const el=document.getElementById("bQR"); if(el && el.dataset.done!=="1" && window.QRCode){ try{ new QRCode(el,{text:location.origin+location.pathname+"?mode=anzeige",width:140,height:140,correctLevel:QRCode.CorrectLevel.M}); el.dataset.done="1"; }catch(e){} } })();
   const res=CUR.res, cmap=teacherColor(MATRIX);
   const rows=[...res.sched].sort((a,b)=>a.start-b.start);
   const order=CUR.order||[];
