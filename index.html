@@ -638,11 +638,13 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
 /* ===== Live-Dirigent: Beamer-Zonen (Vorbereitung) ===== */
 .beamer-prep{margin-top:-8px}
 .bcard.prep{border-color:#caa23a;box-shadow:0 0 0 1px #caa23a30}
-.bcard.prep .bprep-people{display:flex;flex-direction:column;gap:12px;margin-top:12px}
-.bprep-person{display:flex;align-items:baseline;gap:14px}
-.bprep-person .pnm{font-size:26px;font-weight:600;color:#fff}
-.bprep-person .pmeta{font-size:19px;color:#aebfd4}
-.bprep-person .btimer{margin-left:auto;font-family:ui-monospace,monospace;font-size:26px;font-weight:700;color:#e7c14d}
+/* „In Vorbereitung": Spalten-Raster Name | Fach | Prüfer | Beisitz | Timer (ausgerichtet, kein Umbruch) */
+.bcard.prep .bprep-people{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto auto;gap:12px 16px;align-items:center;margin-top:12px}
+.bprep-person{display:contents}
+.bprep-person .pnm{font-size:24px;font-weight:600;color:#fff;line-height:1.15}
+.bprep-person .pfach{font-size:18px;color:#aebfd4;text-align:right;white-space:nowrap}
+.bprep-person .pdash{color:#5a6b82}
+.bprep-person .btimer{font-family:ui-monospace,monospace;font-size:24px;font-weight:700;color:#e7c14d;justify-self:end;white-space:nowrap}
 /* mitlaufende Prüfungszeit in der "Jetzt dran"-Karte */
 .bcur-timer{margin-top:10px;font-size:clamp(20px,3vw,40px);font-weight:700;color:#ff2323}
 .bcur-timer .btimer{font-family:"DSEG7 Classic",ui-monospace,monospace;letter-spacing:2px;text-shadow:0 0 8px rgba(255,40,40,.4)}
@@ -859,7 +861,7 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
     </span>
     <div class="title-stack">
       <h1>Matura-Einteilung</h1>
-      <div class="sub">Mündliche Reife- &amp; Diplomprüfung · <b>zeitoptimierter Prüfungsplan</b> für Schüler &amp; Lehrer <span style="opacity:.5;font-size:11px">· Version 2026-06-16 (r13)</span></div>
+      <div class="sub">Mündliche Reife- &amp; Diplomprüfung · <b>zeitoptimierter Prüfungsplan</b> für Schüler &amp; Lehrer <span style="opacity:.5;font-size:11px">· Version 2026-06-16 (r14)</span></div>
     </div>
     <div class="clock" aria-label="Uhrzeit">
       <div class="time"><span class="off">88:88:88</span><span class="lit" id="clockTime">00:00:00</span></div>
@@ -1228,7 +1230,7 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
   </div>
   <footer>Erstellt offline im Browser · Daten verlassen das Gerät nicht · XLSX-Import/-Export via SheetJS<br>
     <span style="opacity:.7">© DI Theodor Kranz · kranzlab</span><br>
-    <span id="appVersion" style="opacity:.55;font-size:11px">Version 2026-06-16 · Live-Dirigent + Kommission (r13)</span><br>
+    <span id="appVersion" style="opacity:.55;font-size:11px">Version 2026-06-16 · Live-Dirigent + Kommission (r14)</span><br>
     <svg class="kl-footer" viewBox="122 50 292 100" role="img" aria-label="kranzlab" xmlns="http://www.w3.org/2000/svg">
 <defs>
 <radialGradient id="klMoonGrad" cx="36%" cy="34%"><stop offset="0%" stop-color="#f6f8fb"/><stop offset="55%" stop-color="#c2ccd9"/><stop offset="100%" stop-color="#8a98ab"/></radialGradient>
@@ -2176,8 +2178,9 @@ function renderBeamer(){
   const bpp=document.getElementById("bPrepPeople");
   if(bpp){
     if(inPrep.length){
-      bpp.innerHTML=inPrep.map(x=>{ const bei=x.beisitz?` · Beisitz <span class="bp" style="background:${cmap[x.beisitz]||'#5b6b7e'}">${x.beisitz}</span>`:"";
-        return `<div class="bprep-person"><span class="pnm">${x.student}</span><span class="pmeta">${x.subject} · <span class="bp" style="background:${cmap[x.teacher]}">${x.teacher}</span>${bei}</span><span class="btimer">${fmtDur(x.prepAt)}</span></div>`; }).join("");
+      // Saubere Spalten: Name | Fach | Prüfer | Beisitz | Timer (kein Umbruch, alles ausgerichtet)
+      bpp.innerHTML=inPrep.map(x=>{ const bei=x.beisitz?bPill(x.beisitz):`<span class="pdash">–</span>`;
+        return `<div class="bprep-person"><span class="pnm">${x.student}</span><span class="pfach">${x.subject}</span>${bPill(x.teacher)}${bei}<span class="btimer">${fmtDur(x.prepAt)}</span></div>`; }).join("");
     } else {
       bpp.innerHTML=`<div class="bname" style="font-size:24px;color:#6a83a3">— niemand in Vorbereitung —</div>`;
     }
