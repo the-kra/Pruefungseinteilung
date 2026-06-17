@@ -489,7 +489,8 @@ td.delayed{background:#fff3f3 !important}
 /* QR im Beamer zum Mitschauen */
 .beamer-listrow{flex:1;display:flex;gap:22px;min-height:0;margin-top:4px}
 .beamer-qr{align-self:flex-start;flex:0 0 auto;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 12px 9px;box-shadow:0 14px 40px -22px rgba(20,30,50,.6);display:flex;flex-direction:column;align-items:center;gap:7px}
-/* QR fest oben im Beamer-Header, kompakt; Uhr wandert per margin-left:auto nach ganz rechts */
+/* Linke Header-Spalte: HTL-Logo oben, QR darunter; Uhr wandert per margin-left:auto nach ganz rechts */
+.beamer-head .bhead-left{display:flex;flex-direction:column;align-items:center;gap:8px;align-self:flex-start}
 .beamer-head .beamer-qr{align-self:center;padding:7px 7px 5px;gap:3px}
 .beamer-head .bclock{margin-left:auto}
 .beamer-head .beamer-qr .bqr-code,.beamer-head .beamer-qr .bqr-code img,.beamer-head .beamer-qr .bqr-code canvas{width:88px;height:88px}
@@ -745,6 +746,7 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
 
 <div class="beamer" id="beamerView">
   <div class="beamer-head">
+    <div class="bhead-left">
     <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 432.46 202.88" id="bLogo" class="blogo htl-logo-anim" role="img" aria-label="HTL1 Klagenfurt">
   <defs>
     
@@ -782,13 +784,14 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
     </g>
   </g>
 </svg>
+      <div class="beamer-qr" id="bQRWrap"><div class="bqr-code" id="bQR"></div><div class="bqr-label">📱 Live mitschauen</div></div>
+    </div>
     <div>
       <h2>Mündliche Matura — Live</h2>
       <div class="bsub" id="bDate">Prüfungstag</div>
     </div>
     <span class="bdelay zero" id="bDelay">pünktlich</span>
     <div class="beamer-room letterboard"><span class="lb-arrow">→</span><span class="lb-text" id="bRoom">H211</span></div>
-    <div class="beamer-qr" id="bQRWrap"><div class="bqr-code" id="bQR"></div><div class="bqr-label">📱 Live mitschauen</div></div>
     <button class="bprep-toggle" id="bPrepToggle" title="Vorbereitungszeiten ein-/ausblenden" aria-pressed="false">Vorber. <span class="bpt-state">aus</span></button>
     <div class="bclock"><span id="bClock">00:00:00</span></div>
     <button class="bfs" id="bFsToggle" onclick="beamerToggleFullscreen()" title="Vollbild ein/aus">⛶</button>
@@ -851,7 +854,7 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
     </span>
     <div class="title-stack">
       <h1>Matura-Einteilung</h1>
-      <div class="sub">Mündliche Reife- &amp; Diplomprüfung · <b>zeitoptimierter Prüfungsplan</b> für Schüler &amp; Lehrer <span style="opacity:.5;font-size:11px">· Version 2026-06-16 (r9)</span></div>
+      <div class="sub">Mündliche Reife- &amp; Diplomprüfung · <b>zeitoptimierter Prüfungsplan</b> für Schüler &amp; Lehrer <span style="opacity:.5;font-size:11px">· Version 2026-06-16 (r10)</span></div>
     </div>
     <div class="clock" aria-label="Uhrzeit">
       <div class="time"><span class="off">88:88:88</span><span class="lit" id="clockTime">00:00:00</span></div>
@@ -1220,7 +1223,7 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
   </div>
   <footer>Erstellt offline im Browser · Daten verlassen das Gerät nicht · XLSX-Import/-Export via SheetJS<br>
     <span style="opacity:.7">© DI Theodor Kranz · kranzlab</span><br>
-    <span id="appVersion" style="opacity:.55;font-size:11px">Version 2026-06-16 · Live-Dirigent + Kommission (r9)</span><br>
+    <span id="appVersion" style="opacity:.55;font-size:11px">Version 2026-06-16 · Live-Dirigent + Kommission (r10)</span><br>
     <svg class="kl-footer" viewBox="122 50 292 100" role="img" aria-label="kranzlab" xmlns="http://www.w3.org/2000/svg">
 <defs>
 <radialGradient id="klMoonGrad" cx="36%" cy="34%"><stop offset="0%" stop-color="#f6f8fb"/><stop offset="55%" stop-color="#c2ccd9"/><stop offset="100%" stop-color="#8a98ab"/></radialGradient>
