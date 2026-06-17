@@ -165,10 +165,14 @@ neu berechnen und am Beamer die **voraussichtliche Startzeit pro Schüler** anze
   die **rechten schmaler** → asymmetrische 4-Karten-Aufteilung (links etwas breiter).
 - Risiko: mittel (ETA-Berechnung aus laufenden Zeiten + Layout-Umbau, Höhe konstant halten).
 
-### 15. Prüfungszeit mit „+" erhöhen, wenn zu spät aktiviert
+### 15. Prüfungszeit mit „+" erhöhen, wenn zu spät aktiviert  (NOCH NICHT umgesetzt)
+**Aktueller Stand:** Sobald jemand in Vorbereitung/Prüfung/fertig ist, sind die ±-Buttons
+**ausgeblendet** („— fix —"), weil gestartete Prüfungen festgenagelt sind. → Für eine **schon
+laufende** Prüfung gibt es derzeit **kein „+"**.
 Wird ein/e Kandidat/in **zu spät** in die Prüfung geschickt (Aktivieren vergessen, läuft real schon),
-soll man die **Prüfungszeit nachträglich mit „+"** erhöhen können (rückwirkender Start/Dauer-Korrektur),
-damit die echte Prüfungsdauer/ETA wieder stimmt.
+soll man die **Prüfungszeit nachträglich korrigieren** können — eine **eigene** Steuerung nur für die
+aktive Prüfung (z. B. „Start war vor X min" oder kleines +/−), ohne die Fix-Logik der anderen Zeilen
+aufzuweichen.
 - Risiko: gering–mittel (examAt rückdatieren bzw. Dauer-Offset; Auswirkung auf ETA/Folgezeiten beachten).
 
 ---
