@@ -165,15 +165,20 @@ neu berechnen und am Beamer die **voraussichtliche Startzeit pro Schüler** anze
   die **rechten schmaler** → asymmetrische 4-Karten-Aufteilung (links etwas breiter).
 - Risiko: mittel (ETA-Berechnung aus laufenden Zeiten + Layout-Umbau, Höhe konstant halten).
 
-### 15. Prüfungszeit mit „+" erhöhen, wenn zu spät aktiviert  (NOCH NICHT umgesetzt)
+### 15. Laufende Prüfungszeit (Dauer) direkt erhöhen können  (NOCH NICHT umgesetzt)
+**Worum es geht:** Die **Dauer der gerade laufenden Prüfung** soll sich **direkt verlängern** lassen
+(„Prüfungszeit +", z. B. +1/+5 min) — **kein** Verschieben des Starts, **kein** Zeit-Offset, sondern
+**Manipulation der Prüfungsdauer** der aktiven Prüfung. Anwendungsfall: Kandidat/in wurde **zu spät**
+in die Prüfung geschickt (Aktivieren vergessen, läuft real schon) → die laufende Prüfungszeit soll
+sich auf den echten Wert **hochsetzen** lassen.
+
 **Aktueller Stand:** Sobald jemand in Vorbereitung/Prüfung/fertig ist, sind die ±-Buttons
-**ausgeblendet** („— fix —"), weil gestartete Prüfungen festgenagelt sind. → Für eine **schon
-laufende** Prüfung gibt es derzeit **kein „+"**.
-Wird ein/e Kandidat/in **zu spät** in die Prüfung geschickt (Aktivieren vergessen, läuft real schon),
-soll man die **Prüfungszeit nachträglich korrigieren** können — eine **eigene** Steuerung nur für die
-aktive Prüfung (z. B. „Start war vor X min" oder kleines +/−), ohne die Fix-Logik der anderen Zeilen
-aufzuweichen.
-- Risiko: gering–mittel (examAt rückdatieren bzw. Dauer-Offset; Auswirkung auf ETA/Folgezeiten beachten).
+**ausgeblendet** („— fix —"). → Für eine **schon laufende** Prüfung gibt es derzeit **kein „+"**.
+
+**Idee:** Eine **eigene** „Prüfungszeit +"-Steuerung nur für die **aktive** Prüfung, die die
+**Dauer/den live mitlaufenden Prüfungs-Timer** erhöht (nicht den Startzeitpunkt), ohne die Fix-Logik
+der übrigen Zeilen aufzuweichen.
+- Risiko: gering–mittel (per-Prüfung Dauer-Wert statt Plandauer; Auswirkung auf ETA/Folgezeiten beachten).
 
 ---
 
