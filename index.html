@@ -377,11 +377,11 @@ td.delayed{background:#fff3f3 !important}
 .live-now td{box-shadow:inset 3px 0 0 #ff2b2b}
 /* Beamer-Vollbild-Ansicht */
 .beamer{position:fixed;inset:0;z-index:9999;background:linear-gradient(160deg,#0c1018,#05070b);
-  color:#e8eef6;display:none;flex-direction:column;padding:34px 44px;overflow:hidden}
+  color:#e8eef6;display:none;flex-direction:column;padding:18px 44px;overflow:hidden}
 .beamer.on{display:flex}
-.beamer-head{display:flex;align-items:center;gap:24px;border-bottom:1px solid #1e2a3a;padding-bottom:20px;flex-wrap:wrap}
+.beamer-head{display:flex;align-items:center;gap:24px;border-bottom:1px solid #1e2a3a;padding-bottom:12px;flex-wrap:wrap}
 .beamer-head .beamer-room{align-self:center}   /* Raum-Tafel mittig mit „pünktlich" und Uhr (statt oben) */
-.beamer-head .blogo{height:68px;width:auto;background:rgba(14,22,46,0.55);padding:8px 16px;
+.beamer-head .blogo{height:56px;width:auto;background:rgba(14,22,46,0.55);padding:8px 16px;
   border:1px solid rgba(120,150,210,0.22);border-radius:12px;flex:0 0 auto;box-shadow:0 4px 14px -4px rgba(0,0,0,.5);box-sizing:content-box}
 .beamer-head h2{font-size:30px;font-weight:600;margin:0;letter-spacing:-.5px;color:#fff}
 .beamer-head .bsub{font-size:14px;color:#7c93b0;font-weight:300}
@@ -425,7 +425,7 @@ td.delayed{background:#fff3f3 !important}
 .beamer .bdelay{font-family:'Lexend',sans-serif;font-size:15px;font-weight:600;padding:5px 14px;border-radius:14px;align-self:center}
 .beamer .bdelay.zero{background:#13332b;color:#4fd6bf}
 .beamer .bdelay.late{background:#3a1416;color:#ff6b6b}
-.beamer-now{display:flex;gap:24px;margin:26px 0}
+.beamer-now{display:flex;gap:24px;margin:12px 0}
 .bcard{flex:1;background:#111927;border:1px solid #1e2a3a;border-radius:18px;padding:22px 26px}
 .bcard .blabel{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#6a83a3;font-weight:600}
 .bcard.current{border-color:#ff2b2b;box-shadow:0 0 0 1px #ff2b2b40,0 10px 40px -16px rgba(255,40,40,.4)}
@@ -493,7 +493,7 @@ td.delayed{background:#fff3f3 !important}
 .beamer-head .bhead-left{display:flex;flex-direction:column;align-items:center;gap:8px;align-self:flex-start}
 .beamer-head .beamer-qr{align-self:center;padding:7px 7px 5px;gap:3px}
 .beamer-head .bclock{margin-left:auto}
-.beamer-head .beamer-qr .bqr-code,.beamer-head .beamer-qr .bqr-code img,.beamer-head .beamer-qr .bqr-code canvas{width:88px;height:88px}
+.beamer-head .beamer-qr .bqr-code,.beamer-head .beamer-qr .bqr-code img,.beamer-head .beamer-qr .bqr-code canvas{width:72px;height:72px}
 .beamer-head .beamer-qr .bqr-label{font-size:10px}
 .beamer-qr .bqr-code{width:140px;height:140px;display:flex;align-items:center;justify-content:center}
 .beamer-qr .bqr-code img,.beamer-qr .bqr-code canvas{width:140px;height:140px;display:block}
@@ -854,7 +854,7 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
     </span>
     <div class="title-stack">
       <h1>Matura-Einteilung</h1>
-      <div class="sub">Mündliche Reife- &amp; Diplomprüfung · <b>zeitoptimierter Prüfungsplan</b> für Schüler &amp; Lehrer <span style="opacity:.5;font-size:11px">· Version 2026-06-16 (r10)</span></div>
+      <div class="sub">Mündliche Reife- &amp; Diplomprüfung · <b>zeitoptimierter Prüfungsplan</b> für Schüler &amp; Lehrer <span style="opacity:.5;font-size:11px">· Version 2026-06-16 (r11)</span></div>
     </div>
     <div class="clock" aria-label="Uhrzeit">
       <div class="time"><span class="off">88:88:88</span><span class="lit" id="clockTime">00:00:00</span></div>
@@ -1223,7 +1223,7 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
   </div>
   <footer>Erstellt offline im Browser · Daten verlassen das Gerät nicht · XLSX-Import/-Export via SheetJS<br>
     <span style="opacity:.7">© DI Theodor Kranz · kranzlab</span><br>
-    <span id="appVersion" style="opacity:.55;font-size:11px">Version 2026-06-16 · Live-Dirigent + Kommission (r10)</span><br>
+    <span id="appVersion" style="opacity:.55;font-size:11px">Version 2026-06-16 · Live-Dirigent + Kommission (r11)</span><br>
     <svg class="kl-footer" viewBox="122 50 292 100" role="img" aria-label="kranzlab" xmlns="http://www.w3.org/2000/svg">
 <defs>
 <radialGradient id="klMoonGrad" cx="36%" cy="34%"><stop offset="0%" stop-color="#f6f8fb"/><stop offset="55%" stop-color="#c2ccd9"/><stop offset="100%" stop-color="#8a98ab"/></radialGradient>
