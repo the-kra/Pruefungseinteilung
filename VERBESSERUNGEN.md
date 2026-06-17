@@ -138,10 +138,38 @@ aktuellen Masters brauchen (kein versehentliches/fremdes Kapern).
   „Gerät X will übernehmen — erlauben?" und bestätigt/lehnt ab.
 - **Master tot** (kein Heartbeat > Zeitlimit, z. B. 9 s): Übernahme **sofort erlaubt**, ohne
   Bestätigung (niemand da, der zustimmen könnte).
+- Konkret: der aktuelle Master bekommt einen **eigenen „Übergabe erlauben"-Knopf**; erst nach
+  dessen Klick wird das anfragende Gerät Master. Ohne Heartbeat entfällt der Knopf → direkt übernehmbar.
 
 - Nutzen: kein versehentliches Überschreiben bei laufender Steuerung; trotzdem kein Deadlock.
 - Risiko: mittel (bidirektionale Anfrage/Bestätigung über den Payload; mehr Zustände).
 - Hinweis: Erhöht die Komplexität spürbar — nur umsetzen, wenn Mehrfach-Geräte real ein Problem werden.
+
+### 12. Excel-Export: Rahmen um die erste Zeile (Prüfungstag-Export)
+Beim exportierten Prüfungstag fehlt der ersten Zeile (Titel-/Kopfzeile) ein **Rahmen**.
+- Idee: erste Zeile des Export-Blatts mit Rahmen/Border versehen (sauberer Druck/Optik).
+- Risiko: gering (nur Export-Formatierung in ExcelJS).
+
+### 13. Live-Nummern stabil oder manuell vergebbar
+Beim „in Vorbereitung schicken" ändert sich durch die chronologische Sortierung die **#-Nummer**.
+- Idee A: Nummer **nicht** ändern, wenn jemand in Vorbereitung geht (stabile Plan-Nummer behalten).
+- Idee B: Möglichkeit, **in Vorbereitung Nummern manuell zu vergeben / zu sortieren** (eigene Reihenfolge).
+- Risiko: gering–mittel (Anzeige-/Sortierlogik; #-Spalte von der Sortierung entkoppeln).
+
+### 14. ETA / voraussichtliche Startzeit am Beamer (ohne Layout zu verschieben)
+Nach dem Setzen der **ersten Vorbereitung** und nach **Abschluss jeder Prüfung** Zeit & **ETA**
+neu berechnen und am Beamer die **voraussichtliche Startzeit pro Schüler** anzeigen.
+- **Wichtig:** Der Anzeigebereich darf **nicht nach unten wandern** — es muss alles am Beamer
+  sichtbar bleiben.
+- Layout-Idee: die **zwei linken Karten breiter** machen (Platz für die ETA in einer **neuen Zeile**),
+  die **rechten schmaler** → asymmetrische 4-Karten-Aufteilung (links etwas breiter).
+- Risiko: mittel (ETA-Berechnung aus laufenden Zeiten + Layout-Umbau, Höhe konstant halten).
+
+### 15. Prüfungszeit mit „+" erhöhen, wenn zu spät aktiviert
+Wird ein/e Kandidat/in **zu spät** in die Prüfung geschickt (Aktivieren vergessen, läuft real schon),
+soll man die **Prüfungszeit nachträglich mit „+"** erhöhen können (rückwirkender Start/Dauer-Korrektur),
+damit die echte Prüfungsdauer/ETA wieder stimmt.
+- Risiko: gering–mittel (examAt rückdatieren bzw. Dauer-Offset; Auswirkung auf ETA/Folgezeiten beachten).
 
 ---
 
