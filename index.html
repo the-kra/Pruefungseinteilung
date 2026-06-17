@@ -408,9 +408,10 @@ td.delayed{background:#fff3f3 !important}
   .beamer .bdelay{font-size:13px;padding:4px 11px}
   .beamer .bclose{position:absolute;top:14px;right:14px;width:36px;height:36px}
 }
-.beamer .bclose{background:#1e2a3a;border:none;color:#9fb3cc;font-size:22px;cursor:pointer;
+.beamer .bclose,.beamer .bfs{background:#1e2a3a;border:none;color:#9fb3cc;font-size:22px;cursor:pointer;
   width:42px;height:42px;border-radius:10px;flex:0 0 auto}
-.beamer .bclose:hover{background:#2a3a4f;color:#fff}
+.beamer .bclose:hover,.beamer .bfs:hover{background:#2a3a4f;color:#fff}
+.beamer .bfs{align-self:center}
 .beamer .bprep-toggle{background:#1e2a3a;border:1px solid #2a3a4f;color:#9fb3cc;
   font-family:'Lexend',sans-serif;font-size:14px;font-weight:600;letter-spacing:.5px;
   padding:0 16px;height:42px;border-radius:10px;cursor:pointer;flex:0 0 auto;
@@ -431,6 +432,11 @@ td.delayed{background:#fff3f3 !important}
 .bcard .bname{font-size:34px;font-weight:600;margin:8px 0 4px;color:#fff}
 .bcard .bmeta{font-size:18px;color:#aebfd4}
 .bcard .bmeta b{color:#fff}
+/* Karten-Meta gestapelt: Label-Spalte + Wert-Spalte (Kürzel sauber untereinander) */
+.bcard .bmeta-grid{display:grid;grid-template-columns:auto auto;gap:7px 18px;justify-content:start;align-items:center;margin-top:12px}
+.bcard .bmeta-grid .bm-l{font-size:16px;font-weight:300;color:#8da3bd}
+.bcard .bmeta-grid .bm-v{font-size:21px;color:#dce6f2;justify-self:start}
+.bcard .bmeta-grid .bm-v b{color:#fff}
 .bcard.idle .bname{font-size:24px;color:#6a83a3}
 .beamer-list{flex:1;min-width:0;overflow-y:auto;border-top:1px solid #24344a;padding-top:12px}
 .beamer-list table{width:100%;border-collapse:separate;border-spacing:0 6px;font-family:'Lexend',sans-serif}
@@ -483,8 +489,9 @@ td.delayed{background:#fff3f3 !important}
 /* QR im Beamer zum Mitschauen */
 .beamer-listrow{flex:1;display:flex;gap:22px;min-height:0;margin-top:4px}
 .beamer-qr{align-self:flex-start;flex:0 0 auto;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 12px 9px;box-shadow:0 14px 40px -22px rgba(20,30,50,.6);display:flex;flex-direction:column;align-items:center;gap:7px}
-/* QR fest oben im Beamer-Header (rechts), kompakt */
-.beamer-head .beamer-qr{margin-left:auto;align-self:center;padding:7px 7px 5px;gap:3px}
+/* QR fest oben im Beamer-Header, kompakt; Uhr wandert per margin-left:auto nach ganz rechts */
+.beamer-head .beamer-qr{align-self:center;padding:7px 7px 5px;gap:3px}
+.beamer-head .bclock{margin-left:auto}
 .beamer-head .beamer-qr .bqr-code,.beamer-head .beamer-qr .bqr-code img,.beamer-head .beamer-qr .bqr-code canvas{width:88px;height:88px}
 .beamer-head .beamer-qr .bqr-label{font-size:10px}
 .beamer-qr .bqr-code{width:140px;height:140px;display:flex;align-items:center;justify-content:center}
@@ -781,9 +788,10 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
     </div>
     <span class="bdelay zero" id="bDelay">pünktlich</span>
     <div class="beamer-room letterboard"><span class="lb-arrow">→</span><span class="lb-text" id="bRoom">H211</span></div>
-    <div class="bclock"><span id="bClock">00:00:00</span></div>
-    <button class="bprep-toggle" id="bPrepToggle" title="Vorbereitungszeiten ein-/ausblenden" aria-pressed="false">Vorber. <span class="bpt-state">aus</span></button>
     <div class="beamer-qr" id="bQRWrap"><div class="bqr-code" id="bQR"></div><div class="bqr-label">📱 Live mitschauen</div></div>
+    <button class="bprep-toggle" id="bPrepToggle" title="Vorbereitungszeiten ein-/ausblenden" aria-pressed="false">Vorber. <span class="bpt-state">aus</span></button>
+    <div class="bclock"><span id="bClock">00:00:00</span></div>
+    <button class="bfs" id="bFsToggle" onclick="beamerToggleFullscreen()" title="Vollbild ein/aus">⛶</button>
     <button class="bclose" id="bClose" title="Schließen">✕</button>
   </div>
   <div class="beamer-now">
@@ -843,7 +851,7 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
     </span>
     <div class="title-stack">
       <h1>Matura-Einteilung</h1>
-      <div class="sub">Mündliche Reife- &amp; Diplomprüfung · <b>zeitoptimierter Prüfungsplan</b> für Schüler &amp; Lehrer <span style="opacity:.5;font-size:11px">· Version 2026-06-16 (r8)</span></div>
+      <div class="sub">Mündliche Reife- &amp; Diplomprüfung · <b>zeitoptimierter Prüfungsplan</b> für Schüler &amp; Lehrer <span style="opacity:.5;font-size:11px">· Version 2026-06-16 (r9)</span></div>
     </div>
     <div class="clock" aria-label="Uhrzeit">
       <div class="time"><span class="off">88:88:88</span><span class="lit" id="clockTime">00:00:00</span></div>
@@ -1212,7 +1220,7 @@ input[type=file]{font-family:'Lexend',sans-serif;font-size:12px;font-weight:300}
   </div>
   <footer>Erstellt offline im Browser · Daten verlassen das Gerät nicht · XLSX-Import/-Export via SheetJS<br>
     <span style="opacity:.7">© DI Theodor Kranz · kranzlab</span><br>
-    <span id="appVersion" style="opacity:.55;font-size:11px">Version 2026-06-16 · Live-Dirigent + Kommission (r8)</span><br>
+    <span id="appVersion" style="opacity:.55;font-size:11px">Version 2026-06-16 · Live-Dirigent + Kommission (r9)</span><br>
     <svg class="kl-footer" viewBox="122 50 292 100" role="img" aria-label="kranzlab" xmlns="http://www.w3.org/2000/svg">
 <defs>
 <radialGradient id="klMoonGrad" cx="36%" cy="34%"><stop offset="0%" stop-color="#f6f8fb"/><stop offset="55%" stop-color="#c2ccd9"/><stop offset="100%" stop-color="#8a98ab"/></radialGradient>
@@ -2034,6 +2042,8 @@ function beamerFullscreen(){ try{ const el=document.getElementById("beamerView")
   const rq=el.requestFullscreen||el.webkitRequestFullscreen||el.msRequestFullscreen;
   if(rq && !document.fullscreenElement){ const p=rq.call(el); if(p&&p.catch) p.catch(()=>{}); } }catch(e){} }
 function beamerExitFullscreen(){ try{ if(document.fullscreenElement && document.exitFullscreen){ const p=document.exitFullscreen(); if(p&&p.catch) p.catch(()=>{}); } }catch(e){} }
+function beamerToggleFullscreen(){ if(document.fullscreenElement) beamerExitFullscreen(); else beamerFullscreen(); }
+window.beamerToggleFullscreen=beamerToggleFullscreen;
 let BEAMER_ON=false, BEAMER_TIMER=null, BEAMER_PREP=true;   // Vorbereitungszeit standardmäßig sichtbar
 let BEAMER_SIG="", BEAMER_LASTTARGET=-1, BEAMER_WAKELOCK=null;
 // Bildschirm wach halten (sofern der Browser die Wake-Lock-API unterstützt) – kein Zutun nötig.
@@ -2100,6 +2110,15 @@ function renderBeamer(){
     const qurl = (typeof window.__mcStudentUrl==="function" && window.__mcStudentUrl()) || (location.origin+location.pathname+"?mode=anzeige");
     if(el.dataset.url!==qurl){ el.innerHTML=""; try{ new QRCode(el,{text:qurl,width:140,height:140,correctLevel:QRCode.CorrectLevel.M}); el.dataset.url=qurl; }catch(e){} } })();
   const res=CUR.res, cmap=teacherColor(MATRIX);
+  // Karten-Meta gestapelt: Label links, Kürzel rechts untereinander (Fach/Prüfer/Beisitz übereinander)
+  const bPill=code=>`<span class="bp" style="background:${cmap[code]||'#5b6b7e'}">${code}</span>`;
+  const bMetaGrid=(x,extra)=>{
+    let r=`<span class="bm-l">Fach</span><span class="bm-v"><b>${x.subject}</b></span>`
+         +`<span class="bm-l">Prüfer</span><span class="bm-v">${bPill(x.teacher)}</span>`;
+    if(x.beisitz) r+=`<span class="bm-l">Beisitz</span><span class="bm-v">${bPill(x.beisitz)}</span>`;
+    if(extra) r+=extra;
+    return `<div class="bmeta bmeta-grid">${r}</div>`;
+  };
   const rows=[...res.sched].sort((a,b)=>a.start-b.start);
   const order=CUR.order||[];
   const now=nowMinutes();   // echte Live-Zeit
@@ -2134,19 +2153,17 @@ function renderBeamer(){
   const cc=document.getElementById("bCurrent");
   if(cc){ if(cur){ cc.className="bcard current";
       const runHtml = (cur.examAt!=null) ? `<div class="bcur-timer">läuft <span class="btimer">${fmtDur(cur.examAt)}</span></div>` : "";
-      const curBei = cur.beisitz ? ` · Beisitz <span class="bp" style="background:${cmap[cur.beisitz]||'#5b6b7e'}">${cur.beisitz}</span>` : "";
       cc.innerHTML=`<div class="blabel">Jetzt dran · ${min2hm(cur.start)}–${min2hm(cur.end)}</div>
         <div class="bname">${cur.student}</div>
-        <div class="bmeta">Fach <b>${cur.subject}</b> · Prüfer <span class="bp" style="background:${cmap[cur.teacher]}">${cur.teacher}</span>${curBei}</div>${runHtml}`; }
+        ${bMetaGrid(cur)}${runHtml}`; }
     else { cc.className="bcard current idle"; cc.innerHTML=`<div class="blabel">Jetzt dran</div><div class="bname">— Pause / keine laufende Prüfung —</div>`; } }
   // Karte "Als Nächstes" (zur Prüfung)
   const nc=document.getElementById("bNext");
   if(nc){ if(next){ nc.className="bcard";
-      const prepHtml = BEAMER_PREP ? ` · Vorber. ab <b>${min2hm(next.prepStart)}</b>` : "";
-      const nextBei = next.beisitz ? ` · Beisitz <span class="bp" style="background:${cmap[next.beisitz]||'#5b6b7e'}">${next.beisitz}</span>` : "";
+      const extra = BEAMER_PREP ? `<span class="bm-l">Vorber. ab</span><span class="bm-v"><b>${min2hm(next.prepStart)}</b></span>` : "";
       nc.innerHTML=`<div class="blabel">Als Nächstes · ${min2hm(next.start)}</div>
         <div class="bname">${next.student}</div>
-        <div class="bmeta">Fach <b>${next.subject}</b> · Prüfer <span class="bp" style="background:${cmap[next.teacher]}">${next.teacher}</span>${nextBei}${prepHtml}</div>`; }
+        ${bMetaGrid(next, extra)}`; }
     else { nc.className="bcard idle"; nc.innerHTML=`<div class="blabel">Als Nächstes</div><div class="bname">— Ende —</div>`; } }
   // Karte "In Vorbereitung" (mehrere möglich, je mit Mitlauf-Timer)
   const bpp=document.getElementById("bPrepPeople");
@@ -2162,9 +2179,8 @@ function renderBeamer(){
   const np=conducting?lcResolveNextPrep():null;
   const bnp=document.getElementById("bNextPrep");
   if(bnp){ if(np){ bnp.className="bcard nextprep";
-      const npBei = np.beisitz ? ` · Beisitz <span class="bp" style="background:${cmap[np.beisitz]||'#5b6b7e'}">${np.beisitz}</span>` : "";
       bnp.innerHTML=`<div class="blabel">Nächste Vorbereitung</div><div class="bname">${np.student}</div>
-        <div class="bmeta">Fach <b>${np.subject}</b> · Prüfer <span class="bp" style="background:${cmap[np.teacher]}">${np.teacher}</span>${npBei}</div>`; }
+        ${bMetaGrid(np)}`; }
     else { bnp.className="bcard nextprep idle"; bnp.innerHTML=`<div class="blabel">Nächste Vorbereitung</div><div class="bname">—</div>`; } }
   // Liste: nur neu aufbauen, wenn sich Inhalt/Reihenfolge/Status ändert – sonst bleibt die Scrollposition erhalten
   const lb=document.getElementById("bList"); if(!lb) return;
