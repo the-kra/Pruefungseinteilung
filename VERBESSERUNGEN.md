@@ -188,6 +188,18 @@ zu **notieren** bzw. den laufenden Prüfungs-Timer **anzuhalten** (und später f
 - Verwandt mit #15 (Dauer-/Zeit-Steuerung der laufenden Prüfung).
 - Risiko: mittel (Pausenintervalle pro Prüfung speichern; Timer/ETA-Berechnung anpassen).
 
+### 17. Beamer-Liste: erledigte/laufende Kandidaten ausblenden (Redundanz vermeiden)
+**Beobachtung (zuletzt bei der letzten Prüfung des Tages, evtl. dauerhaft):** Der/die aktuelle
+Kandidat/in wird oben in der Karte „Jetzt dran" angezeigt **und** erscheint zusätzlich noch in der
+**Liste darunter** — wirkt doppelt/unübersichtlich, besonders am Tagesende.
+
+**Idee:** Namen aus der **Liste darunter entfernen/ausgrauen**, sobald sie „nach oben" gewandert sind
+(in Prüfung bzw. erledigt). Liste zeigt dann v. a. die **noch kommenden**.
+- Optionen: erledigte ausblenden; laufende ausblenden (steht ja in „Jetzt dran"); oder erledigte nur
+  abgedunkelt lassen (Übersicht „was war").
+- Offen: ob man die Erledigten ganz weglässt oder nur dezent zeigt — Geschmack/Anforderung klären.
+- Risiko: gering (nur Filter/Anzeige in der Beamer-Liste).
+
 ---
 
 ## Bewusst NICHT umgesetzt (mit Begründung)
