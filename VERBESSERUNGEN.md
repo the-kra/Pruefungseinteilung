@@ -180,6 +180,14 @@ sich auf den echten Wert **hochsetzen** lassen.
 der übrigen Zeilen aufzuweichen.
 - Risiko: gering–mittel (per-Prüfung Dauer-Wert statt Plandauer; Auswirkung auf ETA/Folgezeiten beachten).
 
+### 16. „Pause"-Knopf bei laufender Prüfung (zum Notieren/Anhalten)
+Während einer **laufenden Prüfung** soll ein **„Pause"-Knopf** verfügbar sein, um eine Unterbrechung
+zu **notieren** bzw. den laufenden Prüfungs-Timer **anzuhalten** (und später fortzusetzen).
+- Anwendungsfall: kurze Unterbrechung der Prüfung soll festgehalten werden, ohne die Zeit weiterlaufen zu lassen.
+- Idee: Toggle „Pause/Weiter" je aktiver Prüfung; pausierte Zeit wird nicht mitgezählt (Timer/Dauer/ETA berücksichtigen die Pause).
+- Verwandt mit #15 (Dauer-/Zeit-Steuerung der laufenden Prüfung).
+- Risiko: mittel (Pausenintervalle pro Prüfung speichern; Timer/ETA-Berechnung anpassen).
+
 ---
 
 ## Bewusst NICHT umgesetzt (mit Begründung)
